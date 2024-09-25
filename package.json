@@ -1,0 +1,28 @@
+{
+  "name": "data-engine",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/uuid": "^10.0.0",
+    "nodemon": "^3.1.7",
+    "prettier": "^3.3.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@fastify/multipart": "^9.0.0",
+    "csv-parse": "^5.5.6",
+    "fastify": "^5.0.0",
+    "redis": "^4.7.0",
+    "undici": "^6.19.8",
+    "uuid": "^10.0.0"
+  },
+  "scripts": {
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'bun run' server.ts",
+    "start": "bun run server.ts",
+    "redis": "redis-server",
+    "ollama": "ollama run codellama"
+  }
+}
