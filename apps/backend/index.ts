@@ -4,8 +4,8 @@ import Fastify from "fastify"
 import multipart from "@fastify/multipart"
 import cors from "@fastify/cors"
 
-import { parserRoutes } from "./src/routes/parserRoutes"
 import { connectRedis, disconnectRedis } from "./src/lib/redis"
+import { parserRoutes } from "./src/routes/parserRoutes"
 
 const fastify = Fastify({
   logger: true,

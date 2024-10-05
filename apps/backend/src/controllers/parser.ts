@@ -6,6 +6,38 @@ import { redisClient } from "../lib/redis"
 import type { ParseType, ParsedColumn, ParsedData, NameData, SocialData } from "../types/parser"
 import { generateWithOllama, generateWithOpenAI } from "../lib/ollama"
 import { z } from "zod"
+import { customAlphabet } from "nanoid"
+
+// Update the alphabet to use only lowercase letters and numbers
+const nanoid = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 6)
+
+// Add this function near the top of the file, after the other Redis-related functions
+async function getAllDatasetKeys(): Promise<string[]> {
+  const allKeys = await redisClient.keys("*")
+  return allKeys.filter((key) => !key.endsWith("-parsed-columns"))
+}
+
+// Add this function after getAllDatasetKeys
+async function getAllDatasetsInfo(): Promise<
+  Array<{ uuid: string; fileName: string; rowCount: number }>
+> {
+  const keys = await getAllDatasetKeys()
+  const datasetsInfo = await Promise.all(
+    keys.map(async (key) => {
+      const dataset = await getData(key)
+      return dataset
+        ? {
+            uuid: key,
+            fileName: dataset.fileName,
+            rowCount: dataset.data.length,
+          }
+        : null
+    })
+  )
+  return datasetsInfo.filter(
+    (info): info is { uuid: string; fileName: string; rowCount: number } => info !== null
+  )
+}
 
 // Update the COLUMNS_CONFIG
 const COLUMNS_CONFIG = {
@@ -21,11 +53,13 @@ const COL_SOCIAL = COLUMNS_CONFIG.linkedin_url
 const COL_NAME = COLUMNS_CONFIG.name
 const COL_EMAILS = COLUMNS_CONFIG.email
 
-async function saveData(uuid: string, data: Record<string, any>[]) {
+async function saveData(uuid: string, data: { fileName: string; data: Record<string, any>[] }) {
   await redisClient.set(uuid, JSON.stringify(data))
 }
 
-async function getData(uuid: string): Promise<Record<string, any>[] | null> {
+async function getData(
+  uuid: string
+): Promise<{ fileName: string; data: Record<string, any>[] } | null> {
   const data = await redisClient.get(uuid)
   return data ? JSON.parse(data) : null
 }
@@ -59,23 +93,13 @@ function parseLinkedInUrl(url: string): SocialData | null {
 
 // Add this function to track parsed columns
 function addParsedColumn(uuid: string, columnName: string, parseType: ParseType) {
-  return redisClient.sAdd(`${uuid}-parsed-columns`, JSON.stringify({ columnName, parseType }))
-}
-
-export async function parseCSVHandler(request: FastifyRequest, reply: FastifyReply) {
-  const data = await request.file()
-  if (!data) {
-    return reply.code(400).send({ error: "No file uploaded" })
-  }
-
-  try {
-    const parsedData = await parseCSV(await data.toBuffer())
-    const uuid = uuidv4()
-    await saveData(uuid, parsedData)
-    reply.send({ uuid })
-  } catch (error) {
-    reply.code(500).send({ error })
-  }
+  return redisClient.sAdd(
+    `${uuid}-parsed-columns`,
+    JSON.stringify({
+      columnName,
+      parseType: parseType === "first_name" || parseType === "last_name" ? "name" : parseType,
+    })
+  )
 }
 
 export async function getDatasetHandler(
@@ -85,14 +109,14 @@ export async function getDatasetHandler(
   reply: FastifyReply
 ) {
   const { uuid } = request.params
-  const data = await getData(uuid)
-  if (!data) {
+  const dataset = await getData(uuid)
+  if (!dataset) {
     return reply.code(404).send({ error: "Dataset not found" })
   }
-  reply.send(data)
+  reply.send(dataset.data)
 }
 
-// Modify parseColumnHandler to track parsed columns
+// Modify parseColumnHandler to remove parsed columns
 export async function parseColumnHandler(
   request: FastifyRequest<{
     Params: { uuid: string }
@@ -103,8 +127,8 @@ export async function parseColumnHandler(
   const { uuid } = request.params
   const { columnName, parseType } = request.body
 
-  const data = await getData(uuid)
-  if (!data) {
+  const dataset = await getData(uuid)
+  if (!dataset) {
     return reply.code(404).send({ error: "Data not found" })
   }
 
@@ -116,21 +140,24 @@ export async function parseColumnHandler(
 
   switch (parseType) {
     case "linkedin_url":
-      updatedData = data.map((row) => {
+      updatedData = dataset.data.map((row) => {
+        const newRow = { ...row }
         if (row[columnName]) {
           const parsedValue = parseLinkedInUrl(row[columnName])
           if (parsedValue) {
-            return { ...row, [COL_SOCIAL]: parsedValue }
+            newRow[COL_SOCIAL] = parsedValue
           }
         }
-        return row
+        delete newRow[columnName]
+        return newRow
       })
       break
 
     case "first_name":
     case "last_name":
     case "name":
-      updatedData = data.map((row) => {
+      updatedData = dataset.data.map((row) => {
+        const newRow = { ...row }
         if (row[columnName]) {
           let parsedValue: NameData
           switch (parseType) {
@@ -144,28 +171,27 @@ export async function parseColumnHandler(
               parsedValue = parseName(row[columnName])
               break
           }
-          return {
-            ...row,
-            [COL_NAME]: {
-              ...row[COL_NAME],
-              ...parsedValue,
-            },
+          newRow[COL_NAME] = {
+            ...newRow[COL_NAME],
+            ...parsedValue,
           }
         }
-        return row
+        delete newRow[columnName]
+        return newRow
       })
       break
 
     case "email":
-      updatedData = data.map((row) => {
+      updatedData = dataset.data.map((row) => {
+        const newRow = { ...row }
         if (row[columnName]) {
           const parsedEmail = parseEmail(row[columnName])
-          return {
-            ...row,
-            [COL_EMAILS]: row[COL_EMAILS] ? [...row[COL_EMAILS], parsedEmail] : [parsedEmail],
-          }
+          newRow[COL_EMAILS] = newRow[COL_EMAILS]
+            ? [...newRow[COL_EMAILS], parsedEmail]
+            : [parsedEmail]
         }
-        return row
+        delete newRow[columnName]
+        return newRow
       })
       break
 
@@ -174,18 +200,40 @@ export async function parseColumnHandler(
   }
 
   await addParsedColumn(uuid, columnName, parseType)
-  await saveData(uuid, updatedData)
-  reply.send({ message: `Column "${columnName}" parsed successfully` })
+  await saveData(uuid, {
+    fileName: dataset.fileName,
+    data: updatedData,
+  })
+  reply.send({
+    message: `Column "${columnName}" parsed successfully and removed from the original data`,
+  })
 }
 
-// New function to initialize a load dataset
+// Updated function to initialize a load dataset
 export async function initializeLoadDatasetHandler(request: FastifyRequest, reply: FastifyReply) {
-  const loadUuid = uuidv4()
-  await saveData(loadUuid, []) // Initialize with an empty array
+  const data = await request.file()
+  if (!data) {
+    return reply.code(400).send({ error: "No file uploaded" })
+  }
+
+  const fileName = data.filename || "unnamed_file"
+  const fileNameWithoutExtension = fileName.replace(/\.[^/.]+$/, "") // Remove file extension
+  const sanitizedFileName = fileNameWithoutExtension.replace(/[^a-z0-9]+/gi, "-").toLowerCase() // Replace spaces and special characters with dashes
+  const randomId = nanoid(6) // Generate a 6-character random ID
+  const loadUuid = `${sanitizedFileName}-${randomId}`
+
+  // Create an object to store both the dataset and metadata
+  const datasetWithMetadata = {
+    fileName: fileName,
+    data: await parseCSV(await data.toBuffer()),
+  }
+
+  await saveData(loadUuid, datasetWithMetadata)
 
   reply.send({
     message: "Load dataset initialized successfully",
     loadUuid,
+    fileName,
   })
 }
 
@@ -198,18 +246,18 @@ export async function loadHandler(
 ) {
   const { loadUuid, sourceUuid } = request.params
 
-  const sourceData = await getData(sourceUuid)
-  if (!sourceData) {
+  const sourceDataset = await getData(sourceUuid)
+  if (!sourceDataset) {
     return reply.code(404).send({ error: "Source dataset not found" })
   }
 
-  let existingLoadedData = (await getData(loadUuid)) || []
+  let existingLoadedDataset = (await getData(loadUuid)) || { fileName: "", data: [] }
   let createdCount = 0
   let updatedCount = 0
 
   const pipeline = redisClient.multi()
 
-  for (const row of sourceData) {
+  for (const row of sourceDataset.data) {
     // Filter only parsed columns (starting with "__")
     const parsedRow: ParsedData = Object.entries(row).reduce((acc, [key, value]) => {
       if (key.startsWith("__")) {
@@ -263,7 +311,7 @@ export async function loadHandler(
 
     if (matchedUuid) {
       // Merge data with existing record
-      const existingRow = existingLoadedData.find((r) => r.uuid === matchedUuid)
+      const existingRow = existingLoadedDataset.data.find((r) => r.uuid === matchedUuid)
       if (existingRow) {
         updatedRow = mergeRows(existingRow, parsedRow)
         updatedRow.uuid = matchedUuid
@@ -275,13 +323,13 @@ export async function loadHandler(
         // This shouldn't happen, but just in case
         console.warn(`Matched UUID ${matchedUuid} not found in existingLoadedData`)
         updatedRow = { ...parsedRow, uuid: uuidv4() }
-        existingLoadedData.push(updatedRow)
+        existingLoadedDataset.data.push(updatedRow)
         createdCount++
       }
     } else {
       // Create new record
       updatedRow = { ...parsedRow, uuid: uuidv4() }
-      existingLoadedData.push(updatedRow)
+      existingLoadedDataset.data.push(updatedRow)
       createdCount++
     }
 
@@ -292,17 +340,21 @@ export async function loadHandler(
   }
 
   // Save updated data
-  await saveData(loadUuid, existingLoadedData)
+  await saveData(loadUuid, {
+    fileName: existingLoadedDataset.fileName,
+    data: existingLoadedDataset.data,
+  })
 
   reply.send({
     message: "Data loaded successfully",
     sourceUuid,
     loadUuid,
+    fileName: existingLoadedDataset.fileName,
     summary: {
-      totalProcessed: sourceData.length,
+      totalProcessed: sourceDataset.data.length,
       created: createdCount,
       updated: updatedCount,
-      totalLoaded: existingLoadedData.length,
+      totalLoaded: existingLoadedDataset.data.length,
     },
   })
 }
@@ -391,15 +443,15 @@ export async function suggestColumnsHandler(
 ) {
   const { uuid } = request.params
 
-  const data = await getData(uuid)
-  if (!data) {
+  const dataset = await getData(uuid)
+  if (!dataset) {
     return reply.code(404).send({ error: "Dataset not found" })
   }
 
   const sampleData: Record<string, string[]> = {}
 
   // Process the data to create the sampleData dictionary
-  for (const row of data) {
+  for (const row of dataset.data) {
     for (const [columnName, value] of Object.entries(row)) {
       if (!sampleData[columnName]) {
         sampleData[columnName] = []
@@ -452,5 +504,39 @@ export async function suggestColumnsHandler(
   } catch (error) {
     console.error("Error generating suggestions:", error)
     reply.code(500).send({ error: "Failed to generate suggestions" })
+  }
+}
+
+// Add this function near the other handler functions
+export async function listDatasetsHandler(request: FastifyRequest, reply: FastifyReply) {
+  try {
+    const datasets = await getAllDatasetsInfo()
+    reply.send(datasets)
+  } catch (error) {
+    console.error("Error listing datasets:", error)
+    reply.code(500).send({ error: "Failed to list datasets" })
+  }
+}
+
+// Add this new function to get parsed columns
+async function getParsedColumns(uuid: string): Promise<ParsedColumn[]> {
+  const parsedColumnsSet = await redisClient.sMembers(`${uuid}-parsed-columns`)
+  return parsedColumnsSet.map((column) => JSON.parse(column))
+}
+
+// Add this new handler function
+export async function getParsedColumnsHandler(
+  request: FastifyRequest<{
+    Params: { uuid: string }
+  }>,
+  reply: FastifyReply
+) {
+  const { uuid } = request.params
+  try {
+    const parsedColumns = await getParsedColumns(uuid)
+    reply.send(parsedColumns)
+  } catch (error) {
+    console.error("Error fetching parsed columns:", error)
+    reply.code(500).send({ error: "Failed to fetch parsed columns" })
   }
 }

@@ -1,108 +1,310 @@
 "use client"
 
-import React, { useState, useEffect, useMemo } from "react"
+import React, { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { AgGridReact } from "ag-grid-react"
-import { ColDef } from "ag-grid-community"
+import { ColDef, GridOptions } from "ag-grid-community"
 import "ag-grid-community/styles/ag-grid.css"
 import "ag-grid-community/styles/ag-theme-alpine.css"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
+import { Wand2 } from "lucide-react"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
+
+type ParsedColumn = {
+  columnName: string
+  // Add other properties if needed
+  parseType: string
+}
 
 const useDataset = (uuid: string) => {
-  return useQuery({
+  const queryFn = async () => {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dataset/${uuid}`)
+    if (!response.ok) {
+      throw new Error("Failed to fetch dataset")
+    }
+    return response.json()
+  }
+
+  const query = useQuery({
     queryKey: ["dataset", uuid],
-    queryFn: async () => {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/dataset/${uuid}`)
-      if (!response.ok) {
-        throw new Error("Failed to fetch dataset")
-      }
-      return response.json()
-    },
+    queryFn,
   })
+
+  return {
+    ...query,
+    refetch: query.refetch,
+  }
+}
+
+const useSuggestions = (uuid: string) => {
+  const queryFn = async () => {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/dataset/${uuid}/suggest-parse-columns`
+    )
+    if (!response.ok) {
+      throw new Error("Failed to fetch suggestions")
+    }
+    return response.json()
+  }
+
+  return useQuery({
+    queryKey: ["suggestions", uuid],
+    queryFn,
+    staleTime: Infinity,
+    enabled: false, // Don't run the query automatically
+  })
+}
+
+const parseColumn = async (uuid: string, columnName: string, parseType: string) => {
+  const response = await fetch(
+    `${process.env.NEXT_PUBLIC_API_URL}/api/dataset/${uuid}/parse-column`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ columnName, parseType }),
+    }
+  )
+
+  if (!response.ok) {
+    throw new Error("Failed to parse column")
+  }
+
+  return response.json()
 }
 
 const calculateColumnWidth = (key: string, data: any[]): number => {
   const maxContentLength = Math.max(key.length, ...data.map((row) => String(row[key]).length))
-  // Assuming an average character width of 8 pixels
-  return Math.min(Math.max(maxContentLength * 8, 100), 300)
+  return Math.min(Math.max(maxContentLength * 8, 100), 300) + 50
 }
 
 const CustomHeader = (props: any) => {
-  const onOptionClick = (option: string) => {
-    if (option === "hide") {
-      props.column.setVisible(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const suggestion = props?.context?.suggestions?.columns?.find(
+    (column: any) => column.columnName === props.column.getColId()
+  )
+
+  const onParseClick = async () => {
+    setIsLoading(true)
+    try {
+      await parseColumn(props.context.uuid, props.column.getColId(), suggestion.parseType)
+      await Promise.all([props.context.refetchData(), props.context.refetchParsedColumns()])
+    } catch (error) {
+      console.error("Error parsing column:", error)
+      // You might want to show an error message to the user here
+    } finally {
+      setIsLoading(false)
     }
-    // Add more options here as needed
   }
 
   return (
     <div className="ag-header-cell-label flex justify-between items-center">
       <span>{props.displayName}</span>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
-            <span className="sr-only">Open menu</span>
-            <svg width="15" height="15" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3.625 7.5C3.625 8.12132 3.12132 8.625 2.5 8.625C1.87868 8.625 1.375 8.12132 1.375 7.5C1.375 6.87868 1.87868 6.375 2.5 6.375C3.12132 6.375 3.625 6.87868 3.625 7.5ZM8.625 7.5C8.625 8.12132 8.12132 8.625 7.5 8.625C6.87868 8.625 6.375 8.12132 6.375 7.5C6.375 6.87868 6.87868 6.375 7.5 6.375C8.12132 6.375 8.625 6.87868 8.625 7.5ZM12.5 8.625C13.1213 8.625 13.625 8.12132 13.625 7.5C13.625 6.87868 13.1213 6.375 12.5 6.375C11.8787 6.375 11.375 6.87868 11.375 7.5C11.375 8.12132 11.8787 8.625 12.5 8.625Z" fill="currentColor" fillRule="evenodd" clipRule="evenodd"></path></svg>
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => onOptionClick("hide")}>
-            Hide Column
-          </DropdownMenuItem>
-          {/* Add more menu items here */}
-        </DropdownMenuContent>
-      </DropdownMenu>
+      {props.context.isSuggestionsLoading ? (
+        <div className="h-4 w-4 animate-spin rounded-full border-2 border-gray-300 border-t-blue-600" />
+      ) : suggestion ? (
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onParseClick}
+                disabled={isLoading}
+                className="h-8 w-8 p-0 ml-4"
+              >
+                <span className="sr-only">Parse column</span>
+                <Wand2 className={`h-4 w-4 ${isLoading ? "animate-spin" : ""} stroke-blue-600`} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Suggested parse type: {suggestion.parseType}</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ) : null}
     </div>
   )
 }
 
+const EmailsRenderer = (props: any) => {
+  const emails = props.value || []
+  return (
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span>{emails.length} email(s)</span>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{emails.join(", ")}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
+  )
+}
+
+const NameRenderer = (props: any) => {
+  const { first_name, last_name } = props.value || {}
+  return <span>{`${first_name} ${last_name}`}</span>
+}
+
+const SocialRenderer = (props: any) => {
+  const value = props.value
+  if (!value) return <span>-</span>
+
+  let url = value
+  if (!value.startsWith("http://") && !value.startsWith("https://")) {
+    url = `https://www.linkedin.com/in/${value}`
+  }
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-blue-600 hover:text-blue-800 underline"
+    >
+      LinkedIn Profile
+    </a>
+  )
+}
+
+const getColumnRenderer = (key: string) => {
+  switch (key) {
+    case "__emails":
+      return EmailsRenderer
+    case "__name":
+      return NameRenderer
+    case "__social":
+      return SocialRenderer
+    default:
+      return undefined
+  }
+}
+
+// Add this new hook to fetch parsed columns
+const useParsedColumns = (uuid: string) => {
+  const queryFn = async (): Promise<ParsedColumn[]> => {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL}/api/dataset/${uuid}/parsed-columns`
+    )
+    if (!response.ok) {
+      throw new Error("Failed to fetch parsed columns")
+    }
+    return response.json()
+  }
+
+  return useQuery<ParsedColumn[], Error>({
+    queryKey: ["parsedColumns", uuid],
+    queryFn,
+  })
+}
+
 export default function Dataset({ params }: { params: { uuid: string } }) {
   const { uuid } = params
-  const { data, isLoading, error } = useDataset(uuid)
+  const { data, isLoading: isDataLoading, error: dataError, refetch } = useDataset(uuid)
+  const {
+    data: suggestions,
+    isLoading: isSuggestionsLoading,
+    error: suggestionsError,
+    refetch: refetchSuggestions,
+  } = useSuggestions(uuid)
+  const {
+    data: parsedColumns,
+    isLoading: isParsedColumnsLoading,
+    refetch: refetchParsedColumns,
+  } = useParsedColumns(uuid)
   const [columnDefs, setColumnDefs] = useState<ColDef[]>([])
   const [rowData, setRowData] = useState<any[]>([])
 
   useEffect(() => {
-    if (data && Array.isArray(data) && data.length > 0) {
-      const columns = Object.keys(data[0]).map((key) => ({
-        field: key,
-        headerName: key,
-        width: calculateColumnWidth(key, data),
-        resizable: true,
-        headerComponent: CustomHeader,
-      }))
+    if (data && Array.isArray(data) && data.length > 0 && parsedColumns) {
+      const parsedColumnNames = parsedColumns.map((col: ParsedColumn) => `__${col.parseType}`)
+      // Create a set of all column names (parsed and unparsed)
+      const allColumnNames = new Set([
+        ...parsedColumnNames,
+        ...Object.keys(data[0]).filter((key) => !parsedColumnNames.includes(key)),
+      ])
+
+      const columns: ColDef[] = Array.from(allColumnNames).map((key) => {
+        console.log(key)
+        const isParsedColumn = key.startsWith("__") && parsedColumnNames.includes(key)
+        const displayName = isParsedColumn ? key.replace(/^__/, "") : key
+        return {
+          field: key,
+          headerName: displayName,
+          width: calculateColumnWidth(key, data),
+          resizable: true,
+          headerComponent: CustomHeader,
+          headerComponentParams: {
+            context: {
+              uuid,
+              refetchData: refetch,
+              refetchParsedColumns, // Add this line
+              suggestions: suggestions || {},
+              isSuggestionsLoading,
+            },
+          },
+          pinned: isParsedColumn ? "left" : null,
+          cellClass: isParsedColumn ? "pinned-column" : "",
+          cellRenderer: getColumnRenderer(key),
+          valueGetter: (params: any) => {
+            return params.data[key] !== undefined ? params.data[key] : null
+          },
+        }
+      })
+
+      // Sort columns to ensure parsed columns appear first
+      columns.sort((a, b) => {
+        if (a.pinned === "left" && b.pinned !== "left") return -1
+        if (a.pinned !== "left" && b.pinned === "left") return 1
+        return 0
+      })
+
       setColumnDefs(columns)
-      setRowData(data)
+
+      // Add null values for missing parsed columns in each row
+      const updatedRowData = data.map((row) => {
+        const updatedRow = { ...row }
+        parsedColumnNames.forEach((columnName) => {
+          if (!(columnName in updatedRow)) {
+            updatedRow[columnName] = null
+          }
+        })
+        return updatedRow
+      })
+
+      setRowData(updatedRowData)
+
+      // Fetch suggestions after the dataset is loaded
+      if (!suggestions) {
+        refetchSuggestions()
+      }
     }
-  }, [data])
+  }, [
+    data,
+    suggestions,
+    uuid,
+    refetch,
+    refetchSuggestions,
+    isSuggestionsLoading,
+    parsedColumns,
+    refetchParsedColumns,
+  ])
 
-  const defaultColDef = useMemo(
-    () => ({
-      sortable: true,
-      filter: true,
-    }),
-    []
-  )
-
-  if (isLoading) {
-    return <div className="p-4">Loading dataset...</div>
+  if (isDataLoading) {
+    return <div>Loading dataset...</div>
   }
 
-  if (error) {
-    return <div className="p-4 text-red-500">Error: {(error as Error).message}</div>
+  if (dataError) {
+    return <div className="text-red-500">Error: {(dataError as Error).message}</div>
   }
 
   return (
-    <div className="p-4">
-      <h1 className="text-2xl font-bold mb-4">Dataset: {uuid}</h1>
+    <div>
       <div className="ag-theme-alpine w-full h-[600px]">
-        <AgGridReact
+        <AgGridReact<any>
           columnDefs={columnDefs}
           rowData={rowData}
           pagination={true}
@@ -111,7 +313,12 @@ export default function Dataset({ params }: { params: { uuid: string } }) {
           animateRows={false}
           suppressColumnMoveAnimation={true}
           suppressMovableColumns={true}
-          defaultColDef={defaultColDef}
+          suppressCellFocus={true}
+          suppressHeaderFocus={true}
+          defaultColDef={{
+            sortable: true,
+            filter: true,
+          }}
         />
       </div>
     </div>
