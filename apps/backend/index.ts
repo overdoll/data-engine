@@ -1,5 +1,9 @@
+require("dotenv").config()
+
 import Fastify from "fastify"
 import multipart from "@fastify/multipart"
+import cors from "@fastify/cors"
+
 import { parserRoutes } from "./src/routes/parserRoutes"
 import { connectRedis, disconnectRedis } from "./src/lib/redis"
 
@@ -9,6 +13,10 @@ const fastify = Fastify({
 
 fastify.register(multipart)
 fastify.register(parserRoutes)
+fastify.register(cors, {
+  origin: ["http://localhost:3000"],
+  credentials: true,
+})
 
 fastify.get("/", async (request, reply) => {
   return { hello: "world" }

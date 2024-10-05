@@ -4,7 +4,8 @@ import { Readable } from "stream"
 import { v4 as uuidv4 } from "uuid"
 import { redisClient } from "../lib/redis"
 import type { ParseType, ParsedColumn, ParsedData, NameData, SocialData } from "../types/parser"
-import { generateWithOllama } from "../lib/ollama"
+import { generateWithOllama, generateWithOpenAI } from "../lib/ollama"
+import { z } from "zod"
 
 // Update the COLUMNS_CONFIG
 const COLUMNS_CONFIG = {
@@ -414,17 +415,14 @@ export async function suggestColumnsHandler(
     }
   }
 
-  const endpoint = `curl -X POST http://localhost:3000/parse/${uuid} -H "Content-Type: application/json" -d '{"columnName": "COLUMN_NAME", "parseType": "PARSE_TYPE"}'`
-
   const prompt = `
   You are a helper that is going to help me run data parsing against a dataset. Here is the dataset:
   ${JSON.stringify(sampleData)}
   This dataset is an object, where the key is the column name, and the value is a sample of the data.
 
-  I want to parse the data into a standardized format. I already have an endpoint to do this:
-  ${endpoint}
+  I want to parse the data into a standardized format.
 
-  This endpoint accepts the name of the column as columnName (the key in the sampleData object), and the type of parsing as parseType.
+  I need you to return a list of objects, where each object accepts the name of the column as columnName (the key in the sampleData object), and the type of parsing as parseType.
   The following parseTypes are available:
   name - The full name of a person. Only works if the column has a full name of a human, and the name is, in your opinion, real. A full name includes a first name, an optional middle name, and a last name. You should only choose one column for this parseType.
   first_name - The first name of the person. You should only choose one column for this parseType. If there is already a full name, do not use this.
@@ -439,7 +437,17 @@ export async function suggestColumnsHandler(
   `
 
   try {
-    const suggestions = await generateWithOllama(prompt)
+    const suggestions = await generateWithOpenAI(
+      prompt,
+      z.object({
+        columns: z.array(
+          z.object({
+            columnName: z.string(),
+            parseType: z.string(),
+          })
+        ),
+      })
+    )
     reply.send(suggestions)
   } catch (error) {
     console.error("Error generating suggestions:", error)
