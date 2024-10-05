@@ -17,7 +17,7 @@ fastify.get("/", async (request, reply) => {
 const start = async () => {
   try {
     await connectRedis()
-    await fastify.listen({ port: 3000 })
+    await fastify.listen({ port: 4000 })
   } catch (err) {
     fastify.log.error(err)
     await disconnectRedis()

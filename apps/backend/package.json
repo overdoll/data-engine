@@ -6,7 +6,8 @@
     "@types/bun": "latest",
     "@types/uuid": "^10.0.0",
     "nodemon": "^3.1.7",
-    "prettier": "^3.3.3"
+    "prettier": "^3.3.3",
+    "nx": "19.8.4"
   },
   "peerDependencies": {
     "typescript": "^5.0.0"
@@ -20,9 +21,10 @@
     "uuid": "^10.0.0"
   },
   "scripts": {
-    "dev": "nodemon --watch 'src/**/*.ts' --exec 'bun run' server.ts",
-    "start": "bun run server.ts",
+    "dev": "nodemon --watch 'src/**/*.ts' --exec 'bun run' index.ts",
+    "start": "bun run index.ts",
     "redis": "redis-server",
     "ollama": "ollama run codellama"
-  }
+  },
+  "nx": {}
 }
