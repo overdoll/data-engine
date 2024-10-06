@@ -11,7 +11,7 @@ const fastify = Fastify({
   logger: true,
 })
 
-fastify.register(multipart)
+fastify.register(multipart, { attachFieldsToBody: true })
 fastify.register(parserRoutes)
 fastify.register(cors, {
   origin: ["http://localhost:3000"],

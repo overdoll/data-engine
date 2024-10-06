@@ -14,8 +14,8 @@ export async function parserRoutes(fastify: FastifyInstance) {
   fastify.post("/api/dataset/:uuid/parse-column", parseColumnHandler)
   fastify.post("/api/dataset/initialize-load", initializeLoadDatasetHandler)
   fastify.get<{
-    Params: { loadUuid: string; sourceUuid: string }
-  }>("/api/dataset/:loadUuid/load/:sourceUuid", async (request, reply) => {
+    Params: { loadUuid: string; targetUuid: string }
+  }>("/api/dataset/:loadUuid/load/:targetUuid", async (request, reply) => {
     reply.raw.writeHead(200, {
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",

@@ -19,7 +19,7 @@ async function getAllDatasetKeys(): Promise<string[]> {
 
 // Add this function after getAllDatasetKeys
 async function getAllDatasetsInfo(): Promise<
-  Array<{ uuid: string; fileName: string; rowCount: number }>
+  Array<{ uuid: string; fileName: string; rowCount: number; isMaster: boolean }>
 > {
   const keys = await getAllDatasetKeys()
   const datasetsInfo = await Promise.all(
@@ -30,12 +30,14 @@ async function getAllDatasetsInfo(): Promise<
             uuid: key,
             fileName: dataset.fileName,
             rowCount: dataset.data.length,
+            isMaster: dataset.isMaster,
           }
         : null
     })
   )
   return datasetsInfo.filter(
-    (info): info is { uuid: string; fileName: string; rowCount: number } => info !== null
+    (info): info is { uuid: string; fileName: string; rowCount: number; isMaster: boolean } =>
+      info !== null
   )
 }
 
@@ -218,63 +220,177 @@ export async function parseColumnHandler(
   })
 }
 
-// Updated function to initialize a load dataset
-export async function initializeLoadDatasetHandler(
-  request: FastifyRequest<{
-    Body: {
-      name: string
-      isMaster: boolean
-    }
-  }>,
-  reply: FastifyReply
-) {
-  const { name, isMaster } = request.body
-
-  if (!name) {
-    return reply.code(400).send({ error: "Dataset name is required" })
-  }
-
+// New function to create a dataset
+export async function createDataset(
+  name: string,
+  isMaster: boolean,
+  fileBuffer?: Buffer
+): Promise<{ loadUuid: string; fileName: string; isMaster: boolean; rowCount: number }> {
   const sanitizedName = name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()
   const randomId = nanoid(6)
   const loadUuid = `${sanitizedName}-${randomId}`
 
   let datasetWithMetadata = {
     fileName: name,
-    isMaster: isMaster || false,
+    isMaster: isMaster,
     data: [],
   }
 
-  const file = await request.file()
-  if (file) {
-    const fileBuffer = await file.toBuffer()
+  if (fileBuffer) {
     datasetWithMetadata.data = await parseCSV(fileBuffer)
   }
 
   await saveData(loadUuid, datasetWithMetadata)
 
-  reply.send({
-    message: "Load dataset initialized successfully",
+  return {
     loadUuid,
     fileName: name,
-    isMaster: datasetWithMetadata.isMaster,
+    isMaster: isMaster,
     rowCount: datasetWithMetadata.data.length,
-  })
+  }
+}
+
+// Updated initializeLoadDatasetHandler
+export async function initializeLoadDatasetHandler(
+  request: FastifyRequest<{
+    Body: {
+      name: { value: string }
+      isMaster: { value: string }
+      file: { toBuffer: () => Promise<Buffer> }
+    }
+  }>,
+  reply: FastifyReply
+) {
+  const { name, isMaster, file } = request.body
+
+  if (!name) {
+    return reply.code(400).send({ error: "Dataset name is required" })
+  }
+
+  try {
+    const fileBuffer = file ? await file.toBuffer() : undefined
+    const result = await createDataset(
+      name.value,
+      isMaster.value === "false" ? false : true,
+      fileBuffer
+    )
+
+    reply.send({
+      message: "Load dataset initialized successfully",
+      ...result,
+    })
+  } catch (error) {
+    console.error("Error initializing dataset:", error)
+    reply.code(500).send({ error: "Failed to initialize dataset" })
+  }
 }
 
 // Updated loadHandler function
 export async function loadHandler(
-  request: FastifyRequest<{ Params: { loadUuid: string; sourceUuid: string } }>,
+  request: FastifyRequest<{ Params: { loadUuid: string; targetUuid: string } }>,
   reply: FastifyReply,
   sendEvent: (data: any) => void
 ) {
-  const { loadUuid, sourceUuid } = request.params
+  const { loadUuid, targetUuid } = request.params
 
-  const sourceDataset = await getData(sourceUuid)
+  const sourceDataset = await getData(loadUuid)
   if (!sourceDataset) {
     return reply.code(404).send({ error: "Source dataset not found" })
   }
 
-  let existingLoadedDataset = (await getData(loadUuid)) || { fileName: "", data: [] }
+  let targetDataset = await getData(targetUuid)
+  if (!targetDataset) {
+    return reply.code(404).send({ error: "Target dataset not found" })
+  }
+
+  let masterDataset: Dataset
+  let masterUuid: string
+
+  if (targetDataset.isMaster) {
+    // If target is already a master dataset, load directly into it
+    masterDataset = targetDataset
+    masterUuid = targetUuid
+    console.log("loading into existing")
+  } else {
+    console.log("Creating new master dataset")
+    // Create a new master dataset
+    const newMasterResult = await createDataset(
+      `${targetDataset.fileName}+${sourceDataset.fileName}`,
+      true
+    )
+    masterUuid = newMasterResult.loadUuid
+    const newMasterDataset = await getData(masterUuid)
+    if (!newMasterDataset) {
+      return reply.code(500).send({ error: "Failed to create master dataset" })
+    }
+    masterDataset = newMasterDataset
+
+    // Load the target dataset into the new master dataset
+    await loadDataIntoMaster(targetDataset, masterDataset, masterUuid, sendEvent)
+  }
+
+  // Load the source dataset into the master dataset
+  const summary = await loadDataIntoMaster(sourceDataset, masterDataset, masterUuid, sendEvent)
+
+  // Update relationships for all involved datasets
+  await updateDatasetRelationships(loadUuid, targetUuid, masterUuid)
+
+  // Send final progress update
+  sendEvent({
+    type: "complete",
+    ...summary,
+  })
+
+  reply.header("Content-Type", "application/json;charset=utf-8").send({
+    message: "Data loaded successfully",
+    sourceUuid: loadUuid,
+    targetUuid,
+    masterUuid,
+    fileName: masterDataset.fileName,
+    summary,
+  })
+}
+
+// Updated function to update dataset relationships
+async function updateDatasetRelationships(
+  sourceUuid: string,
+  targetUuid: string,
+  masterUuid: string
+) {
+  const sourceDataset = await getData(sourceUuid)
+  const targetDataset = await getData(targetUuid)
+  const masterDataset = await getData(masterUuid)
+
+  if (sourceDataset && targetDataset && masterDataset) {
+    // Update source dataset
+    await saveData(sourceUuid, {
+      ...sourceDataset,
+      masterUuid,
+      isLoaded: true,
+      loadedInto: masterUuid,
+    })
+
+    // Update target dataset if it's not the master
+    if (!targetDataset.isMaster) {
+      await saveData(targetUuid, {
+        ...targetDataset,
+        masterUuid,
+        isLoaded: true,
+        loadedInto: masterUuid,
+      })
+    }
+
+    // No need to update the master dataset as it doesn't track child datasets
+  }
+}
+
+// Updated loadDataIntoMaster function
+async function loadDataIntoMaster(
+  sourceDataset: Dataset,
+  masterDataset: Dataset,
+  masterUuid: string,
+  sendEvent: (data: any) => void
+) {
   let createdCount = 0
   let updatedCount = 0
   let totalProcessed = 0
@@ -284,15 +400,13 @@ export async function loadHandler(
   for (const row of sourceDataset.data) {
     totalProcessed++
 
-    // Keep all columns, including non-parsed ones
     const processedRow = { ...row }
-
     let matchedUuid: string | null = null
 
     // Check for match based on LinkedIn
     if (processedRow.__social && processedRow.__social.uuid) {
       const socialMatches = await redisClient.sMembers(
-        `index:${loadUuid}:social:${processedRow.__social.uuid}`
+        `index:${masterUuid}:social:${processedRow.__social.uuid}`
       )
       if (socialMatches.length > 0) {
         matchedUuid = socialMatches[0]
@@ -302,7 +416,7 @@ export async function loadHandler(
     // If no match found, check for match based on email
     if (!matchedUuid && processedRow.__emails && processedRow.__emails.length > 0) {
       for (const email of processedRow.__emails) {
-        const emailMatches = await redisClient.sMembers(`index:${loadUuid}:email:${email}`)
+        const emailMatches = await redisClient.sMembers(`index:${masterUuid}:email:${email}`)
         if (emailMatches.length > 0) {
           matchedUuid = emailMatches[0]
           break
@@ -319,7 +433,7 @@ export async function loadHandler(
     ) {
       const fullName =
         `${processedRow.__name.first_name} ${processedRow.__name.last_name}`.toLowerCase()
-      const nameMatches = await redisClient.sMembers(`index:${loadUuid}:name:${fullName}`)
+      const nameMatches = await redisClient.sMembers(`index:${masterUuid}:name:${fullName}`)
       if (nameMatches.length > 0) {
         matchedUuid = nameMatches[0]
       }
@@ -329,33 +443,27 @@ export async function loadHandler(
 
     if (matchedUuid) {
       // Merge data with existing record
-      const existingRow = existingLoadedDataset.data.find((r) => r.uuid === matchedUuid)
+      const existingRow = masterDataset.data.find((r) => r.uuid === matchedUuid)
       if (existingRow) {
         updatedRow = mergeRows(existingRow, processedRow)
         updatedRow.uuid = matchedUuid
-        // Update the existing row in the array
         Object.assign(existingRow, updatedRow)
         updatedCount++
       } else {
-        // This shouldn't happen, but just in case
-        console.warn(`Matched UUID ${matchedUuid} not found in existingLoadedData`)
+        console.warn(`Matched UUID ${matchedUuid} not found in masterDataset`)
         updatedRow = { ...processedRow, uuid: uuidv4() }
-        existingLoadedDataset.data.push(updatedRow)
+        masterDataset.data.push(updatedRow)
         createdCount++
       }
     } else {
       // Create new record
       updatedRow = { ...processedRow, uuid: uuidv4() }
-      existingLoadedDataset.data.push(updatedRow)
+      masterDataset.data.push(updatedRow)
       createdCount++
     }
 
-    // Add indexing operations here if needed
-    // Add new indexes for the updated row
-    await addIndexes(pipeline, loadUuid, updatedRow)
-    // Execute all index operations
-
-    await new Promise((resolve) => setTimeout(resolve, 10))
+    // Add indexing operations
+    await addIndexes(pipeline, masterUuid, updatedRow)
 
     // Send progress update every 10 processed rows
     if (totalProcessed % 10 === 0) {
@@ -371,36 +479,15 @@ export async function loadHandler(
   // Execute all index operations
   await pipeline.exec()
 
-  // Save updated data
-  await saveData(loadUuid, {
-    fileName: existingLoadedDataset.fileName,
-    data: existingLoadedDataset.data,
-  })
+  // Save updated master data
+  await saveData(masterUuid, masterDataset)
 
-  // Delete the source dataset
-  await redisClient.del(sourceUuid)
-  await redisClient.del(`${sourceUuid}-parsed-columns`)
-
-  const summary = {
+  return {
     totalProcessed,
     created: createdCount,
     updated: updatedCount,
-    totalLoaded: existingLoadedDataset.data.length,
+    totalLoaded: masterDataset.data.length,
   }
-
-  // Send final progress update
-  sendEvent({
-    type: "complete",
-    ...summary,
-  })
-
-  reply.header("Content-Type", "application/json;charset=utf-8").send({
-    message: "Data loaded successfully",
-    sourceUuid,
-    loadUuid,
-    fileName: existingLoadedDataset.fileName,
-    summary,
-  })
 }
 
 // Update the mergeRows function to handle all columns
