@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Upload, Merge, GripVertical } from "lucide-react"
+import { Upload, Merge, GripVertical, Star } from "lucide-react"
 import { useState, useRef } from "react"
 import { DndProvider, useDrag, useDrop } from "react-dnd"
 import { HTML5Backend } from "react-dnd-html5-backend"
@@ -13,6 +13,7 @@ interface Dataset {
   uuid: string
   fileName: string
   rowCount: number
+  isMaster?: boolean // Add this line
 }
 
 const DatasetTab = ({
@@ -75,7 +76,12 @@ const DatasetTab = ({
         }`}
         onClick={(e) => isMergeMode && e.preventDefault()}
       >
-        {dataset.fileName}
+        <div className="flex items-center">
+          {dataset.fileName}
+          {dataset.isMaster && (
+            <Star size={16} className="ml-1 text-yellow-400" fill="currentColor" />
+          )}
+        </div>
       </Link>
     </div>
   )
@@ -112,6 +118,8 @@ export default function DatasetsLayout({ children }: { children: React.ReactNode
     mutationFn: async (file: File) => {
       const formData = new FormData()
       formData.append("file", file)
+      formData.append("name", file.name)
+      formData.append("isMaster", "false")
       const response = await fetch(
         `${process.env.NEXT_PUBLIC_API_URL}/api/dataset/initialize-load`,
         {
@@ -139,7 +147,7 @@ export default function DatasetsLayout({ children }: { children: React.ReactNode
 
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/dataset/${targetUuid}/load/${sourceUuid}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/api/dataset/${sourceUuid}/load/${targetUuid}`,
         {
           method: "GET",
         }
@@ -180,6 +188,7 @@ export default function DatasetsLayout({ children }: { children: React.ReactNode
         }
       }
 
+      // Invalidate and refetch the datasets query after successful merge
       queryClient.invalidateQueries({ queryKey: ["datasets"] })
     } catch (error) {
       console.error("Error merging datasets:", error)
