@@ -110,7 +110,13 @@ export default function DatasetsLayout({ children }: { children: React.ReactNode
       if (!response.ok) {
         throw new Error("Failed to fetch datasets")
       }
-      return response.json()
+      const data = await response.json()
+      // Sort the datasets to put master datasets at the front
+      return data.sort((a: Dataset, b: Dataset) => {
+        if (a.isMaster && !b.isMaster) return -1
+        if (!a.isMaster && b.isMaster) return 1
+        return 0
+      })
     },
   })
 
@@ -177,8 +183,7 @@ export default function DatasetsLayout({ children }: { children: React.ReactNode
             setTotalProcessed(data.totalProcessed)
             setCreated(data.created)
             setUpdated(data.updated)
-            setMergeProgress((prev) => [
-              ...prev,
+            setMergeProgress(() => [
               `Processed: ${data.totalProcessed}, Created: ${data.created}, Updated: ${data.updated}`,
             ])
           } else if (data.type === "complete") {

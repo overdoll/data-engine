@@ -130,18 +130,7 @@ const CustomHeader = (props: any) => {
 
 const EmailsRenderer = (props: any) => {
   const emails = props.value || []
-  return (
-    <TooltipProvider>
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <span>{emails.length} email(s)</span>
-        </TooltipTrigger>
-        <TooltipContent>
-          <p>{emails.join(", ")}</p>
-        </TooltipContent>
-      </Tooltip>
-    </TooltipProvider>
-  )
+  return <p>{emails.join(", ")}</p>
 }
 
 const NameRenderer = (props: any) => {
@@ -230,6 +219,7 @@ export default function Dataset({ params }: { params: { uuid: string } }) {
           headerName: displayName,
           width: calculateColumnWidth(key, data),
           resizable: true,
+          hide: key === "uuid",
           headerComponent: CustomHeader,
           headerComponentParams: {
             context: {

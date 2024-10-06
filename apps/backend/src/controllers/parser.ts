@@ -14,7 +14,7 @@ const nanoid = customAlphabet("abcdefghijklmnopqrstuvwxyz0123456789", 6)
 // Add this function near the top of the file, after the other Redis-related functions
 async function getAllDatasetKeys(): Promise<string[]> {
   const allKeys = await redisClient.keys("*")
-  return allKeys.filter((key) => !key.endsWith("-parsed-columns"))
+  return allKeys.filter((key) => !key.endsWith("-parsed-columns") && !key.startsWith("index"))
 }
 
 // Add this function after getAllDatasetKeys
@@ -107,7 +107,9 @@ function addParsedColumn(uuid: string, columnName: string, parseType: ParseType)
           ? "name"
           : parseType === "linkedin_url"
             ? "social"
-            : parseType,
+            : parseType === "email"
+              ? "emails"
+              : parseType,
     })
   )
 }
@@ -325,6 +327,9 @@ export async function loadHandler(
     }
     masterDataset = newMasterDataset
 
+    // Copy parsed column definitions from target dataset to new master dataset
+    await copyParsedColumns(targetUuid, masterUuid)
+
     // Load the target dataset into the new master dataset
     await loadDataIntoMaster(targetDataset, masterDataset, masterUuid, sendEvent)
   }
@@ -461,7 +466,6 @@ async function loadDataIntoMaster(
       masterDataset.data.push(updatedRow)
       createdCount++
     }
-
     // Add indexing operations
     await addIndexes(pipeline, masterUuid, updatedRow)
 
@@ -680,4 +684,22 @@ async function removeIndexes(pipeline: any, loadUuid: string, row: ParsedData) {
       pipeline.sRem(`index:${loadUuid}:email:${email}`, row.uuid)
     }
   }
+}
+
+// New function to copy parsed columns
+async function copyParsedColumns(sourceUuid: string, targetUuid: string) {
+  const sourceParsedColumns = await getParsedColumns(sourceUuid)
+  const pipeline = redisClient.multi()
+
+  for (const column of sourceParsedColumns) {
+    pipeline.sAdd(
+      `${targetUuid}-parsed-columns`,
+      JSON.stringify({
+        columnName: column.columnName,
+        parseType: column.parseType,
+      })
+    )
+  }
+
+  await pipeline.exec()
 }
