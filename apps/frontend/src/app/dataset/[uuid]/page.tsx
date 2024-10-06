@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react"
 import { useQuery } from "@tanstack/react-query"
 import { AgGridReact } from "ag-grid-react"
-import { ColDef, GridOptions } from "ag-grid-community"
+import { ColDef } from "ag-grid-community"
 import "ag-grid-community/styles/ag-grid.css"
 import "ag-grid-community/styles/ag-theme-alpine.css"
 import { Button } from "@/components/ui/button"
@@ -207,14 +207,9 @@ export default function Dataset({ params }: { params: { uuid: string } }) {
   const {
     data: suggestions,
     isLoading: isSuggestionsLoading,
-    error: suggestionsError,
     refetch: refetchSuggestions,
   } = useSuggestions(uuid)
-  const {
-    data: parsedColumns,
-    isLoading: isParsedColumnsLoading,
-    refetch: refetchParsedColumns,
-  } = useParsedColumns(uuid)
+  const { data: parsedColumns, refetch: refetchParsedColumns } = useParsedColumns(uuid)
   const [columnDefs, setColumnDefs] = useState<ColDef[]>([])
   const [rowData, setRowData] = useState<any[]>([])
 
@@ -304,6 +299,7 @@ export default function Dataset({ params }: { params: { uuid: string } }) {
     <div>
       <div className="ag-theme-alpine w-full h-[600px]">
         <AgGridReact<any>
+          // @ts-expect-error this is a bug in ag-grid-react
           columnDefs={columnDefs}
           rowData={rowData}
           pagination={true}
