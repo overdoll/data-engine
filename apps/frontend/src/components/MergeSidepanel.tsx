@@ -23,9 +23,9 @@ const MergeSidepanel: React.FC<MergeSidepanelProps> = ({
   if (!isOpen) return null
 
   return (
-    <div className="fixed inset-y-0 right-0 w-64 bg-white shadow-lg p-4 overflow-y-auto">
+    <div className="fixed inset-y-0 right-0 w-[350px] bg-white shadow-lg p-4 overflow-y-auto">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold">Merge Progress</h2>
+        <h2 className="text-lg font-semibold">Merge</h2>
         <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
           <X size={20} />
         </button>

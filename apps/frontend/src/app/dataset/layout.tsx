@@ -213,11 +213,9 @@ export default function DatasetsLayout({ children }: { children: React.ReactNode
   if (isLoading) return <div>Loading datasets...</div>
   if (error) return <div className="text-red-500">Error loading datasets</div>
 
-  const activeDatasetUuid = pathname.split("/")[2]
-
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className={`${isMergeMode ? "mr-64" : ""}`}>
+      <div className={`${isMergeMode ? "mr-[350px]" : ""}`}>
         <div className="mx-auto px-4 py-8">
           <div className="flex justify-between items-center mb-4">
             <h1 className="text-2xl font-bold">Datasets</h1>
