@@ -53,13 +53,16 @@ const COL_SOCIAL = COLUMNS_CONFIG.linkedin_url
 const COL_NAME = COLUMNS_CONFIG.name
 const COL_EMAILS = COLUMNS_CONFIG.email
 
-async function saveData(uuid: string, data: { fileName: string; data: Record<string, any>[] }) {
+async function saveData(
+  uuid: string,
+  data: { fileName: string; isMaster: boolean; data: Record<string, any>[] }
+) {
   await redisClient.set(uuid, JSON.stringify(data))
 }
 
 async function getData(
   uuid: string
-): Promise<{ fileName: string; data: Record<string, any>[] } | null> {
+): Promise<{ fileName: string; isMaster: boolean; data: Record<string, any>[] } | null> {
   const data = await redisClient.get(uuid)
   return data ? JSON.parse(data) : null
 }
@@ -207,6 +210,7 @@ export async function parseColumnHandler(
   await addParsedColumn(uuid, columnName, parseType)
   await saveData(uuid, {
     fileName: dataset.fileName,
+    isMaster: dataset.isMaster,
     data: updatedData,
   })
   reply.send({
@@ -215,22 +219,35 @@ export async function parseColumnHandler(
 }
 
 // Updated function to initialize a load dataset
-export async function initializeLoadDatasetHandler(request: FastifyRequest, reply: FastifyReply) {
-  const data = await request.file()
-  if (!data) {
-    return reply.code(400).send({ error: "No file uploaded" })
+export async function initializeLoadDatasetHandler(
+  request: FastifyRequest<{
+    Body: {
+      name: string
+      isMaster: boolean
+    }
+  }>,
+  reply: FastifyReply
+) {
+  const { name, isMaster } = request.body
+
+  if (!name) {
+    return reply.code(400).send({ error: "Dataset name is required" })
   }
 
-  const fileName = data.filename || "unnamed_file"
-  const fileNameWithoutExtension = fileName.replace(/\.[^/.]+$/, "") // Remove file extension
-  const sanitizedFileName = fileNameWithoutExtension.replace(/[^a-z0-9]+/gi, "-").toLowerCase() // Replace spaces and special characters with dashes
-  const randomId = nanoid(6) // Generate a 6-character random ID
-  const loadUuid = `${sanitizedFileName}-${randomId}`
+  const sanitizedName = name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()
+  const randomId = nanoid(6)
+  const loadUuid = `${sanitizedName}-${randomId}`
 
-  // Create an object to store both the dataset and metadata
-  const datasetWithMetadata = {
-    fileName: fileName,
-    data: await parseCSV(await data.toBuffer()),
+  let datasetWithMetadata = {
+    fileName: name,
+    isMaster: isMaster || false,
+    data: [],
+  }
+
+  const file = await request.file()
+  if (file) {
+    const fileBuffer = await file.toBuffer()
+    datasetWithMetadata.data = await parseCSV(fileBuffer)
   }
 
   await saveData(loadUuid, datasetWithMetadata)
@@ -238,7 +255,9 @@ export async function initializeLoadDatasetHandler(request: FastifyRequest, repl
   reply.send({
     message: "Load dataset initialized successfully",
     loadUuid,
-    fileName,
+    fileName: name,
+    isMaster: datasetWithMetadata.isMaster,
+    rowCount: datasetWithMetadata.data.length,
   })
 }
 
@@ -265,24 +284,15 @@ export async function loadHandler(
   for (const row of sourceDataset.data) {
     totalProcessed++
 
-    // Filter only parsed columns (starting with "__")
-    const parsedRow: ParsedData = Object.entries(row).reduce((acc, [key, value]) => {
-      if (key.startsWith("__")) {
-        acc[key] = value
-      }
-      return acc
-    }, {} as ParsedData)
-
-    if (Object.keys(parsedRow).length === 0) {
-      continue // Skip rows with no parsed data
-    }
+    // Keep all columns, including non-parsed ones
+    const processedRow = { ...row }
 
     let matchedUuid: string | null = null
 
     // Check for match based on LinkedIn
-    if (parsedRow.__social && parsedRow.__social.uuid) {
+    if (processedRow.__social && processedRow.__social.uuid) {
       const socialMatches = await redisClient.sMembers(
-        `index:${loadUuid}:social:${parsedRow.__social.uuid}`
+        `index:${loadUuid}:social:${processedRow.__social.uuid}`
       )
       if (socialMatches.length > 0) {
         matchedUuid = socialMatches[0]
@@ -290,8 +300,8 @@ export async function loadHandler(
     }
 
     // If no match found, check for match based on email
-    if (!matchedUuid && parsedRow.__emails && parsedRow.__emails.length > 0) {
-      for (const email of parsedRow.__emails) {
+    if (!matchedUuid && processedRow.__emails && processedRow.__emails.length > 0) {
+      for (const email of processedRow.__emails) {
         const emailMatches = await redisClient.sMembers(`index:${loadUuid}:email:${email}`)
         if (emailMatches.length > 0) {
           matchedUuid = emailMatches[0]
@@ -303,46 +313,51 @@ export async function loadHandler(
     // If still no match found, check for match based on name
     if (
       !matchedUuid &&
-      parsedRow.__name &&
-      parsedRow.__name.first_name &&
-      parsedRow.__name.last_name
+      processedRow.__name &&
+      processedRow.__name.first_name &&
+      processedRow.__name.last_name
     ) {
-      const fullName = `${parsedRow.__name.first_name} ${parsedRow.__name.last_name}`.toLowerCase()
+      const fullName =
+        `${processedRow.__name.first_name} ${processedRow.__name.last_name}`.toLowerCase()
       const nameMatches = await redisClient.sMembers(`index:${loadUuid}:name:${fullName}`)
       if (nameMatches.length > 0) {
         matchedUuid = nameMatches[0]
       }
     }
 
-    let updatedRow: ParsedData
+    let updatedRow: Record<string, any>
 
     if (matchedUuid) {
       // Merge data with existing record
       const existingRow = existingLoadedDataset.data.find((r) => r.uuid === matchedUuid)
       if (existingRow) {
-        updatedRow = mergeRows(existingRow, parsedRow)
+        updatedRow = mergeRows(existingRow, processedRow)
         updatedRow.uuid = matchedUuid
-        // Remove old indexes
         // Update the existing row in the array
         Object.assign(existingRow, updatedRow)
         updatedCount++
       } else {
         // This shouldn't happen, but just in case
         console.warn(`Matched UUID ${matchedUuid} not found in existingLoadedData`)
-        updatedRow = { ...parsedRow, uuid: uuidv4() }
+        updatedRow = { ...processedRow, uuid: uuidv4() }
         existingLoadedDataset.data.push(updatedRow)
         createdCount++
       }
     } else {
       // Create new record
-      updatedRow = { ...parsedRow, uuid: uuidv4() }
+      updatedRow = { ...processedRow, uuid: uuidv4() }
       existingLoadedDataset.data.push(updatedRow)
       createdCount++
     }
 
+    // Add indexing operations here if needed
+    // Add new indexes for the updated row
+    await addIndexes(pipeline, loadUuid, updatedRow)
+    // Execute all index operations
+
     await new Promise((resolve) => setTimeout(resolve, 10))
 
-    // Send progress update every 100 processed rows
+    // Send progress update every 10 processed rows
     if (totalProcessed % 10 === 0) {
       sendEvent({
         type: "progress",
@@ -388,23 +403,33 @@ export async function loadHandler(
   })
 }
 
-// Helper function to merge rows
-function mergeRows(existingRow: ParsedData, newRow: ParsedData): ParsedData {
-  const mergedRow: ParsedData = { ...existingRow }
+// Update the mergeRows function to handle all columns
+function mergeRows(
+  existingRow: Record<string, any>,
+  newRow: Record<string, any>
+): Record<string, any> {
+  const mergedRow: Record<string, any> = { ...existingRow }
 
-  if (newRow.__name) {
-    mergedRow.__name = {
-      ...existingRow.__name,
-      ...newRow.__name,
+  for (const [key, value] of Object.entries(newRow)) {
+    if (key.startsWith("__")) {
+      // Special handling for parsed fields
+      if (key === "__name") {
+        mergedRow.__name = {
+          ...existingRow.__name,
+          ...value,
+        }
+      } else if (key === "__social") {
+        mergedRow.__social = value
+      } else if (key === "__emails") {
+        mergedRow.__emails = Array.from(new Set([...(existingRow.__emails || []), ...value]))
+      } else {
+        // For other parsed fields, overwrite with new value
+        mergedRow[key] = value
+      }
+    } else {
+      // For non-parsed fields, keep the existing value if present, otherwise use the new value
+      mergedRow[key] = existingRow[key] || value
     }
-  }
-
-  if (newRow.__social) {
-    mergedRow.__social = newRow.__social
-  }
-
-  if (newRow.__emails) {
-    mergedRow.__emails = Array.from(new Set([...(existingRow.__emails || []), ...newRow.__emails]))
   }
 
   return mergedRow
@@ -535,5 +560,37 @@ export async function getParsedColumnsHandler(
   } catch (error) {
     console.error("Error fetching parsed columns:", error)
     reply.code(500).send({ error: "Failed to fetch parsed columns" })
+  }
+}
+
+// Updated addIndexes function
+async function addIndexes(pipeline: any, loadUuid: string, row: ParsedData) {
+  if (row.__name && row.__name.first_name && row.__name.last_name) {
+    const fullName = `${row.__name.first_name} ${row.__name.last_name}`.toLowerCase()
+    pipeline.sAdd(`index:${loadUuid}:name:${fullName}`, row.uuid)
+  }
+  if (row.__social && row.__social.uuid) {
+    pipeline.sAdd(`index:${loadUuid}:social:${row.__social.uuid}`, row.uuid)
+  }
+  if (row.__emails) {
+    for (const email of row.__emails) {
+      pipeline.sAdd(`index:${loadUuid}:email:${email}`, row.uuid)
+    }
+  }
+}
+
+// Updated removeIndexes function
+async function removeIndexes(pipeline: any, loadUuid: string, row: ParsedData) {
+  if (row.__name?.first_name && row.__name?.last_name) {
+    const oldFullName = `${row.__name.first_name} ${row.__name.last_name}`.toLowerCase()
+    pipeline.sRem(`index:${loadUuid}:name:${oldFullName}`, row.uuid)
+  }
+  if (row.__social?.uuid) {
+    pipeline.sRem(`index:${loadUuid}:social:${row.__social.uuid}`, row.uuid)
+  }
+  if (row.__emails) {
+    for (const email of row.__emails) {
+      pipeline.sRem(`index:${loadUuid}:email:${email}`, row.uuid)
+    }
   }
 }
