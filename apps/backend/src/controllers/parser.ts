@@ -244,10 +244,9 @@ export async function initializeLoadDatasetHandler(request: FastifyRequest, repl
 
 // Updated loadHandler function
 export async function loadHandler(
-  request: FastifyRequest<{
-    Params: { loadUuid: string; sourceUuid: string }
-  }>,
-  reply: FastifyReply
+  request: FastifyRequest<{ Params: { loadUuid: string; sourceUuid: string } }>,
+  reply: FastifyReply,
+  sendEvent: (data: any) => void
 ) {
   const { loadUuid, sourceUuid } = request.params
 
@@ -259,10 +258,13 @@ export async function loadHandler(
   let existingLoadedDataset = (await getData(loadUuid)) || { fileName: "", data: [] }
   let createdCount = 0
   let updatedCount = 0
+  let totalProcessed = 0
 
   const pipeline = redisClient.multi()
 
   for (const row of sourceDataset.data) {
+    totalProcessed++
+
     // Filter only parsed columns (starting with "__")
     const parsedRow: ParsedData = Object.entries(row).reduce((acc, [key, value]) => {
       if (key.startsWith("__")) {
@@ -338,11 +340,21 @@ export async function loadHandler(
       createdCount++
     }
 
-    // Add new indexes for the updated row
-    await addIndexes(pipeline, loadUuid, updatedRow)
-    // Execute all index operations
-    await pipeline.exec()
+    await new Promise((resolve) => setTimeout(resolve, 10))
+
+    // Send progress update every 100 processed rows
+    if (totalProcessed % 10 === 0) {
+      sendEvent({
+        type: "progress",
+        totalProcessed,
+        created: createdCount,
+        updated: updatedCount,
+      })
+    }
   }
+
+  // Execute all index operations
+  await pipeline.exec()
 
   // Save updated data
   await saveData(loadUuid, {
@@ -350,17 +362,29 @@ export async function loadHandler(
     data: existingLoadedDataset.data,
   })
 
-  reply.send({
+  // Delete the source dataset
+  await redisClient.del(sourceUuid)
+  await redisClient.del(`${sourceUuid}-parsed-columns`)
+
+  const summary = {
+    totalProcessed,
+    created: createdCount,
+    updated: updatedCount,
+    totalLoaded: existingLoadedDataset.data.length,
+  }
+
+  // Send final progress update
+  sendEvent({
+    type: "complete",
+    ...summary,
+  })
+
+  reply.header("Content-Type", "application/json;charset=utf-8").send({
     message: "Data loaded successfully",
     sourceUuid,
     loadUuid,
     fileName: existingLoadedDataset.fileName,
-    summary: {
-      totalProcessed: sourceDataset.data.length,
-      created: createdCount,
-      updated: updatedCount,
-      totalLoaded: existingLoadedDataset.data.length,
-    },
+    summary,
   })
 }
 
@@ -384,38 +408,6 @@ function mergeRows(existingRow: ParsedData, newRow: ParsedData): ParsedData {
   }
 
   return mergedRow
-}
-
-// Updated addIndexes function
-async function addIndexes(pipeline: any, loadUuid: string, row: ParsedData) {
-  if (row.__name && row.__name.first_name && row.__name.last_name) {
-    const fullName = `${row.__name.first_name} ${row.__name.last_name}`.toLowerCase()
-    pipeline.sAdd(`index:${loadUuid}:name:${fullName}`, row.uuid)
-  }
-  if (row.__social && row.__social.uuid) {
-    pipeline.sAdd(`index:${loadUuid}:social:${row.__social.uuid}`, row.uuid)
-  }
-  if (row.__emails) {
-    for (const email of row.__emails) {
-      pipeline.sAdd(`index:${loadUuid}:email:${email}`, row.uuid)
-    }
-  }
-}
-
-// Updated removeIndexes function
-async function removeIndexes(pipeline: any, loadUuid: string, row: ParsedData) {
-  if (row.__name?.first_name && row.__name?.last_name) {
-    const oldFullName = `${row.__name.first_name} ${row.__name.last_name}`.toLowerCase()
-    pipeline.sRem(`index:${loadUuid}:name:${oldFullName}`, row.uuid)
-  }
-  if (row.__social?.uuid) {
-    pipeline.sRem(`index:${loadUuid}:social:${row.__social.uuid}`, row.uuid)
-  }
-  if (row.__emails) {
-    for (const email of row.__emails) {
-      pipeline.sRem(`index:${loadUuid}:email:${email}`, row.uuid)
-    }
-  }
 }
 
 // Update these parsing functions
