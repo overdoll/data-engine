@@ -97,7 +97,12 @@ function addParsedColumn(uuid: string, columnName: string, parseType: ParseType)
     `${uuid}-parsed-columns`,
     JSON.stringify({
       columnName,
-      parseType: parseType === "first_name" || parseType === "last_name" ? "name" : parseType,
+      parseType:
+        parseType === "first_name" || parseType === "last_name"
+          ? "name"
+          : parseType === "linkedin_url"
+            ? "social"
+            : parseType,
     })
   )
 }

@@ -153,9 +153,9 @@ const SocialRenderer = (props: any) => {
   const value = props.value
   if (!value) return <span>-</span>
 
-  let url = value
-  if (!value.startsWith("http://") && !value.startsWith("https://")) {
-    url = `https://www.linkedin.com/in/${value}`
+  let url = value.uuid
+  if (value.type === "LINKEDIN") {
+    url = `https://www.linkedin.com/in/${value.uuid}`
   }
 
   return (
@@ -165,7 +165,7 @@ const SocialRenderer = (props: any) => {
       rel="noopener noreferrer"
       className="text-blue-600 hover:text-blue-800 underline"
     >
-      LinkedIn Profile
+      {value.uuid}
     </a>
   )
 }
@@ -228,7 +228,6 @@ export default function Dataset({ params }: { params: { uuid: string } }) {
       ])
 
       const columns: ColDef[] = Array.from(allColumnNames).map((key) => {
-        console.log(key)
         const isParsedColumn = key.startsWith("__") && parsedColumnNames.includes(key)
         const displayName = isParsedColumn ? key.replace(/^__/, "") : key
         return {
