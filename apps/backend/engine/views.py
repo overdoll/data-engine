@@ -4,8 +4,10 @@ from rest_framework.response import Response
 from rest_framework import status
 from .services.classifiers import get_classifier
 from .services.csv_service import CSVService, Metadata
+from .services.ai_service import AIService
 
 csv_service = CSVService()
+ai_service = AIService()
 
 
 @api_view(["POST"])
@@ -87,15 +89,12 @@ def update_csv(request, uuid):
 def get_suggestions(request, uuid):
     try:
         columns = csv_service.get_data(str(uuid))
-        column_defs = [
-            {
-                "id": col["id"],
-                "label": col["label"],
-                "classification": col["classification"],
-            }
-            for col in columns
-        ]
-        suggestions = []  # Empty list for now
+        suggestions = ai_service.get_column_suggestions(columns)
         return Response({"suggestions": suggestions})
     except ValueError:
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response(
+            {"error": f"Error generating suggestions: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

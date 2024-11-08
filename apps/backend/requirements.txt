@@ -3,3 +3,4 @@ djangorestframework
 polars
 boto3
 django-environ
+openai
