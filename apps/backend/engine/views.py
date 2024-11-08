@@ -2,10 +2,12 @@ import uuid
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Classification, Metadata
-from .services.csv_service import CSVService
+from .services.classifiers import get_classifier
+from .services.csv_service import CSVService, Metadata
+from .services.ai_service import AIService
 
 csv_service = CSVService()
+ai_service = AIService()
 
 
 @api_view(["POST"])
@@ -59,7 +61,8 @@ def update_csv(request, uuid):
 
             elif action == "classify_column":
                 classification = update.get("classification")
-                if classification not in [c.value for c in Classification]:
+                classifier = get_classifier(classification)
+                if not classifier:
                     return Response(
                         {"error": f"Invalid classification: {classification}"},
                         status=status.HTTP_400_BAD_REQUEST,
@@ -68,6 +71,12 @@ def update_csv(request, uuid):
                 for col in columns:
                     if col["id"] == column_id:
                         col["classification"] = classification
+                        col["data"] = classifier.transform_values(col["data"])
+
+                return Response(
+                    {"error": f"Column {column_id} not found"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         csv_service.save_data(str(uuid), columns)
         return Response({"status": "success"})
@@ -80,15 +89,12 @@ def update_csv(request, uuid):
 def get_suggestions(request, uuid):
     try:
         columns = csv_service.get_data(str(uuid))
-        column_defs = [
-            {
-                "id": col["id"],
-                "label": col["label"],
-                "classification": col["classification"],
-            }
-            for col in columns
-        ]
-        suggestions = []  # Empty list for now
+        suggestions = ai_service.get_column_suggestions(columns)
         return Response({"suggestions": suggestions})
     except ValueError:
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
+    except Exception as e:
+        return Response(
+            {"error": f"Error generating suggestions: {str(e)}"},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+        )

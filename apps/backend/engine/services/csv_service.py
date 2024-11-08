@@ -4,7 +4,31 @@ import json
 import uuid
 from typing import List, Dict, BinaryIO
 from django.conf import settings
-from ..models import Metadata, ColumnDef, Row, Column
+from typing import TypedDict, Optional, Any
+
+
+class Metadata(TypedDict):
+    storageEngine: str
+    originalFilename: str
+
+
+class ColumnDef(TypedDict):
+    id: str
+    label: str
+    classification: Optional[str]
+    data: List[Any]
+
+
+# Types for API responses
+class Column(TypedDict):
+    id: str
+    label: str
+    classification: Optional[str]
+
+
+class Row(TypedDict):
+    id: str
+    data: Dict[str, str]
 
 
 class CSVService:
