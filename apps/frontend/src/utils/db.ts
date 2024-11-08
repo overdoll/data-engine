@@ -1,37 +1,31 @@
-import { openDB, DBSchema } from 'idb';
-
 interface FileMetadata {
-  id: string;
-  fileName: string;
-  uploadDate: Date;
+  id: string
+  fileName: string
+  uploadDate: Date
 }
 
-interface FileDB extends DBSchema {
-  files: {
-    key: string;
-    value: FileMetadata;
-    indexes: { 'by-date': Date };
-  };
+const STORAGE_KEY = "dataset-files"
+
+export function addFile(fileMetadata: FileMetadata): void {
+  const existingFiles = getFiles()
+  existingFiles.push(fileMetadata)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(existingFiles))
 }
 
-const DB_NAME = 'dataset-manager';
-const STORE_NAME = 'files';
+export function getFiles(): FileMetadata[] {
+  const filesJson = localStorage.getItem(STORAGE_KEY)
+  if (!filesJson) return []
 
-export async function initDB() {
-  return openDB<FileDB>(DB_NAME, 1, {
-    upgrade(db) {
-      const store = db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-      store.createIndex('by-date', 'uploadDate');
-    },
-  });
+  const files = JSON.parse(filesJson)
+  // Convert string dates back to Date objects
+  return files.map((file: any) => ({
+    ...file,
+    uploadDate: new Date(file.uploadDate),
+  }))
 }
 
-export async function addFile(fileMetadata: FileMetadata) {
-  const db = await initDB();
-  await db.put(STORE_NAME, fileMetadata);
+export function removeFile(id: string): void {
+  const files = getFiles()
+  const updatedFiles = files.filter((file) => file.id !== id)
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedFiles))
 }
-
-export async function getFiles(): Promise<FileMetadata[]> {
-  const db = await initDB();
-  return db.getAllFromIndex(STORE_NAME, 'by-date');
-} 

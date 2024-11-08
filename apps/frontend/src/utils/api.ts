@@ -1,10 +1,11 @@
 import axios from "axios"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { addFile, getFiles } from "./db"
+import { CsvData } from "../app/components/CsvViewer"
 
 // Base API client
 const apiClient = axios.create({
-  baseURL: "/api",
+  baseURL: "http://localhost:8000/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -18,14 +19,19 @@ interface ApiError {
 
 // File types
 export interface FileUploadResponse {
-  id: string
-  url: string
+  uuid: string
+}
+
+export interface CsvData {
+  headers: string[]
+  rows: string[][]
 }
 
 // Query keys
 export const queryKeys = {
   files: ["files"] as const,
   file: (id: string) => ["file", id] as const,
+  csvData: (id: string) => ["csv-data", id] as const,
 }
 
 // Queries
@@ -42,9 +48,20 @@ export const useFile = (id: string) => {
   return useQuery({
     queryKey: queryKeys.file(id),
     queryFn: async () => {
-      const { data } = await apiClient.get<FileUploadResponse>(`/files/${id}/`)
+      const { data } = await apiClient.get<FileUploadResponse>(`/csv/${id}`)
       return data
     },
+  })
+}
+
+export const useCsvData = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.csvData(id),
+    queryFn: async () => {
+      const { data } = await apiClient.get<CsvData>(`/csv/${id}`)
+      return data
+    },
+    enabled: !!id,
   })
 }
 
@@ -53,18 +70,21 @@ export const useUploadFile = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (file: FormData) => {
-      const { data } = await apiClient.post<FileUploadResponse>("/files/upload/", file, {
+      const { data } = await apiClient.post<FileUploadResponse>("/csv/upload", file, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
       })
 
-      // Then save metadata to IndexedDB
-      await addFile({
-        id: data.id,
-        fileName: file.get("file").name,
-        uploadDate: new Date(),
-      })
+      const fileData = file.get("file")
+      if (fileData instanceof File) {
+        // Then save metadata to IndexedDB
+        await addFile({
+          id: data.uuid,
+          fileName: fileData.name,
+          uploadDate: new Date(),
+        })
+      }
 
       return data
     },
