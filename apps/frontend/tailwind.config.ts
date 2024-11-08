@@ -1,13 +1,12 @@
 import type { Config } from "tailwindcss"
 import animate from "tailwindcss-animate"
-import { FONT_FAMILY_MONO } from "./src/ui-preset/constants"
-import { FONT_FAMILY_SANS } from "./src/ui-preset/constants"
-import { theme } from "./src/ui-preset/theme/extension/theme"
-import { typography } from "./src/ui-preset/theme/tokens/typography"
-import { colors } from "./src/ui-preset/theme/tokens/colors"
-import { effects } from "./src/ui-preset/theme/tokens/effects"
+import { theme } from "./src/theme/extension/theme"
+import { typography } from "./src/theme/tokens/typography"
+import { colors } from "./src/theme/tokens/colors"
+import { effects } from "./src/theme/tokens/effects"
 import plugin from "tailwindcss/plugin"
-import { components } from "./src/ui-preset/theme/tokens/components"
+import { components } from "./src/theme/tokens/components"
+import { fontFamily } from "tailwindcss/defaultTheme"
 
 const config: Config = {
   content: ["./src/**/*.{ts,tsx,js,jsx}"],
@@ -48,8 +47,8 @@ const config: Config = {
     extend: {
       ...theme.extend,
       fontFamily: {
-        sans: FONT_FAMILY_SANS,
-        mono: FONT_FAMILY_MONO,
+        sans: ["Inter", ...fontFamily.sans],
+        mono: ["Roboto Mono", ...fontFamily.mono],
       },
       transitionProperty: {
         fg: "color, background-color, border-color, box-shadow, opacity",
