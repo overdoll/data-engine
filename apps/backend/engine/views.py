@@ -2,8 +2,8 @@ import uuid
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Classification, Metadata
-from .services.csv_service import CSVService
+from .services.classifiers import get_classifier
+from .services.csv_service import CSVService, Metadata
 
 csv_service = CSVService()
 
@@ -59,7 +59,8 @@ def update_csv(request, uuid):
 
             elif action == "classify_column":
                 classification = update.get("classification")
-                if classification not in [c.value for c in Classification]:
+                classifier = get_classifier(classification)
+                if not classifier:
                     return Response(
                         {"error": f"Invalid classification: {classification}"},
                         status=status.HTTP_400_BAD_REQUEST,
@@ -68,6 +69,12 @@ def update_csv(request, uuid):
                 for col in columns:
                     if col["id"] == column_id:
                         col["classification"] = classification
+                        col["data"] = classifier.transform_values(col["data"])
+
+                return Response(
+                    {"error": f"Column {column_id} not found"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         csv_service.save_data(str(uuid), columns)
         return Response({"status": "success"})
