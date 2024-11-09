@@ -52,7 +52,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   if (!data) return null
 
   return (
-    <div className="flex-1 h-[calc(100vh-32px)] w-full ag-theme-alpine">
+    <div className="flex-1 h-[calc(100vh-79px)] w-full ag-theme-alpine">
       <AgGridReact<{ [columnId: string]: string }>
         columnDefs={columnDefs}
         rowData={rowData}

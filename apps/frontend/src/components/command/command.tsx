@@ -7,10 +7,7 @@ import React from "react"
 /**
  * This component is based on the div element and supports all of its props
  */
-const CommandComponent = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => {
+const CommandComponent = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
   return (
     <div
       className={clx(
@@ -28,13 +25,7 @@ const CommandCopy = React.forwardRef<
   React.ElementRef<typeof Copy>,
   React.ComponentPropsWithoutRef<typeof Copy>
 >(({ className, ...props }, ref) => {
-  return (
-    <Copy
-      {...props}
-      ref={ref}
-      className={clx("!text-ui-code-fg-muted ml-auto", className)}
-    />
-  )
+  return <Copy {...props} ref={ref} className={clx("!text-ui-code-fg-muted ml-auto", className)} />
 })
 CommandCopy.displayName = "Command.Copy"
 
