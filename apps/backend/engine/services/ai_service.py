@@ -1,7 +1,17 @@
 from typing import List, Dict, Any
 from openai import OpenAI
-from .column_processor import CLASSIFIERS, ClassifierId
+from .column_processor import CLASSIFIERS
 from django.conf import settings
+from pydantic import BaseModel
+
+
+class ColumnClassification(BaseModel):
+    column_id: str
+    classification: str  # TODO this may need to be enforced by the ClassiferId enum
+
+
+class ResponseFormatList(BaseModel):
+    classifications: List[ColumnClassification]
 
 
 class AIService:
@@ -15,43 +25,44 @@ class AIService:
         """Get first 10 non-null values from column"""
         return [val for val in column["data"] if val and val.strip()][:10]
 
-    def _create_classification_prompt(self, columns: List[Dict[str, Any]]) -> str:
-        # Create context about available classifications
-        classifications_context = "\n".join(
+    def _get_column_context(self, columns: List[Dict[str, Any]]) -> str:
+        return "\n".join(
+            [
+                f"Column '{col['id']}' examples: {', '.join(self._get_column_sample(col))}"
+                for col in columns
+            ]
+        )
+
+    def _get_classifier_context(self) -> str:
+        return "\n".join(
             [
                 f"- {c_id}: {classifier.situation}"
                 for c_id, classifier in CLASSIFIERS.items()
             ]
         )
 
-        # Create context about columns
-        columns_context = "\n".join(
-            [
-                f"Column '{col['label']}' examples: {', '.join(self._get_column_sample(col))}"
-                for col in columns
-            ]
-        )
-
-        return f"""Given these classification types:
-{classifications_context}
-
-And these columns with example values:
-{columns_context}
-
-Return a JSON array of objects with this structure:
-[{{"column_id": "string", "label": "string", "classification": "string"}}]
-
-Where classification must be one of: {', '.join(ClassifierId.__members__.keys())}
-Only return the JSON array, no other text."""
-
     def get_column_suggestions(self, columns: List[Dict[str, Any]]) -> str:
         """Get AI suggestions for column classifications"""
+        classifiers = self._get_classifier_context()
+        columns = self._get_column_context(columns)
+
+        # TODO try prompting each column with each case
+        # i.e. "does this column fit this? no? what about this? yes? great, classify it"
+
         response = self.client.chat.completions.create(
-            model="openai/gpt-3.5-turbo",
+            model="openai/gpt-4o-mini",
             messages=[
-                {"role": "user", "content": self._create_classification_prompt(columns)}
+                {
+                    "role": "system",
+                    "content": "Using the classifiers and their situtations, and given the contents of the column, classify each column. Do not classify a column if it does not fit the situation.",
+                },
+                {"role": "system", "content": f"Classifiers: {classifiers}"},
+                {
+                    "role": "user",
+                    "content": columns,
+                },
             ],
-            response_format={"type": "json_object"},
+            response_format=ResponseFormatList,
         )
 
-        return response.choices[0].message.content
+        return response.choices[0].message.parsed

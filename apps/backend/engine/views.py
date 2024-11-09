@@ -85,7 +85,7 @@ def get_suggestions(request, uuid):
     try:
         columns = csv_service.get_data(str(uuid))
         suggestions = ai_service.get_column_suggestions(columns)
-        return Response({"suggestions": suggestions})
+        return Response(suggestions)
     except ValueError:
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
