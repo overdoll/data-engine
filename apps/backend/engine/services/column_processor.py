@@ -1,6 +1,5 @@
-from enum import Enum
+from enum import StrEnum
 import uuid
-import re
 from typing import List, Optional
 from nameparser import HumanName
 from .base import (
@@ -11,9 +10,10 @@ from .base import (
     InvalidActionError,
 )
 from .types import ColumnDef
+import phonenumbers
 
 
-class ClassifierId(Enum):
+class ClassifierId(StrEnum):
     NAME = "name"
     FIRST_NAME = "first_name"
     LAST_NAME = "last_name"
@@ -94,7 +94,7 @@ class NameClassifier(BaseClassifier):
 
     @property
     def situation(self) -> str:
-        return "Column contains a full name"
+        return "Is a full name of a person. For example - Albert Einstein. URLs are not names."
 
     def transform(self, value: str) -> str:
         return value
@@ -136,7 +136,7 @@ class FirstNameClassifier(BaseClassifier):
 
     @property
     def situation(self) -> str:
-        return "Column contains a first name"
+        return "Is a first name of a person"
 
     def transform(self, value: str) -> str:
         return value.strip().title()
@@ -149,7 +149,7 @@ class LastNameClassifier(BaseClassifier):
 
     @property
     def situation(self) -> str:
-        return "Column contains a last name"
+        return "Is a last name of a person"
 
     def transform(self, value: str) -> str:
         return value.strip().title()
@@ -162,7 +162,7 @@ class EmailClassifier(BaseClassifier):
 
     @property
     def situation(self) -> str:
-        return "Column contains email addresses"
+        return "Is a valid email address, usually containing an '@' symbol"
 
     def transform(self, value: str) -> str:
         """Clean and standardize email addresses"""
@@ -176,14 +176,23 @@ class PhoneClassifier(BaseClassifier):
 
     @property
     def situation(self) -> str:
-        return "Column contains phone numbers"
+        return "Is a mobile, landline, or other phone number"
 
     def transform(self, value: str) -> str:
         """Clean and standardize phone numbers"""
-        digits = re.sub(r"\D", "", value)
-        if len(digits) >= 10:
-            return digits[-10:]  # Keep last 10 digits
-        return digits
+        try:
+            # Parse phone number (assume US if no country code provided)
+            parsed = phonenumbers.parse(value, None)
+            if phonenumbers.is_valid_number(parsed):
+                # Format in E.164 format (+12345678900)
+                return phonenumbers.format_number(
+                    parsed, phonenumbers.PhoneNumberFormat.E164
+                )
+        except phonenumbers.NumberParseException:
+            pass
+
+        # Fallback to original value if parsing fails
+        return value.strip()
 
 
 class ColumnOperationService:
