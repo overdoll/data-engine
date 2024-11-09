@@ -41,7 +41,7 @@ def get_csv(request, uuid):
         columns = csv_service.get_data(str(uuid))
         column_defs, rows = csv_service.transform_to_row_format(columns)
 
-        return Response({"columns": column_defs, "data": rows})
+        return Response({"columns": column_defs, "rows": rows})
     except ValueError:
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
 

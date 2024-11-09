@@ -1,7 +1,6 @@
 import axios from "axios"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { addFile, getFiles } from "./db"
-import { CsvData } from "../app/components/CsvViewer"
 
 // Base API client
 const apiClient = axios.create({
@@ -23,8 +22,12 @@ export interface FileUploadResponse {
 }
 
 export interface CsvData {
-  headers: string[]
-  rows: string[][]
+  columns: Array<{
+    id: string
+    label: string
+    classification?: string
+  }>
+  rows: { id: string; data: { [columnId: string]: string } }[]
 }
 
 // Query keys
