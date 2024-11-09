@@ -2,11 +2,17 @@ import uuid
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from .services.classifiers import get_classifier
 from .services.csv_service import CSVService, Metadata
 from .services.ai_service import AIService
+from .services.base import (
+    ColumnNotFoundError,
+    InvalidActionError,
+    InvalidClassificationError,
+)
+from .services.column_processor import ColumnOperationService
 
 csv_service = CSVService()
+column_operation_service = ColumnOperationService()
 ai_service = AIService()
 
 
@@ -52,32 +58,21 @@ def update_csv(request, uuid):
         columns = csv_service.get_data(str(uuid))
         updates = request.data.get("updates", [])
 
+        operations = []
         for update in updates:
-            action = update.get("action")
-            column_id = update.get("column_id")
+            try:
+                # TODO we may want to pass silently if operation is invalid
+                # because AI could hallucinate
+                operation = column_operation_service.create_operation(**update)
+                operations.append(operation)
+            except (
+                ColumnNotFoundError,
+                InvalidActionError,
+                InvalidClassificationError,
+            ) as e:
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-            if action == "remove_column":
-                columns = [col for col in columns if col["id"] != column_id]
-
-            elif action == "classify_column":
-                classification = update.get("classification")
-                classifier = get_classifier(classification)
-                if not classifier:
-                    return Response(
-                        {"error": f"Invalid classification: {classification}"},
-                        status=status.HTTP_400_BAD_REQUEST,
-                    )
-
-                for col in columns:
-                    if col["id"] == column_id:
-                        col["classification"] = classification
-                        col["data"] = classifier.transform_values(col["data"])
-
-                return Response(
-                    {"error": f"Column {column_id} not found"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
-
+        columns = column_operation_service.apply_operations(columns, operations)
         csv_service.save_data(str(uuid), columns)
         return Response({"status": "success"})
 

@@ -3,5 +3,6 @@ djangorestframework
 polars
 boto3
 django-environ
-django-cors-headers==4.3.1
+django-cors-headers
 openai
+nameparser

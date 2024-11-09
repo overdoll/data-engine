@@ -2,33 +2,9 @@ import polars as pl
 import boto3
 import json
 import uuid
-from typing import List, Dict, BinaryIO
+from typing import List, BinaryIO
 from django.conf import settings
-from typing import TypedDict, Optional, Any
-
-
-class Metadata(TypedDict):
-    storageEngine: str
-    originalFilename: str
-
-
-class ColumnDef(TypedDict):
-    id: str
-    label: str
-    classification: Optional[str]
-    data: List[Any]
-
-
-# Types for API responses
-class Column(TypedDict):
-    id: str
-    label: str
-    classification: Optional[str]
-
-
-class Row(TypedDict):
-    id: str
-    data: Dict[str, str]
+from .types import Metadata, ColumnDef, Column, Row
 
 
 class CSVService:
@@ -116,6 +92,3 @@ class CSVService:
             rows.append({"id": str(uuid.uuid4()), "data": row_data})
 
         return column_defs, rows
-
-    def get_column_suggestions(self, columns: List[Column]) -> List[Dict[str, str]]:
-        return []  # Return empty list for now

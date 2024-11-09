@@ -1,6 +1,6 @@
 from typing import List, Dict, Any
 from openai import OpenAI
-from .classifiers import CLASSIFIERS, ClassifierId
+from .column_processor import CLASSIFIERS, ClassifierId
 from django.conf import settings
 
 
