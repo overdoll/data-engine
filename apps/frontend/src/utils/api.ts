@@ -1,6 +1,7 @@
 import axios from "axios"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { addFile, getFiles } from "./db"
+import { addFile, getFile, getFiles } from "./db"
+import { nanoid } from "nanoid"
 
 // Base API client
 const apiClient = axios.create({
@@ -35,7 +36,12 @@ export const queryKeys = {
   files: ["files"] as const,
   file: (id: string) => ["file", id] as const,
   csvData: (id: string) => ["csv-data", id] as const,
+  fileMetadata: (id: string) => ["file-metadata", id] as const,
 }
+
+// Default cache settings
+const defaultCacheTime = 1000 * 60 * 5 // 5 minutes
+const defaultStaleTime = 1000 * 60 * 1 // 1 minute
 
 // Queries
 export const useFiles = () => {
@@ -44,6 +50,8 @@ export const useFiles = () => {
     queryFn: async () => {
       return getFiles()
     },
+    gcTime: defaultCacheTime,
+    staleTime: defaultStaleTime,
   })
 }
 
@@ -54,6 +62,20 @@ export const useFile = (id: string) => {
       const { data } = await apiClient.get<FileUploadResponse>(`/csv/${id}`)
       return data
     },
+    gcTime: defaultCacheTime,
+    staleTime: defaultStaleTime,
+  })
+}
+
+export const useFileMetadata = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.fileMetadata(id),
+    queryFn: async () => {
+      return getFile(id)
+    },
+    enabled: !!id,
+    gcTime: defaultCacheTime,
+    staleTime: defaultStaleTime,
   })
 }
 
@@ -65,6 +87,8 @@ export const useCsvData = (id: string) => {
       return data
     },
     enabled: !!id,
+    gcTime: defaultCacheTime,
+    staleTime: defaultStaleTime,
   })
 }
 
@@ -81,11 +105,16 @@ export const useUploadFile = () => {
 
       const fileData = file.get("file")
       if (fileData instanceof File) {
+        const sanitizedName = fileData.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()
+        const randomId = nanoid(6)
+        const friendlyId = `${sanitizedName}-${randomId}`
+
         // Then save metadata to IndexedDB
         await addFile({
           id: data.uuid,
           fileName: fileData.name,
           uploadDate: new Date(),
+          friendlyId,
         })
       }
 
