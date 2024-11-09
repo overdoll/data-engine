@@ -17,7 +17,6 @@ class ResponseFormatList(BaseModel):
 class AIService:
     def __init__(self):
         self.client = OpenAI(
-            base_url="https://openrouter.ai/api/v1",
             api_key=settings.AI_API_KEY,
         )
 
@@ -49,8 +48,11 @@ class AIService:
         # TODO try prompting each column with each case
         # i.e. "does this column fit this? no? what about this? yes? great, classify it"
 
-        response = self.client.chat.completions.create(
-            model="openai/gpt-4o-mini",
+        # TODO if the response format does not contain the column IDs or classifications
+        # just remove the item from the response
+
+        response = self.client.beta.chat.completions.parse(
+            model="gpt-4o-mini-2024-07-18",
             messages=[
                 {
                     "role": "system",

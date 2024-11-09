@@ -82,13 +82,21 @@ def update_csv(request, uuid):
 
 @api_view(["GET"])
 def get_suggestions(request, uuid):
+    print(f"Received suggestion request for UUID: {uuid}")
     try:
+        print("Fetching data from CSV service")
         columns = csv_service.get_data(str(uuid))
+
+        print(f"Retrieved {len(columns)} columns, getting AI suggestions")
         suggestions = ai_service.get_column_suggestions(columns)
+
+        print("Successfully got suggestions")
         return Response(suggestions)
     except ValueError:
+        print(f"CSV not found for UUID: {uuid}")
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
     except Exception as e:
+        print(f"Error generating suggestions: {str(e)}")
         return Response(
             {"error": f"Error generating suggestions: {str(e)}"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
