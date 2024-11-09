@@ -3,10 +3,10 @@
 import { useFileMetadata } from "@/utils/api"
 import { CsvViewer } from "../../components/CsvViewer"
 import { useParams } from "next/navigation"
-import ArrowLeft from "@/icons/arrow-left"
 import { Label } from "@/components/label"
 import { ExportDropdown } from "../../components/ExportDropdown"
 import Head from "next/head"
+import Link from "next/link"
 
 export default function FileViewerPage() {
   const params = useParams()
@@ -24,15 +24,15 @@ export default function FileViewerPage() {
   return (
     <main className="flex flex-col gap-3">
       <Head>{metadata.fileName}</Head>
-      <div className="w-full border-b p-3 flex justify-between items-center">
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => (window.location.href = "/")}
-            className="hover:bg-gray-100 p-2 rounded-full"
-          >
-            <ArrowLeft className="w-4 h-4" />
-          </button>
-          <Label size="large">{metadata.fileName}</Label>
+      <div className="w-full border-b px-3 py-2 flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <Link href="/" className="text-gray-500 hover:text-gray-700 flex items-center gap-1">
+            <span>Files</span>
+          </Link>
+          <span className="text-gray-400">/</span>
+          <Label size="large" className="text-gray-900">
+            {metadata.fileName}
+          </Label>
         </div>
         <div className="flex items-center gap-2">
           <ExportDropdown fileId={fileId} />

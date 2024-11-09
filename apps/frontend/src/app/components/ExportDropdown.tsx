@@ -1,9 +1,12 @@
-"use client"
-
 import { DropdownMenu } from "@/components/dropdown-menu"
 import { Button } from "@/components/button"
 import { Download } from "lucide-react"
 import { useFileMetadata } from "@/utils/api"
+import { useState } from "react"
+import { PremiumFeatureModal } from "./PremiumFeatureModal"
+import Hubspot from "@/icons/hubspot"
+import Salesforce from "@/icons/salesforce"
+import { CubeSolid } from "@/icons/index"
 
 interface ExportDropdownProps {
   fileId: string
@@ -11,6 +14,8 @@ interface ExportDropdownProps {
 
 export function ExportDropdown({ fileId }: ExportDropdownProps) {
   const { data: metadata } = useFileMetadata(fileId)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [selectedFeature, setSelectedFeature] = useState<string>("")
 
   const handleExportCsv = () => {
     // Get the grid API from CsvViewer
@@ -35,17 +40,40 @@ export function ExportDropdown({ fileId }: ExportDropdownProps) {
     document.body.removeChild(link)
   }
 
+  const handlePremiumExport = (feature: string) => {
+    setSelectedFeature(feature)
+    setModalOpen(true)
+  }
+
   return (
-    <DropdownMenu>
-      <DropdownMenu.Trigger asChild>
-        <Button variant="secondary">
-          <Download className="w-4 h-4" />
-          Export
-        </Button>
-      </DropdownMenu.Trigger>
-      <DropdownMenu.Content>
-        <DropdownMenu.Item onClick={handleExportCsv}>CSV</DropdownMenu.Item>
-      </DropdownMenu.Content>
-    </DropdownMenu>
+    <>
+      <DropdownMenu>
+        <DropdownMenu.Trigger asChild>
+          <Button variant="secondary">
+            <Download className="w-4 h-4" />
+            Export
+          </Button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Content>
+          <DropdownMenu.Item onClick={() => handlePremiumExport("Hubspot")}>
+            <Hubspot className="w-4 h-4 mr-2" />
+            Hubspot
+          </DropdownMenu.Item>
+          <DropdownMenu.Item onClick={() => handlePremiumExport("Salesforce")}>
+            <Salesforce className="w-4 h-4 mr-2" />
+            Salesforce
+          </DropdownMenu.Item>
+          <DropdownMenu.Item onClick={handleExportCsv}>
+            <CubeSolid className="w-4 h-4 mr-2" />
+            Comma-separated values (.csv)
+          </DropdownMenu.Item>
+        </DropdownMenu.Content>
+      </DropdownMenu>
+      <PremiumFeatureModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        featureName={selectedFeature}
+      />
+    </>
   )
 }
