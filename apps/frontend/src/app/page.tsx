@@ -7,19 +7,28 @@ import { useState } from "react"
 
 export default function Home() {
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null)
-  console.log(selectedFileId)
+
+  if (!selectedFileId) {
+    return (
+      <div className="flex flex-col gap-4 items-center justify-center min-h-screen">
+        <FileUpload />
+        <FileList onFileSelect={setSelectedFileId} />
+      </div>
+    )
+  }
 
   return (
-    <main className="min-h-screen p-4">
-      <div className="mb-4">
-        <FileUpload />
+    <main className="flex flex-col gap-3">
+      <div className="w-full border-b p-3 flex justify-between">
+        <div>active file name</div>
+        <div>wispbit</div>
       </div>
-      <div className="flex gap-4">
-        <div className="w-64">
-          <FileList onFileSelect={setSelectedFileId} />
+      {selectedFileId && (
+        <div className="flex gap-4 px-2">
+          <CsvViewer fileId={selectedFileId} />
+          <div className="h-[calc(100vh-32px)] bg-ui-bg-base border-ui-border-base flex flex-col rounded-lg border w-[300px]"></div>
         </div>
-        {selectedFileId && <CsvViewer fileId={selectedFileId} />}
-      </div>
+      )}
     </main>
   )
 }

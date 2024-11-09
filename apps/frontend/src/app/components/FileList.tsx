@@ -1,6 +1,7 @@
 "use client"
 
 import { useFiles } from "@/utils/api"
+import { format } from "date-fns"
 
 interface FileListProps {
   onFileSelect: (fileId: string) => void
@@ -14,16 +15,22 @@ export function FileList({ onFileSelect }: FileListProps) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col">
       {files?.map((file) => (
         <button
           key={file.id}
           onClick={() => onFileSelect(file.id)}
-          className="w-full p-2 text-left hover:bg-gray-100 rounded"
+          className="animate-in fade-in-0 duration-200 py-1 px-3 text-center text-gray-500 hover:text-blue-500 flex items-center justify-between"
         >
-          {file.fileName}
+          <span>{file.fileName}</span>
+          <span className="ml-1 text-sm text-gray-400">
+            {format(file.uploadDate, "MMM d, h:mm a")}
+          </span>
         </button>
       ))}
+      <p className="text-sm text-gray-400 mt-3 text-center">
+        All data is automatically deleted after 24 hours
+      </p>
     </div>
   )
 }

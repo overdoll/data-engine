@@ -52,7 +52,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   if (!data) return null
 
   return (
-    <div className="flex-1 h-full w-full ag-theme-alpine">
+    <div className="flex-1 h-[calc(100vh-32px)] w-full ag-theme-alpine">
       <AgGridReact<{ [columnId: string]: string }>
         columnDefs={columnDefs}
         rowData={rowData}
@@ -61,10 +61,11 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           sortable: true,
           filter: false,
         }}
-        paginationPageSize={20}
+        paginationPageSize={15}
         pagination={true}
         paginationAutoPageSize={true}
-        domLayout="autoHeight"
+        domLayout="normal"
+        className="h-full w-full"
       />
     </div>
   )

@@ -19,7 +19,7 @@ export function FileUpload() {
     <div className="flex items-center gap-4">
       <input type="file" onChange={handleUpload} className="hidden" id="file-upload" />
       <label htmlFor="file-upload">
-        <Button disabled={isPending} asChild>
+        <Button size="large" disabled={isPending} asChild>
           <span>{isPending ? "Uploading..." : "Upload File"}</span>
         </Button>
       </label>

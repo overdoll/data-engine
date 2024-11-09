@@ -22,13 +22,3 @@ body {
 .ag-aria-description-container {
   display: none;
 }
-
-/* Add this to your existing styles */
-.ag-theme-alpine .pinned-column {
-  background-color: #fffbe6 !important; /* Light yellow background */
-}
-
-/* Optional: Style for pinned header cells */
-.ag-theme-alpine .ag-header-cell.pinned-column {
-  background-color: #fff8d9 !important; /* Slightly darker yellow for headers */
-}
