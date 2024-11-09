@@ -1,9 +1,15 @@
 import { useCsvData } from "@/utils/api"
 import { AgGridReact } from "ag-grid-react"
-import { ColDef } from "ag-grid-community"
+import { ColDef, GridReadyEvent } from "ag-grid-community"
 import "ag-grid-community/styles/ag-grid.css"
 import "ag-grid-community/styles/ag-theme-alpine.css"
 import { useMemo } from "react"
+
+declare global {
+  interface Window {
+    gridApi: any
+  }
+}
 
 interface CsvViewerProps {
   fileId: string
@@ -41,6 +47,10 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
     }))
   }, [data?.rows])
 
+  const onGridReady = (params: GridReadyEvent) => {
+    window.gridApi = params.api
+  }
+
   if (isLoading) {
     return <div className="flex-1 p-4">Loading...</div>
   }
@@ -66,6 +76,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
         paginationAutoPageSize={true}
         domLayout="normal"
         className="h-full w-full"
+        onGridReady={onGridReady}
       />
     </div>
   )

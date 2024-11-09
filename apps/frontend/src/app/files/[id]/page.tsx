@@ -4,6 +4,9 @@ import { useFileMetadata } from "@/utils/api"
 import { CsvViewer } from "../../components/CsvViewer"
 import { useParams } from "next/navigation"
 import ArrowLeft from "@/icons/arrow-left"
+import { Label } from "@/components/label"
+import { ExportDropdown } from "../../components/ExportDropdown"
+import Head from "next/head"
 
 export default function FileViewerPage() {
   const params = useParams()
@@ -20,6 +23,7 @@ export default function FileViewerPage() {
 
   return (
     <main className="flex flex-col gap-3">
+      <Head>{metadata.fileName}</Head>
       <div className="w-full border-b p-3 flex justify-between items-center">
         <div className="flex items-center gap-3">
           <button
@@ -28,13 +32,15 @@ export default function FileViewerPage() {
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
-          <div>{metadata.fileName}</div>
+          <Label size="large">{metadata.fileName}</Label>
         </div>
-        <div>wispbit</div>
+        <div className="flex items-center gap-2">
+          <ExportDropdown fileId={fileId} />
+        </div>
       </div>
       <div className="flex gap-4 px-2">
         <CsvViewer fileId={metadata.id} />
-        <div className="h-[calc(100vh-79px)] bg-ui-bg-base border-ui-border-base flex flex-col rounded-lg border w-[300px]"></div>
+        <div className="h-[calc(100vh-79px)] bg-ui-bg-base border-ui-border-base flex flex-col rounded-lg border w-[300px]" />
       </div>
     </main>
   )
