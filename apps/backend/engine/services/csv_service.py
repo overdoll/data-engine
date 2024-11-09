@@ -43,8 +43,10 @@ class CSVService:
         )
 
     def get_data(self, file_uuid: str) -> List[ColumnDef]:
+        # TODO reading here is really slow
         data_obj = self.s3.get_object(Bucket=self.bucket, Key=f"{file_uuid}/data.json")
-        return json.loads(data_obj["Body"].read())
+        data = data_obj["Body"].read()
+        return json.loads(data)
 
     def convert_df_to_columns(self, df: pl.DataFrame) -> List[ColumnDef]:
         columns: List[ColumnDef] = []
