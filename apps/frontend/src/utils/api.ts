@@ -31,12 +31,20 @@ export interface CsvData {
   rows: { id: string; data: { [columnId: string]: string } }[]
 }
 
+// Add new Suggestion type
+export interface Suggestion {
+  columnName: string
+  action: string
+  description: string
+}
+
 // Query keys
 export const queryKeys = {
   files: ["files"] as const,
   file: (id: string) => ["file", id] as const,
   csvData: (id: string) => ["csv-data", id] as const,
   fileMetadata: (id: string) => ["file-metadata", id] as const,
+  suggestions: (id: string) => ["suggestions", id] as const,
 }
 
 // Default cache settings
@@ -92,6 +100,20 @@ export const useCsvData = (id: string) => {
   })
 }
 
+// Add new suggestions query
+export const useSuggestions = (id?: string) => {
+  return useQuery({
+    queryKey: queryKeys.suggestions(id!),
+    queryFn: async () => {
+      const { data } = await apiClient.get<Suggestion[]>(`/csv/${id}/suggestions`)
+      return data
+    },
+    enabled: !!id,
+    gcTime: defaultCacheTime,
+    staleTime: defaultStaleTime,
+  })
+}
+
 // Mutations
 export const useUploadFile = () => {
   const queryClient = useQueryClient()
@@ -122,6 +144,27 @@ export const useUploadFile = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["files"] })
+    },
+  })
+}
+
+interface UpdatePayload {
+  columnName: string
+  action: string
+}
+
+// Add new mutation
+export const useApplySuggestion = (fileId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (updates: UpdatePayload[]) => {
+      const { data } = await apiClient.post(`/csv/${fileId}/update`, { updates })
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.csvData(fileId) })
+      queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(fileId) })
     },
   })
 }

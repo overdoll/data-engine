@@ -1,7 +1,6 @@
 import { DropdownMenu } from "@/components/dropdown-menu"
 import { Button } from "@/components/button"
 import { Download } from "lucide-react"
-import { useFileMetadata } from "@/utils/api"
 import { useState } from "react"
 import { PremiumFeatureModal } from "./PremiumFeatureModal"
 import Hubspot from "@/icons/hubspot"
@@ -9,11 +8,10 @@ import Salesforce from "@/icons/salesforce"
 import { CubeSolid } from "@/icons/index"
 
 interface ExportDropdownProps {
-  fileId: string
+  fileName: string
 }
 
-export function ExportDropdown({ fileId }: ExportDropdownProps) {
-  const { data: metadata } = useFileMetadata(fileId)
+export function ExportDropdown({ fileName }: ExportDropdownProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const [selectedFeature, setSelectedFeature] = useState<string>("")
 
@@ -33,7 +31,7 @@ export function ExportDropdown({ fileId }: ExportDropdownProps) {
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
-    link.setAttribute("download", `${metadata?.fileName || "export"}.csv`)
+    link.setAttribute("download", `${fileName || "export"}.csv`)
     link.style.visibility = "hidden "
     document.body.appendChild(link)
     link.click()
