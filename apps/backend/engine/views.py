@@ -84,14 +84,27 @@ def update_csv(request, uuid):
 def get_suggestions(request, uuid):
     print(f"Received suggestion request for UUID: {uuid}")
     try:
-        print("Fetching data from CSV service")
+        metadata = csv_service.get_metadata(str(uuid))
+
+        # Check if we have cached suggestions
+        if metadata and metadata.get("suggestions"):
+            print("Returning cached suggestions from metadata")
+            return Response(metadata["suggestions"])
+
         columns = csv_service.get_data(str(uuid))
 
+        # Generate new suggestions if none exist
         print(f"Retrieved {len(columns)} columns, getting AI suggestions")
         suggestions = ai_service.get_column_suggestions(columns)
 
-        print("Successfully got suggestions")
+        # Update metadata with new suggestions
+        metadata = metadata or {}
+        metadata["suggestions"] = suggestions
+        csv_service.save_metadata(str(uuid), metadata)
+
+        print("Successfully got and cached suggestions")
         return Response(suggestions)
+
     except ValueError:
         print(f"CSV not found for UUID: {uuid}")
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
