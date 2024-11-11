@@ -131,12 +131,10 @@ class AIService:
         ]
 
         response = self.client.beta.chat.completions.parse(
-            model="gpt-4o-mini-2024-07-18",
+            model="gpt-4o-2024-08-06",
             messages=messages,
             response_format=ResponseFormatList,
         )
-
-        print("response", messages)
 
         raw_suggestions = response.choices[0].message.parsed.classifications
         return self._validate_suggestions(raw_suggestions, columns)
