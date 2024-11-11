@@ -4,6 +4,7 @@ from .column_processor import CLASSIFIERS, ClassifierId
 from .types import ColumnDef
 from django.conf import settings
 from pydantic import BaseModel
+from uuid import uuid4
 
 
 class ColumnClassification(BaseModel):
@@ -70,6 +71,7 @@ class AIService:
             ):
                 valid_suggestions.append(
                     {
+                        "suggestion_id": str(uuid4()),
                         "column_id": suggestion.column_id,
                         "classification": suggestion.classification,
                         "label": column_labels[suggestion.column_id],
