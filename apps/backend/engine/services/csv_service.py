@@ -33,7 +33,22 @@ class CSVService:
         )
 
     def parse_csv(self, file: BinaryIO) -> pl.DataFrame:
-        return pl.read_csv(file)
+        df = pl.read_csv(file)
+        return self._process_dataframe(df)
+
+    def _process_dataframe(self, df: pl.DataFrame) -> pl.DataFrame:
+        # Create a list of columns that have at least one non-null value
+        # while preserving their original order
+        non_empty_cols = [col for col in df.columns if df[col].null_count() < len(df)]
+
+        # Filter to keep only non-empty columns in original order
+        df = df.select(non_empty_cols)
+
+        # Rename unnamed columns to "(No name)" while preserving order
+        new_names = {col: "(No name)" if not col.strip() else col for col in df.columns}
+        df = df.rename(new_names)
+
+        return df
 
     def save_data(self, file_uuid: str, columns: List[ColumnDef]):
         self.s3.put_object(
@@ -43,7 +58,6 @@ class CSVService:
         )
 
     def get_data(self, file_uuid: str) -> List[ColumnDef]:
-        # TODO reading here is really slow
         data_obj = self.s3.get_object(Bucket=self.bucket, Key=f"{file_uuid}/data.json")
         data = data_obj["Body"].read()
         return json.loads(data)

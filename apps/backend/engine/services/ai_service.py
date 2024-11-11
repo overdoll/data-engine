@@ -94,15 +94,6 @@ class AIService:
         classifiers_context = self._get_classifier_context()
         columns_context = self._get_column_context(columns)
 
-        # TODO try prompting each column with each case
-        # i.e. "does this column fit this? no? what about this? yes? great, classify it"
-
-        # TODO it classifies the wrong columns or columns more than once
-        # the code must be resilient to being processed multiple times
-        # for example, if name is processed multiple times
-
-        # TODO it thinks that links are names or phone numbers because of their contents
-
         messages = [
             {
                 "role": "system",
