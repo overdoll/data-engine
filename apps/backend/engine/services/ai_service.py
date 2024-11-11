@@ -59,6 +59,7 @@ class AIService:
     ) -> List[Dict[str, str]]:
         # Get set of valid column IDs and create mapping to labels
         valid_column_ids = {col["id"] for col in columns}
+        column_labels = {col["id"]: col["label"] for col in columns}
 
         # Filter valid suggestions
         valid_suggestions = []
@@ -73,12 +74,13 @@ class AIService:
                         "suggestion_id": str(uuid4()),
                         "column_id": suggestion.column_id,
                         "classification": suggestion.classification,
+                        "label": column_labels[suggestion.column_id],
                     }
                 )
             else:
                 if suggestion.classification not in CLASSIFIERS:
                     print(
-                        f"Dropping invalid classifier suggestion: {suggestion.classification} for column ({suggestion.column_id})"
+                        f"Dropping invalid classifier suggestion: {suggestion.classification} for column '{column_labels.get(suggestion.column_id, 'unknown')}' ({suggestion.column_id})"
                     )
                 if suggestion.column_id not in valid_column_ids:
                     print(
