@@ -10,17 +10,20 @@ interface SuggestionProps {
 
 export function Suggestion({ suggestion }: SuggestionProps) {
   const { toggleSuggestion, isSelected } = useSuggestionsStore()
-  const suggestionKey = `${suggestion.columnName}-${suggestion.action}`
 
   return (
     <div className="p-4 border rounded-md flex gap-3">
-      <Checkbox
-        checked={isSelected(suggestionKey)}
-        onCheckedChange={() => toggleSuggestion(suggestionKey)}
-      />
-      <div className="flex-1">
-        <h3 className="font-medium mb-1">{suggestion.columnName}</h3>
-        <p className="text-sm text-gray-600">{suggestion.description}</p>
+      <div className="flex items-start pt-0.5">
+        <Checkbox
+          checked={isSelected(suggestion)}
+          onCheckedChange={() => toggleSuggestion(suggestion)}
+        />
+      </div>
+      <div className="flex-1 cursor-pointer" onClick={() => toggleSuggestion(suggestion)}>
+        <h3 className="font-medium mb-1">Column: {suggestion.columnId}</h3>
+        <p className="text-sm text-gray-600">
+          Suggested Classification: {suggestion.classification}
+        </p>
       </div>
     </div>
   )

@@ -31,11 +31,11 @@ export interface CsvData {
   rows: { id: string; data: { [columnId: string]: string } }[]
 }
 
-// Add new Suggestion type
+// Update Suggestion type to match API schema
 export interface Suggestion {
-  columnName: string
-  action: string
-  description: string
+  classification: string
+  columnId: string
+  suggestionId: string
 }
 
 // Query keys

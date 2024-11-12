@@ -1,16 +1,18 @@
 import { create } from "zustand"
+import type { Suggestion } from "@/utils/api"
 
 interface SuggestionsState {
   selectedSuggestions: Set<string>
-  toggleSuggestion: (suggestionKey: string) => void
+  toggleSuggestion: (suggestion: Suggestion) => void
   clearSelections: () => void
-  isSelected: (suggestionKey: string) => boolean
+  isSelected: (suggestion: Suggestion) => boolean
 }
 
 export const useSuggestionsStore = create<SuggestionsState>((set, get) => ({
   selectedSuggestions: new Set<string>(),
-  
-  toggleSuggestion: (suggestionKey: string) => {
+
+  toggleSuggestion: (suggestion: Suggestion) => {
+    const suggestionKey = suggestion.suggestionId
     set((state) => {
       const newSet = new Set(state.selectedSuggestions)
       if (newSet.has(suggestionKey)) {
@@ -26,7 +28,10 @@ export const useSuggestionsStore = create<SuggestionsState>((set, get) => ({
     set({ selectedSuggestions: new Set() })
   },
 
-  isSelected: (suggestionKey: string) => {
+  isSelected: (suggestion: Suggestion) => {
+    const suggestionKey = suggestion.suggestionId
+    console.log(suggestionKey)
+    console.log(get().selectedSuggestions.keys())
     return get().selectedSuggestions.has(suggestionKey)
   },
-})) 
+}))
