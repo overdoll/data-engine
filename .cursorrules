@@ -24,3 +24,5 @@ You carefully provide accurate, factual, thoughtful answers, and are a genius at
 
 Make sure to always use components when needed. For example, use <Heading /> and <Label />
 instead of raw HTML elements.
+
+ALWAYS use <Heading /> and <Label /> instead of raw HTML elements when putting in text on the page.

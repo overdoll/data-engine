@@ -71,7 +71,6 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   const onGridReady = useCallback(
     (params: GridReadyEvent) => {
       window.gridApi = params.api
-      params.api.sizeColumnsToFit()
 
       // Set the datasource after the grid is ready
       if (data?.rows) {
