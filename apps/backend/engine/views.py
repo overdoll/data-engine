@@ -61,8 +61,6 @@ def update_csv(request, uuid):
         operations = []
         for update in updates:
             try:
-                # TODO we may want to pass silently if operation is invalid
-                # because AI could hallucinate
                 operation = column_operation_service.create_operation(**update)
                 operations.append(operation)
             except (
@@ -74,6 +72,27 @@ def update_csv(request, uuid):
 
         columns = column_operation_service.apply_operations(columns, operations)
         csv_service.save_data(str(uuid), columns)
+
+        # Update metadata to remove applied suggestions
+        try:
+            metadata = csv_service.get_metadata(str(uuid)) or {}
+            if "suggestions" in metadata:
+                # Remove suggestions for any columns that were classified
+                classified_columns = [
+                    update["column_id"]
+                    for update in updates
+                    if update.get("action") == "classify_column"
+                ]
+                metadata["suggestions"] = [
+                    s
+                    for s in metadata["suggestions"]
+                    if s.get("columnId") not in classified_columns
+                ]
+                csv_service.save_metadata(str(uuid), metadata)
+        except Exception:
+            # Don't fail the operation if metadata update fails
+            pass
+
         return Response({"status": "success"})
 
     except ValueError:
@@ -86,10 +105,10 @@ def get_suggestions(request, uuid):
     try:
         metadata = csv_service.get_metadata(str(uuid))
 
-        # Check if we have cached suggestions
-        if metadata and metadata.get("suggestions"):
-            print("Returning cached suggestions from metadata")
-            return Response(metadata["suggestions"])
+        # # Check if we have cached suggestions
+        # if metadata and metadata.get("suggestions"):
+        #     print("Returning cached suggestions from metadata")
+        #     return Response(metadata["suggestions"])
 
         columns = csv_service.get_data(str(uuid))
 
