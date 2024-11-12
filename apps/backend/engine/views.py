@@ -86,7 +86,7 @@ def update_csv(request, uuid):
                 metadata["suggestions"] = [
                     s
                     for s in metadata["suggestions"]
-                    if s.get("columnId") not in classified_columns
+                    if s.get("column_id") not in classified_columns
                 ]
                 csv_service.save_metadata(str(uuid), metadata)
         except Exception:
@@ -105,10 +105,10 @@ def get_suggestions(request, uuid):
     try:
         metadata = csv_service.get_metadata(str(uuid))
 
-        # # Check if we have cached suggestions
-        # if metadata and metadata.get("suggestions"):
-        #     print("Returning cached suggestions from metadata")
-        #     return Response(metadata["suggestions"])
+        # Check if we have cached suggestions
+        if metadata and "suggestions" in metadata:
+            print("Returning cached suggestions from metadata")
+            return Response(metadata["suggestions"])
 
         columns = csv_service.get_data(str(uuid))
 
