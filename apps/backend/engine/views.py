@@ -86,10 +86,10 @@ def get_suggestions(request, uuid):
     try:
         metadata = csv_service.get_metadata(str(uuid))
 
-        # Check if we have cached suggestions
-        if metadata and metadata.get("suggestions"):
-            print("Returning cached suggestions from metadata")
-            return Response(metadata["suggestions"])
+        # # Check if we have cached suggestions
+        # if metadata and metadata.get("suggestions"):
+        #     print("Returning cached suggestions from metadata")
+        #     return Response(metadata["suggestions"])
 
         columns = csv_service.get_data(str(uuid))
 
