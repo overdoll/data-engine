@@ -6,6 +6,8 @@ interface SuggestionsState {
   toggleSuggestion: (suggestion: Suggestion) => void
   clearSelections: () => void
   isSelected: (suggestion: Suggestion) => boolean
+  selectAll: (suggestions: Suggestion[]) => void
+  isAllSelected: (suggestions: Suggestion[]) => boolean
 }
 
 export const useSuggestionsStore = create<SuggestionsState>((set, get) => ({
@@ -32,4 +34,22 @@ export const useSuggestionsStore = create<SuggestionsState>((set, get) => ({
     const suggestionKey = suggestion.suggestion_id
     return get().selectedSuggestions.has(suggestionKey)
   },
+
+  selectAll: (suggestions: Suggestion[]) => {
+    const currentState = get()
+    const allSelected = currentState.isAllSelected(suggestions)
+
+    if (allSelected) {
+      currentState.clearSelections()
+    } else {
+      set({
+        selectedSuggestions: new Set(suggestions.map(s => s.suggestion_id))
+      })
+    }
+  },
+
+  isAllSelected: (suggestions: Suggestion[]) => {
+    const state = get()
+    return suggestions.length > 0 && suggestions.every(s => state.isSelected(s))
+  }
 }))

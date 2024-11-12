@@ -1,22 +1,39 @@
 "use client"
 
 import { Label } from "@/components/label"
+import { Checkbox } from "@/components/checkbox"
 import { useSuggestions } from "@/utils/api"
 import { Suggestion } from "./Suggestion"
 import { ApplySuggestionsButton } from "./ApplySuggestionsButton"
+import { useSuggestionsStore } from "@/stores/suggestions"
 
 export function SuggestionsList({ fileId }: { fileId: string }) {
-  const { data: suggestions, isLoading } = useSuggestions(fileId)
+  const { selectAll, isAllSelected } = useSuggestionsStore()
+
+  const { data: suggestions, isLoading } = useSuggestions(fileId, (data) => {
+    selectAll(data)
+  })
 
   if (isLoading) {
     return <div className="p-4">Loading suggestions...</div>
+  }
+
+  const handleSelectAll = () => {
+    if (suggestions) {
+      selectAll(suggestions)
+    }
   }
 
   return (
     <div className="flex flex-col h-full">
       <div className="p-4 border-b">
         <div className="flex justify-between items-center">
-          <Label className="text-md font-semibold">Suggestions</Label>
+          <div className="flex items-center gap-2">
+            <Checkbox checked={isAllSelected(suggestions)} onCheckedChange={handleSelectAll} />
+            <Label className="text-md font-semibold">
+              Possible fixes ({suggestions?.length || 0})
+            </Label>
+          </div>
           <ApplySuggestionsButton fileId={fileId} />
         </div>
       </div>
