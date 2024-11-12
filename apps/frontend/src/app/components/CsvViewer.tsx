@@ -1,9 +1,9 @@
 import { useCsvData } from "@/utils/api"
 import { AgGridReact } from "ag-grid-react"
-import { ColDef, GridReadyEvent } from "ag-grid-community"
+import { ColDef, GridReadyEvent, IDatasource } from "ag-grid-community"
 import "ag-grid-community/styles/ag-grid.css"
 import "ag-grid-community/styles/ag-theme-alpine.css"
-import { useMemo } from "react"
+import { useMemo, useCallback } from "react"
 
 declare global {
   interface Window {
@@ -49,9 +49,37 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
     }))
   }, [data?.rows])
 
-  const onGridReady = (params: GridReadyEvent) => {
-    window.gridApi = params.api
-  }
+  const dataSource: IDatasource = useMemo(() => {
+    return {
+      rowCount: undefined,
+      getRows: (params) => {
+        const startRow = params.startRow
+        const endRow = params.endRow
+
+        // Get a slice of the data for the requested range
+        const rowsThisBlock = rowData.slice(startRow, endRow)
+        const lastRow = rowData.length
+
+        // Return the rows to the grid
+        setTimeout(() => {
+          params.successCallback(rowsThisBlock, lastRow)
+        }, 500)
+      },
+    }
+  }, [rowData])
+
+  const onGridReady = useCallback(
+    (params: GridReadyEvent) => {
+      window.gridApi = params.api
+      params.api.sizeColumnsToFit()
+
+      // Set the datasource after the grid is ready
+      if (data?.rows) {
+        params.api.setDatasource(dataSource)
+      }
+    },
+    [data?.rows, dataSource]
+  )
 
   if (isLoading) {
     return <div className="flex-1 p-4">Loading...</div>
@@ -67,18 +95,23 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
     <div className="flex-1 h-[calc(100vh-79px)] w-full ag-theme-alpine">
       <AgGridReact<{ [columnId: string]: string }>
         columnDefs={columnDefs}
-        rowData={rowData}
         defaultColDef={{
           resizable: true,
           sortable: true,
-          filter: false,
+          filter: true,
         }}
-        paginationPageSize={15}
-        pagination={true}
-        paginationAutoPageSize={true}
+        rowModelType="infinite"
+        cacheBlockSize={100}
+        cacheOverflowSize={2}
+        maxConcurrentDatasourceRequests={1}
+        infiniteInitialRowCount={1000}
+        maxBlocksInCache={10}
         domLayout="normal"
         className="h-full w-full"
         onGridReady={onGridReady}
+        animateRows={true}
+        enableCellTextSelection={true}
+        suppressRowClickSelection={true}
       />
     </div>
   )

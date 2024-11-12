@@ -113,6 +113,7 @@ export const useSuggestions = (id?: string) => {
     enabled: !!id,
     gcTime: defaultCacheTime,
     staleTime: defaultStaleTime,
+    retry: false,
   })
 }
 
