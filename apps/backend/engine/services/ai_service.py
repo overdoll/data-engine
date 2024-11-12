@@ -32,12 +32,25 @@ class AIService:
             return []
         return non_empty_values[:COLUMN_SAMPLE_SIZE]
 
+    def _get_valid_columns(
+        self, columns: List[ColumnDef]
+    ) -> List[tuple[ColumnDef, List[str]]]:
+        """Get columns that are valid for AI classification along with their samples.
+        Returns list of tuples containing (column, sample_data)"""
+        valid_columns = []
+
+        for col in columns:
+            if col["classification"]:
+                continue
+
+            sample = self._get_column_sample(col)
+            if sample:
+                valid_columns.append((col, sample))
+
+        return valid_columns
+
     def _get_column_context(self, columns: List[ColumnDef]) -> str:
-        sample_columns = [
-            (col["id"], self._get_column_sample(col))
-            for col in columns
-            if self._get_column_sample(col)
-        ]  # Only include columns with non-empty samples
+        sample_columns = self._get_valid_columns(columns)
 
         return "\n".join(
             [
