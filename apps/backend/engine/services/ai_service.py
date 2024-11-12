@@ -50,6 +50,7 @@ class AIService:
         return valid_columns
 
     def _get_column_context(self, columns: List[ColumnDef]) -> str:
+        """Get context for columns for AI"""
         sample_columns = self._get_valid_columns(columns)
 
         return "\n".join(
@@ -60,6 +61,7 @@ class AIService:
         )
 
     def _get_classifier_context(self) -> str:
+        """Get context for classifiers for AI"""
         return "\n".join(
             [
                 f"- {c_id}: {classifier.situation}"
