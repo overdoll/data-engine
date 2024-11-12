@@ -130,6 +130,6 @@ def get_suggestions(request, uuid):
     except Exception as e:
         print(f"Error generating suggestions: {str(e)}")
         return Response(
-            {"error": f"Error generating suggestions: {str(e)}"},
+            {"error": "Error generating suggestions"},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR,
         )
