@@ -42,6 +42,7 @@ class BaseClassifier(ABC):
     @property
     @abstractmethod
     def situation(self) -> str:
+        "Tell the AI how to handle this column"
         pass
 
     @property
@@ -58,3 +59,8 @@ class BaseClassifier(ABC):
     def get_operations(self, column_id: str, column: ColumnDef) -> List[BaseOperation]:
         """Get additional operations to perform when classifying"""
         return []
+
+    @property
+    def description(self) -> str:
+        """Return a description of what this classifier does"""
+        return ""

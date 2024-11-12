@@ -65,15 +65,14 @@ class AIService:
         valid_suggestions = []
         for suggestion in raw_suggestions:
             # Check if classifier exists and column exists
-            if (
-                suggestion.classification in CLASSIFIERS
-                and suggestion.column_id in valid_column_ids
-            ):
+            classifier = CLASSIFIERS.get(suggestion.classification)
+            if classifier and suggestion.column_id in valid_column_ids:
                 valid_suggestions.append(
                     {
                         "suggestion_id": str(uuid4()),
                         "column_id": suggestion.column_id,
                         "classification": suggestion.classification,
+                        "description": classifier.description,
                         "label": column_labels[suggestion.column_id],
                     }
                 )
