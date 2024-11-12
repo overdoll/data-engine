@@ -128,6 +128,10 @@ class NameClassifier(BaseClassifier):
             RemoveColumnOperation(column_id),
         ]
 
+    @property
+    def description(self) -> str:
+        return "Splits full names into separate first and last name columns"
+
 
 class FirstNameClassifier(BaseClassifier):
     @property
@@ -140,6 +144,10 @@ class FirstNameClassifier(BaseClassifier):
 
     def transform(self, value: str) -> str:
         return value.strip().title()
+
+    @property
+    def description(self) -> str:
+        return "Standardizes first names by trimming whitespace and proper casing"
 
 
 class LastNameClassifier(BaseClassifier):
@@ -154,6 +162,10 @@ class LastNameClassifier(BaseClassifier):
     def transform(self, value: str) -> str:
         return value.strip().title()
 
+    @property
+    def description(self) -> str:
+        return "Standardizes last names by trimming whitespace and proper casing"
+
 
 class EmailClassifier(BaseClassifier):
     @property
@@ -167,6 +179,10 @@ class EmailClassifier(BaseClassifier):
     def transform(self, value: str) -> str:
         """Clean and standardize email addresses"""
         return value.strip().lower()
+
+    @property
+    def description(self) -> str:
+        return "Standardizes email addresses by converting to lowercase and trimming whitespace"
 
 
 class PhoneClassifier(BaseClassifier):
@@ -193,6 +209,10 @@ class PhoneClassifier(BaseClassifier):
 
         # Fallback to original value if parsing fails
         return value.strip()
+
+    @property
+    def description(self) -> str:
+        return "Formats phone numbers into standardized E.164 format (+12345678900)"
 
 
 class ColumnOperationService:
