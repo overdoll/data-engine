@@ -113,7 +113,7 @@ export const useSuggestions = (id?: string) => {
     enabled: !!id,
     gcTime: defaultCacheTime,
     staleTime: defaultStaleTime,
-    retry: false,
+    retry: 0,
   })
 }
 
@@ -168,9 +168,10 @@ export const useApplySuggestion = (fileId: string) => {
       })
       return data
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: queryKeys.csvData(fileId) })
-      queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(fileId) })
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: queryKeys.csvData(fileId) })
+      window.gridApi?.refreshCells({ force: true })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(fileId) })
     },
   })
 }

@@ -16,7 +16,10 @@ interface CsvViewerProps {
 }
 function calculateColumnWidth(key: string, values: string[]): number {
   // Get max length of header and all cell values
-  const maxContentLength = Math.max(key.length, ...values.map((v) => (v || "").toString().length))
+  const maxContentLength = Math.max(
+    key.length + 3,
+    ...values.map((v) => (v || "").toString().length)
+  )
   // Convert to pixels with some padding
   return Math.min(Math.max(maxContentLength * 10, 100), 300)
 }
@@ -26,7 +29,15 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
 
   const columnDefs = useMemo<ColDef<{ [columnId: string]: string }>[]>(() => {
     if (!data?.columns) return []
-    return data.columns.map((col) => ({
+
+    // Sort columns so classified ones come first
+    const sortedColumns = [...data.columns].sort((a, b) => {
+      if (a.classification && !b.classification) return -1
+      if (!a.classification && b.classification) return 1
+      return 0
+    })
+
+    return sortedColumns.map((col) => ({
       field: col.id,
       headerName: col.label,
       width: calculateColumnWidth(
@@ -51,10 +62,12 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
 
   const dataSource: IDatasource = useMemo(() => {
     return {
-      rowCount: undefined,
+      rowCount: rowData.length,
       getRows: (params) => {
         const startRow = params.startRow
         const endRow = params.endRow
+
+        console.log("get rows", startRow, endRow)
 
         // Get a slice of the data for the requested range
         const rowsThisBlock = rowData.slice(startRow, endRow)
@@ -63,22 +76,14 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
         // Return the rows to the grid
         setTimeout(() => {
           params.successCallback(rowsThisBlock, lastRow)
-        }, 500)
+        }, 0)
       },
     }
   }, [rowData])
 
-  const onGridReady = useCallback(
-    (params: GridReadyEvent) => {
-      window.gridApi = params.api
-
-      // Set the datasource after the grid is ready
-      if (data?.rows) {
-        params.api.setDatasource(dataSource)
-      }
-    },
-    [data?.rows, dataSource]
-  )
+  const onGridReady = useCallback((params: GridReadyEvent) => {
+    window.gridApi = params.api
+  }, [])
 
   if (isLoading) {
     return <div className="flex-1 p-4">Loading...</div>
@@ -100,6 +105,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           filter: true,
         }}
         rowModelType="infinite"
+        datasource={dataSource}
         cacheBlockSize={100}
         cacheOverflowSize={2}
         maxConcurrentDatasourceRequests={1}
