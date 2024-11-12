@@ -12,7 +12,7 @@ export const useSuggestionsStore = create<SuggestionsState>((set, get) => ({
   selectedSuggestions: new Set<string>(),
 
   toggleSuggestion: (suggestion: Suggestion) => {
-    const suggestionKey = suggestion.suggestionId
+    const suggestionKey = suggestion.suggestion_id
     set((state) => {
       const newSet = new Set(state.selectedSuggestions)
       if (newSet.has(suggestionKey)) {
@@ -29,9 +29,7 @@ export const useSuggestionsStore = create<SuggestionsState>((set, get) => ({
   },
 
   isSelected: (suggestion: Suggestion) => {
-    const suggestionKey = suggestion.suggestionId
-    console.log(suggestionKey)
-    console.log(get().selectedSuggestions.keys())
+    const suggestionKey = suggestion.suggestion_id
     return get().selectedSuggestions.has(suggestionKey)
   },
 }))

@@ -22,7 +22,7 @@ export function ApplySuggestionsButton({ fileId }: ApplySuggestionsButtonProps) 
     }
 
     const selectedSuggestionsList = suggestions?.filter((suggestion) =>
-      selectedSuggestions.has(suggestion.suggestionId)
+      selectedSuggestions.has(suggestion.suggestion_id)
     )
 
     if (!selectedSuggestionsList?.length) return
@@ -30,8 +30,8 @@ export function ApplySuggestionsButton({ fileId }: ApplySuggestionsButtonProps) 
     try {
       await applySuggestion(
         selectedSuggestionsList.map((suggestion) => ({
-          columnName: suggestion.columnId,
-          action: suggestion.classification,
+          column_id: suggestion.column_id,
+          classification: suggestion.classification,
         }))
       )
       toast.success("Selected suggestions applied!")

@@ -34,8 +34,10 @@ export interface CsvData {
 // Update Suggestion type to match API schema
 export interface Suggestion {
   classification: string
-  columnId: string
-  suggestionId: string
+  column_id: string
+  label: string
+  description: string
+  suggestion_id: string
 }
 
 // Query keys
@@ -149,8 +151,9 @@ export const useUploadFile = () => {
 }
 
 interface UpdatePayload {
-  columnName: string
-  action: string
+  column_id: string
+  action: "classify_column" | "remove_column"
+  classification?: string
 }
 
 // Add new mutation
@@ -158,8 +161,10 @@ export const useApplySuggestion = (fileId: string) => {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: async (updates: UpdatePayload[]) => {
-      const { data } = await apiClient.post(`/csv/${fileId}/update`, { updates })
+    mutationFn: async (updates: Omit<UpdatePayload, "action">[]) => {
+      const { data } = await apiClient.post(`/csv/${fileId}/update`, {
+        updates: updates.map((update) => ({ ...update, action: "classify_column" })),
+      })
       return data
     },
     onSuccess: () => {

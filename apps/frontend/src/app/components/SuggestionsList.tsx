@@ -13,17 +13,23 @@ export function SuggestionsList({ fileId }: { fileId: string }) {
   }
 
   return (
-    <div className="p-4 flex flex-col gap-4">
-      <div className="flex justify-between items-center">
-        <Label className="text-lg font-semibold">Suggestions</Label>
-        <ApplySuggestionsButton fileId={fileId} />
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b">
+        <div className="flex justify-between items-center">
+          <Label className="text-md font-semibold">Suggestions</Label>
+          <ApplySuggestionsButton fileId={fileId} />
+        </div>
       </div>
-      {suggestions?.map((suggestion) => (
-        <Suggestion key={suggestion.suggestionId} suggestion={suggestion} />
-      ))}
-      {suggestions?.length === 0 && (
-        <p className="text-sm text-gray-500">No suggestions available</p>
-      )}
+      <div className="flex-1 overflow-auto p-4">
+        <div className="flex flex-col gap-4">
+          {suggestions?.map((suggestion) => (
+            <Suggestion key={suggestion.suggestion_id} suggestion={suggestion} />
+          ))}
+          {suggestions?.length === 0 && (
+            <p className="text-sm text-gray-500">No suggestions available</p>
+          )}
+        </div>
+      </div>
     </div>
   )
 }
