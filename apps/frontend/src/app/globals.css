@@ -22,3 +22,11 @@ body {
 .ag-aria-description-container {
   display: none;
 }
+
+.ag-theme-alpine .classified-column {
+  background-color: #fffbe6 !important; /* Light yellow background */
+}
+
+.ag-theme-alpine .classified-header {
+  background-color: #fff8d9 !important; /* Slightly darker yellow for headers */
+}

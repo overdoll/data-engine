@@ -6,13 +6,20 @@ import { useSuggestions } from "@/utils/api"
 import { Suggestion } from "./Suggestion"
 import { ApplySuggestionsButton } from "./ApplySuggestionsButton"
 import { useSuggestionsStore } from "@/stores/suggestions"
+import { useEffect, useRef } from "react"
 
 export function SuggestionsList({ fileId }: { fileId: string }) {
   const { selectAll, isAllSelected } = useSuggestionsStore()
+  const hasSelectedOnce = useRef(false)
 
-  const { data: suggestions, isLoading } = useSuggestions(fileId, (data) => {
-    selectAll(data)
-  })
+  const { data: suggestions, isLoading } = useSuggestions(fileId)
+
+  useEffect(() => {
+    if (suggestions && !isLoading && !hasSelectedOnce.current) {
+      selectAll(suggestions)
+      hasSelectedOnce.current = true
+    }
+  }, [suggestions, isLoading, selectAll])
 
   if (isLoading) {
     return <div className="p-4">Loading suggestions...</div>
@@ -29,7 +36,10 @@ export function SuggestionsList({ fileId }: { fileId: string }) {
       <div className="p-4 border-b">
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
-            <Checkbox checked={isAllSelected(suggestions)} onCheckedChange={handleSelectAll} />
+            <Checkbox
+              checked={isAllSelected(suggestions || [])}
+              onCheckedChange={handleSelectAll}
+            />
             <Label className="text-md font-semibold">
               Possible fixes ({suggestions?.length || 0})
             </Label>

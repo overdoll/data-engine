@@ -43,13 +43,13 @@ export const useSuggestionsStore = create<SuggestionsState>((set, get) => ({
       currentState.clearSelections()
     } else {
       set({
-        selectedSuggestions: new Set(suggestions.map(s => s.suggestion_id))
+        selectedSuggestions: new Set(suggestions.map((s) => s.suggestion_id)),
       })
     }
   },
 
   isAllSelected: (suggestions: Suggestion[]) => {
     const state = get()
-    return suggestions.length > 0 && suggestions.every(s => state.isSelected(s))
-  }
+    return suggestions.length > 0 && suggestions.every((s) => state.isSelected(s))
+  },
 }))

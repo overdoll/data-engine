@@ -36,6 +36,8 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
       sortable: true,
       filter: true,
       resizable: true,
+      cellClass: col.classification ? "classified-column" : undefined,
+      headerClass: col.classification ? "classified-header" : undefined,
     }))
   }, [data?.columns, data?.rows])
 

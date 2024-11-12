@@ -103,7 +103,7 @@ export const useCsvData = (id: string) => {
 }
 
 // Add new suggestions query
-export const useSuggestions = (id?: string, onLoad?: (data: Suggestion[]) => void) => {
+export const useSuggestions = (id?: string) => {
   return useQuery({
     queryKey: queryKeys.suggestions(id!),
     queryFn: async () => {
@@ -113,9 +113,6 @@ export const useSuggestions = (id?: string, onLoad?: (data: Suggestion[]) => voi
     enabled: !!id,
     gcTime: defaultCacheTime,
     staleTime: defaultStaleTime,
-    onSuccess: (data) => {
-      onLoad?.(data)
-    },
   })
 }
 
