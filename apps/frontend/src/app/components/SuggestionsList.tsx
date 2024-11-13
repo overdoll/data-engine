@@ -7,6 +7,7 @@ import { Suggestion } from "./Suggestion"
 import { ApplySuggestionsButton } from "./ApplySuggestionsButton"
 import { useSuggestionsStore } from "@/stores/suggestions"
 import { useEffect, useRef } from "react"
+import { SingleColumnPageSkeleton } from "@/components/skeleton"
 
 export function SuggestionsList({ fileId }: { fileId: string }) {
   const { toggleSuggestion, isSelected } = useSuggestionsStore()
@@ -22,7 +23,7 @@ export function SuggestionsList({ fileId }: { fileId: string }) {
   }, [suggestions, isLoading, toggleSuggestion])
 
   if (isLoading) {
-    return <div className="p-4">Loading suggestions...</div>
+    return <SingleColumnPageSkeleton />
   }
 
   const handleSelectAll = () => {

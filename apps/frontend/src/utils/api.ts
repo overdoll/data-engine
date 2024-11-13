@@ -1,8 +1,21 @@
 import axios from "axios"
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
+import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { addFile, getFile, getFiles } from "./db"
 import { nanoid } from "nanoid"
-import { useState } from "react"
+
+// Default cache settings
+const defaultCacheTime = 1000 * 60 * 5 // 5 minutes
+const defaultStaleTime = 1000 * 60 * 1 // 1 minute
+
+export const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      gcTime: defaultCacheTime,
+      staleTime: defaultStaleTime,
+      refetchOnWindowFocus: false,
+    },
+  },
+})
 
 // Base API client
 const apiClient = axios.create({
@@ -50,10 +63,6 @@ export const queryKeys = {
   suggestions: (id: string) => ["suggestions", id] as const,
 }
 
-// Default cache settings
-const defaultCacheTime = 1000 * 60 * 5 // 5 minutes
-const defaultStaleTime = 1000 * 60 * 1 // 1 minute
-
 // Queries
 export const useFiles = () => {
   return useQuery({
@@ -61,8 +70,6 @@ export const useFiles = () => {
     queryFn: async () => {
       return getFiles()
     },
-    gcTime: defaultCacheTime,
-    staleTime: defaultStaleTime,
   })
 }
 
@@ -73,8 +80,6 @@ export const useFile = (id: string) => {
       const { data } = await apiClient.get<FileUploadResponse>(`/csv/${id}`)
       return data
     },
-    gcTime: defaultCacheTime,
-    staleTime: defaultStaleTime,
   })
 }
 
@@ -85,8 +90,6 @@ export const useFileMetadata = (id: string) => {
       return getFile(id)
     },
     enabled: !!id,
-    gcTime: defaultCacheTime,
-    staleTime: defaultStaleTime,
   })
 }
 
@@ -98,8 +101,6 @@ export const useCsvData = (id: string) => {
       return data
     },
     enabled: !!id,
-    gcTime: defaultCacheTime,
-    staleTime: defaultStaleTime,
   })
 }
 
@@ -112,8 +113,6 @@ export const useSuggestions = (id?: string) => {
       return data
     },
     enabled: !!id,
-    gcTime: defaultCacheTime,
-    staleTime: defaultStaleTime,
     retry: false,
   })
 }
