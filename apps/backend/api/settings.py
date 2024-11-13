@@ -137,7 +137,7 @@ AWS_ACCESS_KEY_ID = env("AWS_ACCESS_KEY_ID")
 AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
 AI_API_KEY = env("AI_API_KEY")
-AI_BASE_URL = "https://api.openai.com/v1/chat/completions"
+AI_BASE_URL = "https://openrouter.ai/api/v1"
 
 
 # Add CORS settings at the bottom of the file
