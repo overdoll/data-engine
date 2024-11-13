@@ -2,6 +2,7 @@ import axios from "axios"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { addFile, getFile, getFiles } from "./db"
 import { nanoid } from "nanoid"
+import { useState } from "react"
 
 // Base API client
 const apiClient = axios.create({
@@ -113,7 +114,7 @@ export const useSuggestions = (id?: string) => {
     enabled: !!id,
     gcTime: defaultCacheTime,
     staleTime: defaultStaleTime,
-    retry: 0,
+    retry: false,
   })
 }
 

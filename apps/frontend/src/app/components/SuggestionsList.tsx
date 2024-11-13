@@ -9,17 +9,17 @@ import { useSuggestionsStore } from "@/stores/suggestions"
 import { useEffect, useRef } from "react"
 
 export function SuggestionsList({ fileId }: { fileId: string }) {
-  const { selectAll, isAllSelected } = useSuggestionsStore()
+  const { toggleSuggestion, isSelected } = useSuggestionsStore()
   const hasSelectedOnce = useRef(false)
 
   const { data: suggestions, isLoading } = useSuggestions(fileId)
 
   useEffect(() => {
     if (suggestions && !isLoading && !hasSelectedOnce.current) {
-      selectAll(suggestions)
+      toggleSuggestion(suggestions)
       hasSelectedOnce.current = true
     }
-  }, [suggestions, isLoading, selectAll])
+  }, [suggestions, isLoading, toggleSuggestion])
 
   if (isLoading) {
     return <div className="p-4">Loading suggestions...</div>
@@ -27,7 +27,7 @@ export function SuggestionsList({ fileId }: { fileId: string }) {
 
   const handleSelectAll = () => {
     if (suggestions) {
-      selectAll(suggestions)
+      toggleSuggestion(suggestions)
     }
   }
 
@@ -37,7 +37,8 @@ export function SuggestionsList({ fileId }: { fileId: string }) {
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-2">
             <Checkbox
-              checked={isAllSelected(suggestions || [])}
+              disabled={!suggestions || suggestions?.length === 0}
+              checked={suggestions && suggestions?.length > 0 ? isSelected(suggestions) : false}
               onCheckedChange={handleSelectAll}
             />
             <Label className="text-md font-semibold">
