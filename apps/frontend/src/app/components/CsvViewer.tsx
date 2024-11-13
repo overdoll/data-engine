@@ -2,7 +2,7 @@ import { useCsvData } from "@/utils/api"
 import { AgGridReact } from "ag-grid-react"
 import { ColDef, GridReadyEvent, IDatasource } from "ag-grid-community"
 import "ag-grid-community/styles/ag-grid.css"
-import "ag-grid-community/styles/ag-theme-alpine.css"
+import "ag-grid-community/styles/ag-theme-quartz.css"
 import { useMemo, useCallback } from "react"
 
 declare global {
@@ -96,7 +96,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   if (!data) return null
 
   return (
-    <div className="flex-1 h-[calc(100vh-79px)] w-full ag-theme-alpine">
+    <div className="flex-1 h-[calc(100vh-79px)] w-full ag-theme-quartz">
       <AgGridReact<{ [columnId: string]: string }>
         columnDefs={columnDefs}
         defaultColDef={{

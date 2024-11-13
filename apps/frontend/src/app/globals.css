@@ -23,10 +23,10 @@ body {
   display: none;
 }
 
-.ag-theme-alpine .classified-column {
+.ag-theme-quartz .classified-column {
   background-color: #fffbe6 !important; /* Light yellow background */
 }
 
-.ag-theme-alpine .classified-header {
+.ag-theme-quartz .classified-header {
   background-color: #fff8d9 !important; /* Slightly darker yellow for headers */
 }
