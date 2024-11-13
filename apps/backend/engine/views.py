@@ -3,7 +3,7 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
 from .services.csv_service import CSVService, Metadata
-from .services.ai_service import AIService
+from .services.ai_service import AIService, TokenLimitExceededError
 from .services.base import (
     ColumnNotFoundError,
     InvalidActionError,
@@ -114,7 +114,17 @@ def get_suggestions(request, uuid):
 
         # Generate new suggestions if none exist
         print(f"Retrieved {len(columns)} columns, getting AI suggestions")
-        suggestions = ai_service.get_column_suggestions(columns)
+        try:
+            suggestions = ai_service.get_column_suggestions(columns)
+        except TokenLimitExceededError as e:
+            return Response(
+                {
+                    "error": "token_limit_exceeded",
+                    "message": "This file is too large to process automatically. Please try a file with fewer columns or shorter content.",
+                    "details": f"Token count: {e.token_count}, Limit: {e.limit}",
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         # Update metadata with new suggestions
         metadata = metadata or {}

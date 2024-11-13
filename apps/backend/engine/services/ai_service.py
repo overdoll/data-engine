@@ -5,6 +5,7 @@ from .types import ColumnDef
 from django.conf import settings
 from pydantic import BaseModel
 from uuid import uuid4
+import tiktoken
 
 
 class ColumnClassification(BaseModel):
@@ -16,21 +17,70 @@ class ResponseFormatList(BaseModel):
     classifications: List[ColumnClassification]
 
 
-COLUMN_SAMPLE_SIZE = 10
+class TokenLimitExceededError(Exception):
+    """Raised when a request would exceed the token limit"""
+
+    def __init__(self, token_count: int, limit: int):
+        self.token_count = token_count
+        self.limit = limit
+        super().__init__(f"Token limit exceeded: {token_count} tokens (limit: {limit})")
 
 
 class AIService:
     def __init__(self):
+        self.model = "openai/gpt-4o-2024-08-06"
+        self.tokenizer_encoding = "o200k_base"  # Base model name for tokenizer
+        self.token_limit = 10000  # Add token limit as class attribute
+        self.column_sample_size = 10
+
         self.client = OpenAI(
+            base_url=settings.AI_BASE_URL,
             api_key=settings.AI_API_KEY,
         )
 
-    def _get_column_sample(self, column: ColumnDef) -> List[str]:
-        """Get first x non-null values from column"""
+        # Initialize tokenizer
+        self.encoding = tiktoken.get_encoding(self.tokenizer_encoding)
+
+    def _count_sample_tokens(self, sample: List[str]) -> int:
+        """Count tokens in a sample of column values"""
+        return sum(len(self.encoding.encode(val)) for val in sample)
+
+    def _count_tokens(self, messages: List[Dict[str, str]]) -> int:
+        """Count the number of tokens in the messages"""
+        num_tokens = 0
+        for message in messages:
+            num_tokens += (
+                4  # Every message follows <im_start>{role/name}\n{content}<im_end>\n
+            )
+            for key, value in message.items():
+                if isinstance(value, str):
+                    num_tokens += self._count_sample_tokens([value])
+                if key == "name":  # If there's a name, the role is omitted
+                    num_tokens += -1  # Role is always required and always 1 token
+        num_tokens += 2  # Every reply is primed with <im_start>assistant
+        return num_tokens
+
+    def _get_column_sample(self, column: ColumnDef, max_tokens: int = 100) -> List[str]:
+        """Get first x non-null values from column, limiting by token count"""
         non_empty_values = [val for val in column["data"] if val and val.strip()]
         if len(non_empty_values) == 0:
             return []
-        return non_empty_values[:COLUMN_SAMPLE_SIZE]
+
+        # First try with requested sample size
+        initial_sample = non_empty_values[: self.column_sample_size]
+        token_count = self._count_sample_tokens(initial_sample)
+
+        if token_count <= max_tokens:
+            return initial_sample
+
+        # If too many tokens, reduce sample size
+        for size in range(self.column_sample_size - 1, 0, -1):
+            reduced_sample = non_empty_values[:size]
+            if self._count_sample_tokens(reduced_sample) <= max_tokens:
+                return reduced_sample
+
+        # If even one sample is too large, skip the column
+        return []
 
     def _get_valid_columns(
         self, columns: List[ColumnDef]
@@ -45,7 +95,7 @@ class AIService:
 
             sample = self._get_column_sample(col)
             if sample:
-                valid_columns.append((col, sample))
+                valid_columns.append((col["id"], sample))
 
         return valid_columns
 
@@ -137,8 +187,15 @@ class AIService:
             },
         ]
 
+        token_count = self._count_tokens(messages)
+        print(f"Token count for request: {token_count}")
+
+        if token_count > self.token_limit:
+            print(f"Context: {messages}")
+            raise TokenLimitExceededError(token_count, self.token_limit)
+
         response = self.client.beta.chat.completions.parse(
-            model="gpt-4o-2024-08-06",
+            model=self.model,
             messages=messages,
             response_format=ResponseFormatList,
         )
