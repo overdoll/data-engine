@@ -1,11 +1,10 @@
 import { useCsvData } from "@/utils/api"
 import "ag-grid-enterprise"
 import { AgGridReact } from "ag-grid-react"
-import { ColDef, GridReadyEvent } from "ag-grid-community"
+import { ColDef, GridReadyEvent, IServerSideGetRowsParams } from "ag-grid-community"
 import "ag-grid-community/styles/ag-grid.css"
 import "ag-grid-community/styles/ag-theme-quartz.css"
-import { useMemo, useCallback } from "react"
-import { useDuplicatesStore } from "@/stores/duplicates"
+import { useMemo, useCallback, useRef } from "react"
 
 declare global {
   interface Window {
@@ -27,21 +26,22 @@ function calculateColumnWidth(key: string, values: string[]): number {
   return Math.min(Math.max(maxContentLength * 10, 100), 300)
 }
 
-// Add type for row data
+// Update the RowData interface to include optional children
 interface RowData {
-  [columnId: string]: string
+  [columnId: string]: string | RowData[] | undefined | boolean
   id: string
-  is_duplicate_of_row_id: string
+  is_duplicate_of_row_id?: string
+  has_duplicates?: boolean
+  children?: RowData[]
 }
 
 export function CsvViewer({ fileId }: CsvViewerProps) {
   const { data, error, isLoading } = useCsvData(fileId)
-  const isShowingDuplicates = useDuplicatesStore((state) => state.isShowingDuplicates)
+  const gridRef = useRef<AgGridReact>(null)
 
   const columnDefs = useMemo<ColDef<RowData>[]>(() => {
     if (!data?.columns) return []
 
-    // Sort columns so classified ones come first
     const sortedColumns = [...data.columns].sort((a, b) => {
       if (a.classification && !b.classification) return -1
       if (!a.classification && b.classification) return 1
@@ -63,53 +63,69 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
     }))
   }, [data?.columns, data?.rows])
 
-  const rowData = useMemo(() => {
-    if (!data?.rows) return []
-    return data.rows.map((row) => ({
-      ...row.data,
-      is_duplicate_of_row_id: row.is_duplicate_of_row_id ?? "",
-      id: row.id,
-    }))
+  const serverSideDatasource = useCallback(() => {
+    return {
+      getRows: (params: IServerSideGetRowsParams) => {
+        if (!data?.rows) {
+          params.success({ rowData: [], rowCount: 0 })
+          return
+        }
+
+        if (params.request.groupKeys.length > 0) {
+          const rows = data.rows
+            .filter(
+              (row) =>
+                row.is_duplicate_of_row_id !== "" &&
+                params.request.groupKeys.includes(row.is_duplicate_of_row_id!) &&
+                !params.request.groupKeys.includes(row.id)
+            )
+            .map((row) => ({
+              ...row.data,
+              id: row.id,
+              is_duplicate_of_row_id: undefined,
+            }))
+
+          params.success({
+            rowData: rows,
+            rowCount: rows.length,
+          })
+
+          return
+        }
+
+        // Create a Set of IDs that have duplicates
+        const idsWithDuplicates = new Set(
+          data.rows
+            .filter((row) => !!row.is_duplicate_of_row_id)
+            .map((row) => row.is_duplicate_of_row_id)
+        )
+
+        const rows = data.rows
+          .filter((row) => !row.is_duplicate_of_row_id)
+          .map((row) => ({
+            ...row.data,
+            id: row.id,
+            is_duplicate_of_row_id: undefined,
+            has_duplicates: idsWithDuplicates.has(row.id),
+          }))
+
+        params.success({
+          rowData: rows,
+          rowCount: rows.length,
+        })
+      },
+    }
   }, [data?.rows])
 
-  const onGridReady = useCallback((params: GridReadyEvent) => {
-    window.gridApi = params.api
-  }, [])
+  const onGridReady = useCallback(
+    (params: GridReadyEvent) => {
+      window.gridApi = params.api
 
-  // Update the processedRows logic
-  const processedRows = useMemo(() => {
-    if (!isShowingDuplicates) return rowData
-
-    const result: (RowData & { children?: RowData[] })[] = []
-    const duplicatesMap = new Map<string, RowData[]>()
-
-    // First, group duplicates by their original row id
-    rowData.forEach((row) => {
-      if (row.is_duplicate_of_row_id) {
-        if (!duplicatesMap.has(row.is_duplicate_of_row_id)) {
-          duplicatesMap.set(row.is_duplicate_of_row_id, [])
-        }
-        duplicatesMap.get(row.is_duplicate_of_row_id)?.push(row)
-      }
-    })
-
-    // Then create the tree structure
-    rowData.forEach((row) => {
-      if (!row.is_duplicate_of_row_id) {
-        const duplicates = duplicatesMap.get(row.id) || []
-        if (duplicates.length > 0) {
-          result.push({
-            ...row,
-            children: duplicates,
-          } as RowData & { children?: RowData[] })
-        } else {
-          result.push(row)
-        }
-      }
-    })
-
-    return result
-  }, [rowData, isShowingDuplicates])
+      const datasource = serverSideDatasource()
+      params.api.setGridOption("serverSideDatasource", datasource)
+    },
+    [serverSideDatasource]
+  )
 
   if (isLoading) {
     return <div className="flex-1 p-4">Loading...</div>
@@ -124,35 +140,36 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   return (
     <div className="flex-1 h-[calc(100vh-79px)] w-full ag-theme-quartz">
       <AgGridReact<RowData>
+        ref={gridRef}
         columnDefs={columnDefs}
         defaultColDef={{
           resizable: true,
           sortable: true,
           filter: true,
         }}
-        rowData={processedRows}
+        rowModelType="serverSide"
         domLayout="normal"
         className="h-full w-full"
         onGridReady={onGridReady}
         animateRows={true}
         enableCellTextSelection={true}
         suppressRowClickSelection={true}
-        gridOptions={{
-          treeData: isShowingDuplicates,
-          groupDefaultExpanded: -1, // Expand all by default
-          autoGroupColumnDef: {
-            headerName: "Row",
-            minWidth: 200,
-            field: "id", // Show the id field in the group column
-            cellRendererParams: {
-              suppressCount: true,
-              // don't render anything, it's just a placeholder
-              innerRenderer: () => {
-                return ""
-              },
-            },
-          },
+        treeData={true}
+        getDataPath={(data: RowData) => {
+          return [data.id]
         }}
+        getRowClass={(params) => {
+          const hasChildren = params.data?.children && params.data.children.length > 0
+          return hasChildren ? "has-duplicates" : ""
+        }}
+        isServerSideGroup={(dataItem) => {
+          return dataItem.has_duplicates
+        }}
+        getServerSideGroupKey={(dataItem) => {
+          return dataItem.id
+        }}
+        cacheBlockSize={100}
+        maxBlocksInCache={10}
       />
     </div>
   )

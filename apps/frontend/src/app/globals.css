@@ -23,10 +23,18 @@ body {
   display: none;
 }
 
-.ag-theme-quartz .classified-column {
+.classified-column {
   background-color: #fffbe6 !important; /* Light yellow background */
 }
 
-.ag-theme-quartz .classified-header {
+.classified-header {
   background-color: #fff8d9 !important; /* Slightly darker yellow for headers */
+}
+
+.has-duplicates {
+  background-color: rgba(255, 244, 229, 0.5);
+}
+
+.ag-row-level-1 {
+  background-color: rgba(249, 250, 251, 0.5);
 }
