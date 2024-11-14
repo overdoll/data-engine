@@ -2,6 +2,7 @@
 
 import { FileList } from "./components/FileList"
 import { FileUpload } from "./components/FileUpload"
+import { DuplicatesToggle } from "./components/DuplicatesToggle"
 import { Heading } from "@/components/heading/heading"
 import { Label } from "@/components/label/label"
 
@@ -14,6 +15,7 @@ export default function Home() {
         </Heading>
       </div>
       <FileUpload />
+      <DuplicatesToggle />
       <FileList />
       <Label size="xsmall" className="text-gray-400 text-center">
         All data is automatically deleted after 24 hours

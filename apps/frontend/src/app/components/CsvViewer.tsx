@@ -1,9 +1,11 @@
 import { useCsvData } from "@/utils/api"
+import "ag-grid-enterprise"
 import { AgGridReact } from "ag-grid-react"
-import { ColDef, GridReadyEvent, IDatasource } from "ag-grid-community"
+import { ColDef, GridReadyEvent } from "ag-grid-community"
 import "ag-grid-community/styles/ag-grid.css"
 import "ag-grid-community/styles/ag-theme-quartz.css"
 import { useMemo, useCallback } from "react"
+import { useDuplicatesStore } from "@/stores/duplicates"
 
 declare global {
   interface Window {
@@ -14,6 +16,7 @@ declare global {
 interface CsvViewerProps {
   fileId: string
 }
+
 function calculateColumnWidth(key: string, values: string[]): number {
   // Get max length of header and all cell values
   const maxContentLength = Math.max(
@@ -24,10 +27,18 @@ function calculateColumnWidth(key: string, values: string[]): number {
   return Math.min(Math.max(maxContentLength * 10, 100), 300)
 }
 
+// Add type for row data
+interface RowData {
+  [columnId: string]: string
+  id: string
+  is_duplicate_of_row_id: string
+}
+
 export function CsvViewer({ fileId }: CsvViewerProps) {
   const { data, error, isLoading } = useCsvData(fileId)
+  const isShowingDuplicates = useDuplicatesStore((state) => state.isShowingDuplicates)
 
-  const columnDefs = useMemo<ColDef<{ [columnId: string]: string }>[]>(() => {
+  const columnDefs = useMemo<ColDef<RowData>[]>(() => {
     if (!data?.columns) return []
 
     // Sort columns so classified ones come first
@@ -56,34 +67,49 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
     if (!data?.rows) return []
     return data.rows.map((row) => ({
       ...row.data,
+      is_duplicate_of_row_id: row.is_duplicate_of_row_id ?? "",
       id: row.id,
     }))
   }, [data?.rows])
 
-  const dataSource: IDatasource = useMemo(() => {
-    return {
-      rowCount: rowData.length,
-      getRows: (params) => {
-        const startRow = params.startRow
-        const endRow = params.endRow
-
-        console.log("get rows", startRow, endRow)
-
-        // Get a slice of the data for the requested range
-        const rowsThisBlock = rowData.slice(startRow, endRow)
-        const lastRow = rowData.length
-
-        // Return the rows to the grid
-        setTimeout(() => {
-          params.successCallback(rowsThisBlock, lastRow)
-        }, 0)
-      },
-    }
-  }, [rowData])
-
   const onGridReady = useCallback((params: GridReadyEvent) => {
     window.gridApi = params.api
   }, [])
+
+  // Update the processedRows logic
+  const processedRows = useMemo(() => {
+    if (!isShowingDuplicates) return rowData
+
+    const result: (RowData & { children?: RowData[] })[] = []
+    const duplicatesMap = new Map<string, RowData[]>()
+
+    // First, group duplicates by their original row id
+    rowData.forEach((row) => {
+      if (row.is_duplicate_of_row_id) {
+        if (!duplicatesMap.has(row.is_duplicate_of_row_id)) {
+          duplicatesMap.set(row.is_duplicate_of_row_id, [])
+        }
+        duplicatesMap.get(row.is_duplicate_of_row_id)?.push(row)
+      }
+    })
+
+    // Then create the tree structure
+    rowData.forEach((row) => {
+      if (!row.is_duplicate_of_row_id) {
+        const duplicates = duplicatesMap.get(row.id) || []
+        if (duplicates.length > 0) {
+          result.push({
+            ...row,
+            children: duplicates,
+          } as RowData & { children?: RowData[] })
+        } else {
+          result.push(row)
+        }
+      }
+    })
+
+    return result
+  }, [rowData, isShowingDuplicates])
 
   if (isLoading) {
     return <div className="flex-1 p-4">Loading...</div>
@@ -97,26 +123,36 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
 
   return (
     <div className="flex-1 h-[calc(100vh-79px)] w-full ag-theme-quartz">
-      <AgGridReact<{ [columnId: string]: string }>
+      <AgGridReact<RowData>
         columnDefs={columnDefs}
         defaultColDef={{
           resizable: true,
           sortable: true,
           filter: true,
         }}
-        rowModelType="infinite"
-        datasource={dataSource}
-        cacheBlockSize={100}
-        cacheOverflowSize={2}
-        maxConcurrentDatasourceRequests={1}
-        infiniteInitialRowCount={1000}
-        maxBlocksInCache={10}
+        rowData={processedRows}
         domLayout="normal"
         className="h-full w-full"
         onGridReady={onGridReady}
         animateRows={true}
         enableCellTextSelection={true}
         suppressRowClickSelection={true}
+        gridOptions={{
+          treeData: isShowingDuplicates,
+          groupDefaultExpanded: -1, // Expand all by default
+          autoGroupColumnDef: {
+            headerName: "Row",
+            minWidth: 200,
+            field: "id", // Show the id field in the group column
+            cellRendererParams: {
+              suppressCount: true,
+              // don't render anything, it's just a placeholder
+              innerRenderer: () => {
+                return ""
+              },
+            },
+          },
+        }}
       />
     </div>
   )

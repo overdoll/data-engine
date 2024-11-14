@@ -8,6 +8,7 @@ import { ExportDropdown } from "../../components/ExportDropdown"
 import Head from "next/head"
 import Link from "next/link"
 import { SuggestionsList } from "../../components/SuggestionsList"
+import { DuplicatesToggle } from "../../components/DuplicatesToggle"
 
 export default function FileViewerPage() {
   const params = useParams()
@@ -36,6 +37,7 @@ export default function FileViewerPage() {
           </Label>
         </div>
         <div className="flex items-center gap-2">
+          <DuplicatesToggle />
           <ExportDropdown fileName={metadata.fileName} />
         </div>
       </div>
