@@ -11,6 +11,7 @@ from .base import (
 )
 from .types import ColumnDef
 import phonenumbers
+import splink.comparison_library as cl
 
 
 class ClassifierId(StrEnum):
@@ -55,7 +56,7 @@ class ClassifyColumnOperation(BaseOperation):
     def __init__(self, column_id: str, classification: str):
         self.column_id = column_id
         self.classification = classification
-        self.classifier = get_classifier(classification)
+        self.classifier = get_classifier(classification, column_id)
         if not self.classifier:
             raise InvalidClassificationError(
                 f"Invalid classification: {classification}"
@@ -69,7 +70,7 @@ class ClassifyColumnOperation(BaseOperation):
             raise ColumnNotFoundError(f"Column not found: {self.column_id}")
 
         # Get additional operations from classifier
-        additional_ops = self.classifier.get_operations(self.column_id, target_column)
+        additional_ops = self.classifier.get_operations(target_column)
 
         # Apply classifier's transform if no additional operations
         if not additional_ops:
@@ -88,8 +89,11 @@ class ClassifyColumnOperation(BaseOperation):
 
 
 class NameClassifier(BaseClassifier):
-    @property
-    def id(self) -> str:
+    def __init__(self, column_id: str | None = None):
+        super().__init__(column_id)
+
+    @classmethod
+    def id(cls) -> str:
         return ClassifierId.NAME.value
 
     @property
@@ -107,7 +111,7 @@ class NameClassifier(BaseClassifier):
             name.last.title() if name.last else "",
         )
 
-    def get_operations(self, column_id: str, column: ColumnDef) -> List[BaseOperation]:
+    def get_operations(self, column: ColumnDef) -> List[BaseOperation]:
         """Split name column into first and last name columns"""
         first_names = []
         last_names = []
@@ -125,7 +129,7 @@ class NameClassifier(BaseClassifier):
                 ClassifierId.FIRST_NAME.value,
             ),
             AddColumnOperation("Last Name", last_names, ClassifierId.LAST_NAME.value),
-            RemoveColumnOperation(column_id),
+            RemoveColumnOperation(self.column_id),
         ]
 
     @property
@@ -134,16 +138,23 @@ class NameClassifier(BaseClassifier):
 
 
 class FirstNameClassifier(BaseClassifier):
-    @property
-    def id(self) -> str:
+    def __init__(self, column_id: str | None = None):
+        super().__init__(column_id)
+
+    @classmethod
+    def id(cls) -> str:
         return ClassifierId.FIRST_NAME.value
+
+    @property
+    def splink_comparator(self) -> cl.NameComparison:
+        return cl.NameComparison(self.column_id)
 
     @property
     def situation(self) -> str:
         return "Is a first name of a person"
 
     def transform(self, value: str) -> str:
-        return value.strip().title()
+        return self.standardize_name(value.strip().title())
 
     @property
     def description(self) -> str:
@@ -151,16 +162,23 @@ class FirstNameClassifier(BaseClassifier):
 
 
 class LastNameClassifier(BaseClassifier):
-    @property
-    def id(self) -> str:
+    def __init__(self, column_id: str | None = None):
+        super().__init__(column_id)
+
+    @classmethod
+    def id(cls) -> str:
         return ClassifierId.LAST_NAME.value
+
+    @property
+    def splink_comparator(self) -> cl.NameComparison:
+        return cl.NameComparison(self.column_id)
 
     @property
     def situation(self) -> str:
         return "Is a last name of a person"
 
     def transform(self, value: str) -> str:
-        return value.strip().title()
+        return self.standardize_name(value.strip().title())
 
     @property
     def description(self) -> str:
@@ -168,9 +186,16 @@ class LastNameClassifier(BaseClassifier):
 
 
 class EmailClassifier(BaseClassifier):
-    @property
-    def id(self) -> str:
+    def __init__(self, column_id: str | None = None):
+        super().__init__(column_id)
+
+    @classmethod
+    def id(cls) -> str:
         return ClassifierId.EMAIL.value
+
+    @property
+    def splink_comparator(self) -> cl.EmailComparison:
+        return cl.EmailComparison(self.column_id)
 
     @property
     def situation(self) -> str:
@@ -186,9 +211,16 @@ class EmailClassifier(BaseClassifier):
 
 
 class PhoneClassifier(BaseClassifier):
-    @property
-    def id(self) -> str:
+    def __init__(self, column_id: str | None = None):
+        super().__init__(column_id)
+
+    @classmethod
+    def id(cls) -> str:
         return ClassifierId.PHONE.value
+
+    @property
+    def splink_comparator(self) -> cl.ExactMatch:
+        return cl.ExactMatch(self.column_id).configure(term_frequency_adjustments=True)
 
     @property
     def situation(self) -> str:
@@ -243,9 +275,12 @@ ALL_CLASSIFIERS = (
     PhoneClassifier,
 )
 
-CLASSIFIERS = {classifier().id: classifier() for classifier in ALL_CLASSIFIERS}
+CLASSIFIERS = {classifier.id(): classifier for classifier in ALL_CLASSIFIERS}
 
 
-def get_classifier(classifier_id: str) -> Optional[BaseClassifier]:
+def get_classifier(classifier_id: str, column_id: str) -> Optional[BaseClassifier]:
     """Get a classifier by its ID"""
-    return CLASSIFIERS.get(classifier_id)
+    classifier_class = CLASSIFIERS.get(classifier_id)
+    if classifier_class:
+        return classifier_class(column_id=column_id)
+    return None

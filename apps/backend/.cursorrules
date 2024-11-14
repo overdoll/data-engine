@@ -1,0 +1,2 @@
+Use Splink 4+ if asked about splink
+Use polars instead of pandas if possible if asked about pandas

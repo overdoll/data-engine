@@ -6,4 +6,5 @@ urlpatterns = [
     path("csv/<uuid:uuid>", views.get_csv, name="get_csv"),
     path("csv/<uuid:uuid>/update", views.update_csv, name="update_csv"),
     path("csv/<uuid:uuid>/suggestions", views.get_suggestions, name="get_suggestions"),
+    path("csv/<uuid:uuid>/deduplicate", views.deduplicate_csv, name="deduplicate_csv"),
 ]

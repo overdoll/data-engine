@@ -10,10 +10,12 @@ from .services.base import (
     InvalidClassificationError,
 )
 from .services.column_processor import ColumnOperationService
+from .services.deduplication_service import DeduplicationService
 
 csv_service = CSVService()
 column_operation_service = ColumnOperationService()
 ai_service = AIService()
+deduplication_service = DeduplicationService()
 
 
 @api_view(["POST"])
@@ -137,9 +139,18 @@ def get_suggestions(request, uuid):
     except ValueError:
         print(f"CSV not found for UUID: {uuid}")
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
-    except Exception as e:
-        print(f"Error generating suggestions: {str(e)}")
-        return Response(
-            {"error": "Error generating suggestions"},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+
+
+@api_view(["GET"])
+def deduplicate_csv(request, uuid):
+    try:
+        # Get the existing classified data
+        columns = csv_service.get_data(str(uuid))
+        column_defs, rows = csv_service.transform_to_row_format(columns)
+
+        # Perform deduplication
+        result = deduplication_service.deduplicate(column_defs, rows)
+        return Response(result)
+
+    except ValueError:
+        return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
