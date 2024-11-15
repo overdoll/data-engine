@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import List, Optional, Any
+from typing import List, Optional, Union
+import splink.comparison_library as cl
 from .types import ColumnDef
 
 
@@ -34,9 +35,12 @@ class BaseOperation(ABC):
 
 
 class BaseClassifier(ABC):
-    @property
+    def __init__(self, column_id: str | None = None):
+        self.column_id = column_id
+
+    @classmethod
     @abstractmethod
-    def id(self) -> str:
+    def id(cls) -> str:
         pass
 
     @property
@@ -46,7 +50,10 @@ class BaseClassifier(ABC):
         pass
 
     @property
-    def splink_comparator(self) -> Optional[Any]:
+    def splink_comparator(
+        self,
+    ) -> Optional[Union[cl.NameComparison, cl.EmailComparison, cl.ExactMatch]]:
+        """Define how Splink should compare values for this type"""
         return None
 
     @abstractmethod
@@ -56,7 +63,7 @@ class BaseClassifier(ABC):
     def transform_values(self, values: List[str]) -> List[str]:
         return [self.transform(val) for val in values]
 
-    def get_operations(self, column_id: str, column: ColumnDef) -> List[BaseOperation]:
+    def get_operations(self, column: ColumnDef) -> List[BaseOperation]:
         """Get additional operations to perform when classifying"""
         return []
 
@@ -64,3 +71,9 @@ class BaseClassifier(ABC):
     def description(self) -> str:
         """Return a description of what this classifier does"""
         return ""
+
+    @classmethod
+    def standardize_name(cls, value: str) -> str:
+        """Standardize a name by removing special characters and proper casing"""
+        cleaned = "".join(char for char in value if char.isalnum() or char.isspace())
+        return cleaned.strip().title()

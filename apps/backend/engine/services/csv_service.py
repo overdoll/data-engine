@@ -68,7 +68,7 @@ class CSVService:
             column_id = str(uuid.uuid4())
             column_data = df[col_name].to_list()
             # Convert all values to strings
-            column_data = [str(val) if val is not None else "" for val in column_data]
+            column_data = [str(val) if val is not None else None for val in column_data]
 
             columns.append(
                 {
