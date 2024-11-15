@@ -1,10 +1,13 @@
 import polars as pl
 import boto3
 import json
-import uuid
 from typing import List, BinaryIO
 from django.conf import settings
 from .types import Metadata, ColumnDef, Column, Row
+import random
+import string
+import re
+import uuid
 
 
 class CSVService:
@@ -15,6 +18,32 @@ class CSVService:
             aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
         )
         self.bucket = settings.AWS_STORAGE_BUCKET_NAME
+
+    @classmethod
+    def generate_column_id(cls, label: str) -> str:
+        # Convert to lowercase and replace all non-alphanumeric chars with underscore
+        formatted_label = re.sub(r"[^a-z0-9_]", "_", label.lower())
+
+        # Ensure it starts with a letter (prepend 'col' if it doesn't)
+        if not formatted_label[0].isalpha():
+            formatted_label = f"col_{formatted_label}"
+
+        # Remove consecutive underscores
+        formatted_label = re.sub(r"_+", "_", formatted_label)
+
+        # Remove trailing underscores
+        formatted_label = formatted_label.strip("_")
+
+        # Truncate to max length (leaving room for the 5 chars: _ + 4 random letters)
+        formatted_label = formatted_label[:27]
+
+        # Remove _l or _r from the end if present
+        formatted_label = re.sub(r"_[lr]$", "", formatted_label)
+
+        # Generate the final ID with random suffix
+        return (
+            f"{formatted_label}_{''.join(random.choices(string.ascii_lowercase, k=4))}"
+        )
 
     def get_metadata(self, file_uuid: str) -> Metadata:
         try:
@@ -65,7 +94,10 @@ class CSVService:
     def convert_df_to_columns(self, df: pl.DataFrame) -> List[ColumnDef]:
         columns: List[ColumnDef] = []
         for col_name in df.columns:
-            column_id = str(uuid.uuid4())
+            # Generate a simple ID by combining the column name with 4 random letters
+            column_id = (
+                f"{col_name}_{''.join(random.choices(string.ascii_lowercase, k=4))}"
+            )
             column_data = df[col_name].to_list()
             # Convert all values to strings
             column_data = [str(val) if val is not None else None for val in column_data]
@@ -96,7 +128,7 @@ class CSVService:
             for col in columns
         ]
 
-        # Transform to row format
+        # Transform to row format using simple numeric IDs
         num_rows = len(columns[0]["data"])
         rows = []
 

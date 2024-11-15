@@ -1,6 +1,6 @@
 from typing import Dict, List, Tuple
 from splink import DuckDBAPI, Linker, SettingsCreator, block_on
-import polars as pl
+import pandas as pd
 from .types import ColumnDef, Row
 from .column_processor import get_classifier, ClassifierId
 
@@ -18,11 +18,10 @@ class DeduplicationService:
             column_defs: List of column definitions with id, label, and classification
             rows: List of rows where each row has an id and data dict keyed by column id
         """
+
         # Transform data to format expected by Splink
         transformed_rows = self._rows_to_splink(rows)
-
-        # Create DataFrame with transformed data
-        df = pl.DataFrame(transformed_rows)
+        df = pd.DataFrame(transformed_rows)
 
         # Create settings using column IDs
         settings = self._create_splink_settings(column_defs)
@@ -45,9 +44,9 @@ class DeduplicationService:
         )
 
         return {
+            "rows": processed_rows,
             "original_count": len(rows),
             "deduplicated_count": deduplicated_count,
-            "rows": processed_rows,
         }
 
     def _rows_to_splink(self, rows: List[Row]) -> List[Dict]:
@@ -66,7 +65,6 @@ class DeduplicationService:
         """
         duplicate_mapping = {}
         cluster_groups = clusters.as_pandas_dataframe()
-        print(cluster_groups)
 
         for _, cluster_rows in cluster_groups.groupby("cluster_id"):
             # Sort cluster rows to consistently pick the same canonical record
@@ -124,12 +122,11 @@ class DeduplicationService:
                     comparisons.append(comparison)
 
                     # Add columns with high-confidence classifiers to blocking rules
-                    if classification in blocking_classifiers:
+                    if classifier.id() in blocking_classifiers:
                         blocking_columns.append(col["id"])
 
         # Create blocking rules from appropriate columns
         blocking_rules = [block_on(col_id) for col_id in blocking_columns]
-
         return SettingsCreator(
             link_type="dedupe_only",
             comparisons=comparisons,
