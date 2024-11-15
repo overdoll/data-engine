@@ -1,4 +1,4 @@
-import { create } from 'zustand'
+import { create } from "zustand"
 
 interface DuplicatesStore {
   isShowingDuplicates: boolean
@@ -8,4 +8,4 @@ interface DuplicatesStore {
 export const useDuplicatesStore = create<DuplicatesStore>((set) => ({
   isShowingDuplicates: false,
   toggleDuplicates: () => set((state) => ({ isShowingDuplicates: !state.isShowingDuplicates })),
-})) 
+}))

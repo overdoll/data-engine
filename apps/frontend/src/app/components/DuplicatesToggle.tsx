@@ -7,6 +7,7 @@ export function DuplicatesToggle() {
   const { isShowingDuplicates, toggleDuplicates } = useDuplicatesStore()
   const onToggleDuplicates = useCallback(() => {
     toggleDuplicates()
+    window.gridApi?.refreshServerSide()
     window.gridApi?.refreshCells({ force: true })
   }, [toggleDuplicates])
 

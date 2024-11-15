@@ -99,12 +99,37 @@ export const useFileMetadata = (id: string) => {
   })
 }
 
+function assignRandomDuplicates(
+  rows: CsvData["rows"],
+  duplicatePercentage: number = 0.3
+): CsvData["rows"] {
+  const rowsCopy = [...rows]
+  const numDuplicates = Math.floor(rows.length * duplicatePercentage)
+
+  // Randomly select rows to be marked as duplicates
+  for (let i = 0; i < numDuplicates; i++) {
+    const randomIndex = Math.floor(Math.random() * rowsCopy.length)
+    const randomTargetIndex = Math.floor(Math.random() * rowsCopy.length)
+
+    // Don't create self-references or duplicate existing relationships
+    if (randomIndex !== randomTargetIndex && !rowsCopy[randomIndex].is_duplicate_of_row_id) {
+      rowsCopy[randomIndex].is_duplicate_of_row_id = rowsCopy[randomTargetIndex].id
+    }
+  }
+
+  return rowsCopy
+}
+
 export const useCsvData = (id: string) => {
   return useQuery({
     queryKey: queryKeys.csvData(id),
     queryFn: async () => {
       const { data } = await apiClient.get<CsvData>(`/csv/${id}`)
-      return data
+      // Modify the data to include random duplicates
+      return {
+        ...data,
+        rows: assignRandomDuplicates(data.rows),
+      }
     },
     enabled: !!id,
   })
