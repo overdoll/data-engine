@@ -56,7 +56,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
         col.label,
         data.rows.map((row) => row.data[col.id])
       ),
-      cellClass: col.classification ? "classified-column" : undefined,
+      // cellClass: col.classification ? "classified-column" : undefined,
       headerClass: col.classification ? "classified-header" : undefined,
     }))
   }, [data?.columns, data?.rows])
@@ -69,6 +69,8 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           return
         }
 
+        const isShowingDuplicates = useDuplicatesStore.getState().isShowingDuplicates
+
         if (params.request.groupKeys.length > 0) {
           const rows = data.rows
             .filter(
@@ -80,7 +82,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
             .map((row) => ({
               ...row.data,
               id: row.id,
-              is_duplicate_of_row_id: undefined,
+              is_duplicate_of_row_id: row.is_duplicate_of_row_id,
             }))
 
           params.success({
@@ -107,6 +109,12 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
               is_duplicate_of_row_id: undefined,
               has_duplicates: idsWithDuplicates.has(row.id),
             }))
+            .sort((a, b) => {
+              // Sort by has_duplicates (true first)
+              if (a.has_duplicates && !b.has_duplicates) return -1
+              if (!a.has_duplicates && b.has_duplicates) return 1
+              return 0
+            })
 
           params.success({
             rowData: rows,
@@ -130,7 +138,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
         })
       },
     }
-  }, [data?.rows, isShowingDuplicates])
+  }, [data?.rows])
 
   const onGridReady = useCallback(
     (params: GridReadyEvent) => {
@@ -176,13 +184,20 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           return [data.id]
         }}
         autoGroupColumnDef={{
-          headerName: "Duplicate",
-          minWidth: 200,
+          headerName: "",
+          minWidth: 48,
+          resizable: false,
           flex: 1,
         }}
         getRowClass={(params) => {
-          const hasChildren = params.data?.children && params.data.children.length > 0
-          return hasChildren ? "has-duplicates" : ""
+          const classes = []
+          if (params.data?.has_duplicates) {
+            classes.push("duplicate-parent-row")
+          }
+          if (params.data?.is_duplicate_of_row_id) {
+            classes.push("duplicate-child-row")
+          }
+          return classes.join(" ")
         }}
         isServerSideGroup={(dataItem) => {
           return dataItem.has_duplicates && isShowingDuplicates
