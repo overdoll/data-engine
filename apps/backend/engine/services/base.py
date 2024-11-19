@@ -61,7 +61,7 @@ class BaseClassifier(ABC):
         pass
 
     def transform_values(self, values: List[str]) -> List[str]:
-        return [self.transform(val) for val in values]
+        return [self.transform(val) if val else val for val in values]
 
     def get_operations(self, column: ColumnDef) -> List[BaseOperation]:
         """Get additional operations to perform when classifying"""

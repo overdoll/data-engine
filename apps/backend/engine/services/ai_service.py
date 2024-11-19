@@ -1,6 +1,6 @@
 from typing import List, Dict
 from openai import OpenAI
-from .column_processor import CLASSIFIERS, ClassifierId
+from .column_processor import CLASSIFIERS, ClassifierId, get_classifier
 from .types import ColumnDef
 from django.conf import settings
 from pydantic import BaseModel
@@ -130,7 +130,7 @@ class AIService:
         valid_suggestions = []
         for suggestion in raw_suggestions:
             # Check if classifier exists and column exists
-            classifier = CLASSIFIERS.get(suggestion.classification)
+            classifier = get_classifier(suggestion.classification, suggestion.column_id)
             if classifier and suggestion.column_id in valid_column_ids:
                 valid_suggestions.append(
                     {

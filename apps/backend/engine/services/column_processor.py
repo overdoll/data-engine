@@ -1,5 +1,4 @@
 from enum import StrEnum
-import uuid
 from typing import List, Optional
 from nameparser import HumanName
 from .base import (
@@ -9,6 +8,7 @@ from .base import (
     InvalidClassificationError,
     InvalidActionError,
 )
+from .csv_service import CSVService
 from .types import ColumnDef
 import phonenumbers
 import splink.comparison_library as cl
@@ -35,7 +35,7 @@ class RemoveColumnOperation(BaseOperation):
 
 class AddColumnOperation(BaseOperation):
     def __init__(self, label: str, data: List[str], classification: str | None = None):
-        self.column_id = str(uuid.uuid4())
+        self.column_id = CSVService.generate_column_id(label)
         self.label = label
         self.data = data
         self.classification = classification
@@ -89,8 +89,8 @@ class ClassifyColumnOperation(BaseOperation):
 
 
 class NameClassifier(BaseClassifier):
-    def __init__(self, column_id: str | None = None):
-        super().__init__(column_id)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @classmethod
     def id(cls) -> str:
@@ -138,8 +138,8 @@ class NameClassifier(BaseClassifier):
 
 
 class FirstNameClassifier(BaseClassifier):
-    def __init__(self, column_id: str | None = None):
-        super().__init__(column_id)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @classmethod
     def id(cls) -> str:
@@ -162,8 +162,8 @@ class FirstNameClassifier(BaseClassifier):
 
 
 class LastNameClassifier(BaseClassifier):
-    def __init__(self, column_id: str | None = None):
-        super().__init__(column_id)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @classmethod
     def id(cls) -> str:
@@ -186,8 +186,8 @@ class LastNameClassifier(BaseClassifier):
 
 
 class EmailClassifier(BaseClassifier):
-    def __init__(self, column_id: str | None = None):
-        super().__init__(column_id)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @classmethod
     def id(cls) -> str:
@@ -211,8 +211,8 @@ class EmailClassifier(BaseClassifier):
 
 
 class PhoneClassifier(BaseClassifier):
-    def __init__(self, column_id: str | None = None):
-        super().__init__(column_id)
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     @classmethod
     def id(cls) -> str:
