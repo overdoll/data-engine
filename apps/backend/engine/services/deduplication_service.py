@@ -1,8 +1,8 @@
 from typing import Dict, List, Tuple
-from splink import DuckDBAPI, Linker, SettingsCreator, block_on
+from splink import DuckDBAPI, Linker, SettingsCreator
 import pandas as pd
 from .types import ColumnDef, Row
-from .column_processor import get_classifier, ClassifierId
+from .column_processor import get_classifier
 
 
 class DeduplicationService:
@@ -10,13 +10,16 @@ class DeduplicationService:
         self.threshold = threshold
         self.db_api = DuckDBAPI()
 
-    def deduplicate(self, column_defs: List[ColumnDef], rows: List[Row]) -> Dict:
+    def deduplicate(
+        self, column_defs: List[ColumnDef], rows: List[Row], column_ids: List[str]
+    ) -> Dict:
         """
         Deduplicate data using Splink with Polars
 
         Args:
             column_defs: List of column definitions with id, label, and classification
             rows: List of rows where each row has an id and data dict keyed by column id
+            column_ids: List of column IDs to use for deduplication
         """
 
         # Transform data to format expected by Splink
@@ -24,7 +27,7 @@ class DeduplicationService:
         df = pd.DataFrame(transformed_rows)
 
         # Create settings using column IDs
-        settings = self._create_splink_settings(column_defs)
+        settings = self._create_splink_settings(column_defs, column_ids)
         linker = Linker(df, settings, self.db_api)
 
         # Train the model
@@ -105,15 +108,16 @@ class DeduplicationService:
 
         return processed_rows, deduplicated_count
 
-    def _create_splink_settings(self, column_defs: List[ColumnDef]) -> SettingsCreator:
+    def _create_splink_settings(
+        self, column_defs: List[ColumnDef], column_ids: List[str]
+    ) -> SettingsCreator:
         """Create Splink settings based on classified columns"""
         comparisons = []
-        blocking_columns = []
 
-        # Map of high-confidence classifiers for blocking rules
-        blocking_classifiers = {ClassifierId.EMAIL.value, ClassifierId.PHONE.value}
+        # Filter columns first
+        filtered_columns = [col for col in column_defs if col["id"] in column_ids]
 
-        for col in column_defs:
+        for col in filtered_columns:
             classification = col.get("classification")
             if classification:
                 classifier = get_classifier(classification, col["id"])
@@ -121,14 +125,8 @@ class DeduplicationService:
                     comparison = classifier.splink_comparator
                     comparisons.append(comparison)
 
-                    # Add columns with high-confidence classifiers to blocking rules
-                    if classifier.id() in blocking_classifiers:
-                        blocking_columns.append(col["id"])
-
-        # Create blocking rules from appropriate columns
-        blocking_rules = [block_on(col_id) for col_id in blocking_columns]
         return SettingsCreator(
             link_type="dedupe_only",
             comparisons=comparisons,
-            blocking_rules_to_generate_predictions=blocking_rules,
+            blocking_rules_to_generate_predictions=[],  # we dont use blocking rules for now - not enough data
         )

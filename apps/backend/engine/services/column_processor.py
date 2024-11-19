@@ -7,6 +7,7 @@ from .base import (
     ColumnNotFoundError,
     InvalidClassificationError,
     InvalidActionError,
+    DatasetType,
 )
 from .csv_service import CSVService
 from .types import ColumnDef
@@ -15,11 +16,42 @@ import splink.comparison_library as cl
 
 
 class ClassifierId(StrEnum):
-    NAME = "name"
-    FIRST_NAME = "first_name"
-    LAST_NAME = "last_name"
-    EMAIL = "email"
-    PHONE = "phone"
+    # Classifiers for companies
+    COMPANY_NAME = "company:name"
+    COMPANY_SOCIAL = "company:social"
+    COMPANY_WEBSITE = "company:website"
+    COMPANY_PHONE = "company:phone"
+    COMPANY_EMAIL = "company:email"
+    # Classifiers for people
+    PERSON_NAME = "person:name"
+    PERSON_FIRST_NAME = "person:first_name"
+    PERSON_LAST_NAME = "person:last_name"
+    PERSON_EMAIL = "person:email"
+    PERSON_PHONE = "person:phone"
+    PERSON_ROLE = "person:role"
+    PERSON_SOCIAL = "person:social"
+    PERSON_WEBSITE = "person:website"
+
+
+COMPANY_CLASSIFIERS = (
+    ClassifierId.COMPANY_NAME,
+    ClassifierId.COMPANY_SOCIAL,
+    ClassifierId.COMPANY_WEBSITE,
+    ClassifierId.COMPANY_PHONE,
+    ClassifierId.COMPANY_EMAIL,
+)
+
+PERSON_CLASSIFIERS = (
+    ClassifierId.PERSON_NAME,
+    ClassifierId.PERSON_FIRST_NAME,
+    ClassifierId.PERSON_LAST_NAME,
+    ClassifierId.PERSON_EMAIL,
+    ClassifierId.PERSON_PHONE,
+    ClassifierId.PERSON_ROLE,
+    ClassifierId.PERSON_SOCIAL,
+    ClassifierId.PERSON_WEBSITE,
+    ClassifierId.COMPANY_NAME,
+)
 
 
 class RemoveColumnOperation(BaseOperation):
@@ -88,13 +120,15 @@ class ClassifyColumnOperation(BaseOperation):
         return result
 
 
-class NameClassifier(BaseClassifier):
+class PersonNameClassifier(BaseClassifier):
+    allowed_dataset_types = (DatasetType.PERSON,)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     @classmethod
     def id(cls) -> str:
-        return ClassifierId.NAME.value
+        return ClassifierId.PERSON_NAME.value
 
     @property
     def situation(self) -> str:
@@ -126,9 +160,11 @@ class NameClassifier(BaseClassifier):
             AddColumnOperation(
                 "First Name",
                 first_names,
-                ClassifierId.FIRST_NAME.value,
+                ClassifierId.PERSON_FIRST_NAME.value,
             ),
-            AddColumnOperation("Last Name", last_names, ClassifierId.LAST_NAME.value),
+            AddColumnOperation(
+                "Last Name", last_names, ClassifierId.PERSON_LAST_NAME.value
+            ),
             RemoveColumnOperation(self.column_id),
         ]
 
@@ -137,13 +173,15 @@ class NameClassifier(BaseClassifier):
         return "Splits full names into separate first and last name columns"
 
 
-class FirstNameClassifier(BaseClassifier):
+class PersonFirstNameClassifier(BaseClassifier):
+    allowed_dataset_types = (DatasetType.PERSON,)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     @classmethod
     def id(cls) -> str:
-        return ClassifierId.FIRST_NAME.value
+        return ClassifierId.PERSON_FIRST_NAME.value
 
     @property
     def splink_comparator(self) -> cl.NameComparison:
@@ -161,13 +199,15 @@ class FirstNameClassifier(BaseClassifier):
         return "Standardizes first names by trimming whitespace and proper casing"
 
 
-class LastNameClassifier(BaseClassifier):
+class PersonLastNameClassifier(BaseClassifier):
+    allowed_dataset_types = (DatasetType.PERSON,)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     @classmethod
     def id(cls) -> str:
-        return ClassifierId.LAST_NAME.value
+        return ClassifierId.PERSON_LAST_NAME.value
 
     @property
     def splink_comparator(self) -> cl.NameComparison:
@@ -185,21 +225,9 @@ class LastNameClassifier(BaseClassifier):
         return "Standardizes last names by trimming whitespace and proper casing"
 
 
-class EmailClassifier(BaseClassifier):
+class BaseEmailClassifier(BaseClassifier):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-
-    @classmethod
-    def id(cls) -> str:
-        return ClassifierId.EMAIL.value
-
-    @property
-    def splink_comparator(self) -> cl.EmailComparison:
-        return cl.EmailComparison(self.column_id)
-
-    @property
-    def situation(self) -> str:
-        return "Is a valid email address, usually containing an '@' symbol"
 
     def transform(self, value: str) -> str:
         """Clean and standardize email addresses"""
@@ -210,21 +238,47 @@ class EmailClassifier(BaseClassifier):
         return "Standardizes email addresses by converting to lowercase and trimming whitespace"
 
 
-class PhoneClassifier(BaseClassifier):
+class PersonEmailClassifier(BaseEmailClassifier):
+    allowed_dataset_types = (DatasetType.PERSON,)
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
     @classmethod
     def id(cls) -> str:
-        return ClassifierId.PHONE.value
+        return ClassifierId.PERSON_EMAIL.value
 
     @property
-    def splink_comparator(self) -> cl.ExactMatch:
-        return cl.ExactMatch(self.column_id).configure(term_frequency_adjustments=True)
+    def splink_comparator(self) -> cl.EmailComparison:
+        return cl.EmailComparison(self.column_id)  # TODO weights
 
     @property
     def situation(self) -> str:
-        return "Is a mobile, landline, or other phone number"
+        return "Is a valid email address, usually containing an '@' symbol"
+
+
+class CompanyEmailClassifier(BaseEmailClassifier):
+    allowed_dataset_types = (DatasetType.COMPANY,)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    @classmethod
+    def id(cls) -> str:
+        return ClassifierId.COMPANY_EMAIL.value
+
+    @property
+    def splink_comparator(self) -> cl.EmailComparison:
+        return cl.EmailComparison(self.column_id)  # TODO weights
+
+    @property
+    def situation(self) -> str:
+        return "Is a valid email address of a company, usually containing an '@' symbol and having a prefix like 'info@', 'contact@', 'support@', etc."
+
+
+class BasePhoneClassifier(BaseClassifier):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
     def transform(self, value: str) -> str:
         """Clean and standardize phone numbers"""
@@ -245,6 +299,44 @@ class PhoneClassifier(BaseClassifier):
     @property
     def description(self) -> str:
         return "Formats phone numbers into standardized E.164 format (+12345678900)"
+
+
+class PersonPhoneClassifier(BasePhoneClassifier):
+    allowed_dataset_types = (DatasetType.PERSON,)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    @classmethod
+    def id(cls) -> str:
+        return ClassifierId.PERSON_PHONE.value
+
+    @property
+    def splink_comparator(self) -> cl.ExactMatch:
+        return cl.ExactMatch(self.column_id).configure(term_frequency_adjustments=True)
+
+    @property
+    def situation(self) -> str:
+        return "Is a mobile, landline, or other phone number of a person"
+
+
+class CompanyPhoneClassifier(BasePhoneClassifier):
+    allowed_dataset_types = (DatasetType.COMPANY,)
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+
+    @classmethod
+    def id(cls) -> str:
+        return ClassifierId.COMPANY_PHONE.value
+
+    @property
+    def splink_comparator(self) -> cl.ExactMatch:
+        return cl.ExactMatch(self.column_id).configure(term_frequency_adjustments=True)
+
+    @property
+    def situation(self) -> str:
+        return "Is a phone number of a company, usually containing extensions like 'ext. 1234' or 'x1234'"
 
 
 class ColumnOperationService:
@@ -268,11 +360,13 @@ class ColumnOperationService:
 
 
 ALL_CLASSIFIERS = (
-    NameClassifier,
-    FirstNameClassifier,
-    LastNameClassifier,
-    EmailClassifier,
-    PhoneClassifier,
+    PersonNameClassifier,
+    PersonFirstNameClassifier,
+    PersonLastNameClassifier,
+    PersonEmailClassifier,
+    PersonPhoneClassifier,
+    CompanyEmailClassifier,
+    CompanyPhoneClassifier,
 )
 
 CLASSIFIERS = {classifier.id(): classifier for classifier in ALL_CLASSIFIERS}

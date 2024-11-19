@@ -2,6 +2,12 @@ from abc import ABC, abstractmethod
 from typing import List, Optional, Union
 import splink.comparison_library as cl
 from .types import ColumnDef
+from enum import StrEnum
+
+
+class DatasetType(StrEnum):
+    PERSON = "person"
+    COMPANY = "company"
 
 
 class OperationError(Exception):
@@ -35,6 +41,8 @@ class BaseOperation(ABC):
 
 
 class BaseClassifier(ABC):
+    allowed_dataset_types: tuple[DatasetType, ...] = ()
+
     def __init__(self, column_id: str | None = None):
         self.column_id = column_id
 
