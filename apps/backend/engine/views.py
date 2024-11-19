@@ -243,78 +243,6 @@ def generate_transformation(request, uuid):
 
 
 @api_view(["POST"])
-def apply_transformation(request, uuid):
-    print(f"Received transformation request for UUID: {uuid}")
-    try:
-        column_id = request.data.get("column_id")
-        prompt = request.data.get("prompt")
-
-        if not column_id or not prompt:
-            return Response(
-                {"error": "column_id and prompt are required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        # Get all columns
-        columns = csv_service.get_data(str(uuid))
-
-        # Find the target column
-        target_column = next((col for col in columns if col["id"] == column_id), None)
-
-        if not target_column:
-            return Response(
-                {"error": f"Column {column_id} not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        try:
-            # Get transformation mapping from AI
-            transformations = ai_service.generate_column_transformation(
-                column=target_column, prompt=prompt
-            )
-
-            # Apply transformations to column data
-            updated_data = [
-                transformations.get(val.strip(), val) if val and val.strip() else val
-                for val in target_column["data"]
-            ]
-
-            # Update the column data
-            target_column["data"] = updated_data
-
-            # Save the updated data
-            for i, col in enumerate(columns):
-                if col["id"] == column_id:
-                    columns[i] = target_column
-                    break
-
-            csv_service.save_data(str(uuid), columns)
-
-            return Response(
-                {
-                    "status": "success",
-                    "transformations": transformations,
-                    "column_id": column_id,
-                }
-            )
-
-        except TokenLimitExceededError as e:
-            return Response(
-                {
-                    "error": "token_limit_exceeded",
-                    "message": "This column has too much content to process. Please try with fewer unique values.",
-                    "details": f"Token count: {e.token_count}, Limit: {e.limit}",
-                },
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        except ValueError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    except ValueError:
-        return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
-
-
-@api_view(["POST"])
 def apply_transformations(request, uuid):
     """Apply a set of transformations to a column"""
     try:
@@ -346,6 +274,8 @@ def apply_transformations(request, uuid):
             )
 
         # Apply transformations to column data
+        # TODO create a new operation called UpdateColumnOperation (similar to CreateColumnOperation)
+        # TODO move this logic to update_csv
         updated_data = [
             transformations.get(val.strip(), val) if val and val.strip() else val
             for val in target_column["data"]
