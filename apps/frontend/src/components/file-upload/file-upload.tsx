@@ -16,6 +16,7 @@ export interface FileUploadProps {
   hasError?: boolean
   formats: string[]
   onUploaded: (files: FileType[]) => void
+  pendingFile?: string
 }
 
 export const FileUpload = ({
@@ -25,6 +26,7 @@ export const FileUpload = ({
   hasError,
   formats,
   onUploaded,
+  pendingFile,
 }: FileUploadProps) => {
   const [isDragOver, setIsDragOver] = useState<boolean>(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -95,6 +97,7 @@ export const FileUpload = ({
       <button
         ref={dropZoneRef}
         type="button"
+        disabled={!!pendingFile}
         onClick={handleOpenFileSelector}
         onDrop={handleDrop}
         onDragOver={(e) => e.preventDefault()}
@@ -114,6 +117,7 @@ export const FileUpload = ({
           <ArrowDownTray />
           <Text>{label}</Text>
         </div>
+        {pendingFile && <Text>Uploading {pendingFile}... </Text>}
         {!!hint && (
           <Text
             size="small"
@@ -131,6 +135,7 @@ export const FileUpload = ({
         type="file"
         accept={formats.join(",")}
         multiple={multiple}
+        disabled={!!pendingFile}
       />
     </div>
   )

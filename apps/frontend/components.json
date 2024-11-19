@@ -15,6 +15,7 @@
     "utils": "@/utils",
     "icons": "@/icons",
     "hooks": "@/hooks",
-    "stores": "@/stores"
+    "stores": "@/stores",
+    "types": "@/types"
   }
 }

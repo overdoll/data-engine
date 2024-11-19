@@ -8,12 +8,14 @@ import { ApplySuggestionsButton } from "./ApplySuggestionsButton"
 import { useSuggestionsStore } from "@/stores/suggestions"
 import { useEffect, useRef } from "react"
 import { SingleColumnPageSkeleton } from "@/components/skeleton"
+import { useMostRecentUpload } from "@/stores/mostRecentUpload"
 
 export function SuggestionsList({ fileId }: { fileId: string }) {
   const { toggleSuggestion, isSelected } = useSuggestionsStore()
+  const mostRecentFileId = useMostRecentUpload((state) => state.fileId)
   const hasSelectedOnce = useRef(false)
 
-  const { data: suggestions, isLoading } = useSuggestions(fileId)
+  const { data: suggestions, isLoading } = useSuggestions(fileId, !mostRecentFileId)
 
   useEffect(() => {
     if (suggestions && !isLoading && !hasSelectedOnce.current) {

@@ -1,21 +1,35 @@
-import { useUploadFile } from "@/utils/api"
 import { FileUpload as FileUploadComponent } from "@/components/file-upload"
+import { useUploadFile } from "@/utils/api"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
+import { useMostRecentUpload } from "@/stores/mostRecentUpload"
 
 export function FileUpload() {
-  const { mutate, error } = useUploadFile()
+  const router = useRouter()
+  const { mutate, isPending } = useUploadFile()
+  const [pendingFile, setPendingFile] = useState<string | undefined>(undefined)
+  const setMostRecentFileId = useMostRecentUpload((state) => state.setFileId)
 
   return (
-    <div className="flex items-center gap-4 w-[300px]">
-      <FileUploadComponent
-        hasError={!!error}
-        label="Upload File"
-        formats={["csv"]}
-        onUploaded={(files) => {
-          const formData = new FormData()
-          formData.append("file", files[0].file)
-          mutate(formData)
-        }}
-      />
-    </div>
+    <FileUploadComponent
+      label="Upload File"
+      formats={["csv"]}
+      pendingFile={isPending ? pendingFile : undefined}
+      onUploaded={(files) => {
+        const file = files[0].file
+        setPendingFile(file.name)
+
+        const formData = new FormData()
+        formData.append("file", file)
+
+        mutate(formData, {
+          onSuccess: (response) => {
+            setPendingFile(undefined)
+            setMostRecentFileId(response.id)
+            router.push(`/files/${response.friendlyId}`)
+          },
+        })
+      }}
+    />
   )
 }

@@ -9,6 +9,7 @@ import Head from "next/head"
 import Link from "next/link"
 import { SuggestionsList } from "../../components/SuggestionsList"
 import { DuplicatesToggle } from "../../components/DuplicatesToggle"
+import { TypeSelectionModal } from "../../components/TypeSelectionModal"
 
 export default function FileViewerPage() {
   const params = useParams()
@@ -47,6 +48,7 @@ export default function FileViewerPage() {
           <SuggestionsList fileId={metadata.id} />
         </div>
       </div>
+      <TypeSelectionModal fileId={metadata.id} />
     </main>
   )
 }
