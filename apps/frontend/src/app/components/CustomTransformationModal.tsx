@@ -17,7 +17,7 @@ interface CustomTransformationModalProps {
     description: string
     columnId: string
     transformations: Record<string, string>
-  }) => void
+  }) => Promise<void>
   fileId: string
   isApplying: boolean
 }
@@ -68,10 +68,10 @@ export function CustomTransformationModal({
     }
   }
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!Object.keys(transformations).length) return
 
-    onSubmit({
+    await onSubmit({
       description,
       columnId: selectedColumn,
       transformations,

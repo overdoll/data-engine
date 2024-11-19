@@ -1,7 +1,6 @@
 import { Input } from "@/components/input"
 import { Loader2, ArrowRight } from "lucide-react"
 import { Table } from "@/components/table"
-import { Label } from "@/components/label"
 
 interface TransformationPreviewTableProps {
   isLoading: boolean
