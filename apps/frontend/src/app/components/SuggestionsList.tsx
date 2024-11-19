@@ -9,6 +9,7 @@ import { useSuggestionsStore } from "@/stores/suggestions"
 import { useEffect, useRef } from "react"
 import { SingleColumnPageSkeleton } from "@/components/skeleton"
 import { useMostRecentUpload } from "@/stores/mostRecentUpload"
+import { CustomTransformation } from "./CustomTransformation"
 
 export function SuggestionsList({ fileId }: { fileId: string }) {
   const { toggleSuggestion, isSelected } = useSuggestionsStore()
@@ -56,9 +57,7 @@ export function SuggestionsList({ fileId }: { fileId: string }) {
           {suggestions?.map((suggestion) => (
             <Suggestion key={suggestion.suggestion_id} suggestion={suggestion} />
           ))}
-          {suggestions?.length === 0 && (
-            <p className="text-sm text-gray-500">No suggestions available</p>
-          )}
+          <CustomTransformation fileId={fileId} />
         </div>
       </div>
     </div>

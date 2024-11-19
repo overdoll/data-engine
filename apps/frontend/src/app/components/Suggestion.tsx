@@ -23,7 +23,7 @@ export function Suggestion({ suggestion }: SuggestionProps) {
       onClick={() => toggleSuggestion(suggestion)}
     >
       <div className="flex items-start pt-0.5">
-        <Checkbox checked={selected} onCheckedChange={() => toggleSuggestion(suggestion)} />
+        <Checkbox checked={selected} />
       </div>
       <div className="flex-1">
         <Label className="font-medium mb-1">{suggestion.label}</Label>

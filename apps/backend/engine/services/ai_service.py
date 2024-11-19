@@ -26,6 +26,15 @@ class TokenLimitExceededError(Exception):
         super().__init__(f"Token limit exceeded: {token_count} tokens (limit: {limit})")
 
 
+class TransformationMapping(BaseModel):
+    original: str
+    transformed: str
+
+
+class TransformationResponse(BaseModel):
+    transformations: List[TransformationMapping]
+
+
 class AIService:
     def __init__(self):
         self.model = "openai/gpt-4o-2024-08-06"
@@ -202,3 +211,74 @@ class AIService:
 
         raw_suggestions = response.choices[0].message.parsed.classifications
         return self._validate_suggestions(raw_suggestions, columns)
+
+    def generate_column_transformation(
+        self, column: ColumnDef, prompt: str, max_unique_values: int = 100
+    ) -> Dict:
+        """
+        Generate transformation suggestions for column values based on user prompt
+
+        Args:
+            column: Column to transform
+            prompt: User's transformation request
+            max_unique_values: Maximum number of unique values to process
+
+        Returns:
+            Dictionary containing column_id and transformations mapping
+        """
+        # Get unique values for the column
+        unique_values = set(
+            val.strip() for val in column["data"] if val and val.strip()
+        )
+        if len(unique_values) > max_unique_values:
+            raise ValueError(
+                f"Column has too many unique values ({len(unique_values)}). "
+                f"Maximum allowed is {max_unique_values}"
+            )
+
+        # Build context string
+        column_context = f"Unique Values: {', '.join(unique_values)}"
+
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a data transformation assistant. For each unique value in the column, "
+                    "you will suggest a transformed value based on the user's request. "
+                    "Respond with a mapping of original values to transformed values. "
+                    "Only transform values if they match the user's requirements. "
+                    "If a value should not be transformed, still include it in the response."
+                ),
+            },
+            {
+                "role": "user",
+                "content": (
+                    f"Transform these values according to this request: {prompt}\n\n"
+                    f"Here are the unique values:\n{column_context}"
+                ),
+            },
+        ]
+
+        token_count = self._count_tokens(messages)
+        print(f"Token count for transformation request: {token_count}")
+
+        if token_count > self.token_limit:
+            raise TokenLimitExceededError(token_count, self.token_limit)
+
+        response = self.client.beta.chat.completions.parse(
+            model=self.model,
+            messages=messages,
+            response_format=TransformationResponse,
+        )
+
+        # Get the first (and only) mapping from response
+        mappings = response.choices[0].message.parsed.transformations
+
+        # Validate transformations
+        valid_transformations = {
+            mapping.original: mapping.transformed
+            for mapping in mappings
+            if mapping.original in unique_values
+        }
+
+        return valid_transformations

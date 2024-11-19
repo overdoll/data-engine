@@ -1,10 +1,9 @@
 "use client"
 
-import { Button } from "@/components/button"
 import { useApplySuggestion } from "@/utils/api"
 import { useSuggestionsStore } from "@/stores/suggestions"
 import { toast } from "@/utils/toast"
-import WandSparkle from "@/icons/wand-sparkle"
+import { FixButton } from "./FixButton"
 
 interface ApplySuggestionsButtonProps {
   fileId: string
@@ -35,15 +34,9 @@ export function ApplySuggestionsButton({ fileId }: ApplySuggestionsButtonProps) 
   }
 
   return (
-    <Button
-      variant="secondary"
-      size="small"
+    <FixButton
       onClick={handleApplySelected}
       disabled={isPending || selectedSuggestions.length === 0}
-      className="bg-amber-50 hover:bg-amber-100 border-amber-200 text-amber-700 hover:text-amber-800 flex items-center gap-2"
-    >
-      <WandSparkle className="w-4 h-4" />
-      Fix
-    </Button>
+    />
   )
 }

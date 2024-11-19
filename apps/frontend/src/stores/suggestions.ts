@@ -6,6 +6,7 @@ interface SuggestionsState {
   toggleSuggestion: (suggestions: Suggestion | Suggestion[]) => void
   isSelected: (suggestions: Suggestion | Suggestion[]) => boolean
   clearSelections: () => void
+  addCustomSuggestion: (suggestion: Suggestion) => void
 }
 
 export const useSuggestionsStore = create<SuggestionsState>((set, get) => ({
@@ -42,4 +43,10 @@ export const useSuggestionsStore = create<SuggestionsState>((set, get) => ({
   },
 
   clearSelections: () => set({ selectedSuggestions: [] }),
+
+  addCustomSuggestion: (suggestion) =>
+    set((state) => ({
+      suggestions: [...(state.suggestions || []), suggestion],
+      selectedSuggestions: [...state.selectedSuggestions, suggestion.suggestion_id],
+    })),
 }))
