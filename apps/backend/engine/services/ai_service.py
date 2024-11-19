@@ -1,6 +1,6 @@
 from typing import List, Dict
 from openai import OpenAI
-from .column_processor import CLASSIFIERS, ClassifierId, get_classifier
+from .column_processor import CLASSIFIERS, ClassifierId, get_classifier, DatasetType
 from .types import ColumnDef
 from django.conf import settings
 from pydantic import BaseModel
@@ -8,12 +8,16 @@ from uuid import uuid4
 import tiktoken
 
 
+class DatasetTypeResponse(BaseModel):
+    dataset_type: DatasetType
+
+
 class ColumnClassification(BaseModel):
     column_id: str
     classification: ClassifierId
 
 
-class ResponseFormatList(BaseModel):
+class ClassificationResponse(BaseModel):
     classifications: List[ColumnClassification]
 
 
@@ -104,7 +108,7 @@ class AIService:
 
             sample = self._get_column_sample(col)
             if sample:
-                valid_columns.append((col["id"], sample))
+                valid_columns.append((col["id"], col["label"], sample))
 
         return valid_columns
 
@@ -114,17 +118,18 @@ class AIService:
 
         return "\n".join(
             [
-                f"Column '{id}' Sample Content: {', '.join(sample)}"
-                for id, sample in sample_columns
+                f"Column: '{id}' (labelled as '{label}') Sample Content: Sample Data: {', '.join(sample)}"
+                for id, label, sample in sample_columns
             ]
         )
 
-    def _get_classifier_context(self) -> str:
+    def _get_classifier_context(self, dataset_type: DatasetType) -> str:
         """Get context for classifiers for AI"""
         return "\n".join(
             [
                 f"- {c_id}: {classifier.situation}"
                 for c_id, classifier in CLASSIFIERS.items()
+                if dataset_type in classifier.allowed_dataset_types
             ]
         )
 
@@ -163,10 +168,10 @@ class AIService:
         return valid_suggestions
 
     def get_column_suggestions(
-        self, columns: List[ColumnDef]
+        self, columns: List[ColumnDef], dataset_type: DatasetType
     ) -> List[ColumnClassification]:
         """Get AI suggestions for column classifications"""
-        classifiers_context = self._get_classifier_context()
+        classifiers_context = self._get_classifier_context(dataset_type)
         columns_context = self._get_column_context(columns)
 
         messages = [
@@ -206,7 +211,7 @@ class AIService:
         response = self.client.beta.chat.completions.parse(
             model=self.model,
             messages=messages,
-            response_format=ResponseFormatList,
+            response_format=ClassificationResponse,
         )
 
         raw_suggestions = response.choices[0].message.parsed.classifications

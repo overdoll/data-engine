@@ -8,6 +8,7 @@ from .services.base import (
     ColumnNotFoundError,
     InvalidActionError,
     InvalidClassificationError,
+    DatasetType,
 )
 from .services.column_processor import ColumnOperationService
 from .services.deduplication_service import DeduplicationService
@@ -59,6 +60,27 @@ def update_csv(request, uuid):
     try:
         columns = csv_service.get_data(str(uuid))
         updates = request.data.get("updates", [])
+        metadata_updates = request.data.get("metadata", {})
+
+        # Handle dataset_type update if provided
+        if "dataset_type" in metadata_updates:
+            dataset_type = metadata_updates["dataset_type"]
+            # Validate dataset_type value
+            if not dataset_type or dataset_type not in [dt.value for dt in DatasetType]:
+                return Response(
+                    {"error": f"Invalid dataset_type: {dataset_type}"},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Check if any columns are already classified
+            classified_columns = [col for col in columns if col.get("classification")]
+            if classified_columns:
+                return Response(
+                    {
+                        "error": "Cannot change dataset_type after columns have been classified. Please upload a new file."
+                    },
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
 
         operations = []
         for update in updates:
@@ -72,14 +94,20 @@ def update_csv(request, uuid):
             ) as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        columns = column_operation_service.apply_operations(columns, operations)
-        csv_service.save_data(str(uuid), columns)
+        if operations:
+            columns = column_operation_service.apply_operations(columns, operations)
+            csv_service.save_data(str(uuid), columns)
 
-        # Update metadata to remove applied suggestions
+        # Update metadata
         try:
             metadata = csv_service.get_metadata(str(uuid)) or {}
-            if "suggestions" in metadata:
-                # Remove suggestions for any columns that were classified
+
+            # Update dataset_type if provided
+            if "dataset_type" in metadata_updates:
+                metadata["dataset_type"] = metadata_updates["dataset_type"]
+
+            # Handle existing suggestion removal logic
+            if "suggestions" in metadata and operations:
                 classified_columns = [
                     update["column_id"]
                     for update in updates
@@ -90,9 +118,11 @@ def update_csv(request, uuid):
                     for s in metadata["suggestions"]
                     if s.get("column_id") not in classified_columns
                 ]
-                csv_service.save_metadata(str(uuid), metadata)
-        except Exception:
+
+            csv_service.save_metadata(str(uuid), metadata)
+        except Exception as e:
             # Don't fail the operation if metadata update fails
+            print(f"Failed to update metadata: {str(e)}")
             pass
 
         return Response({"status": "success"})
@@ -117,7 +147,9 @@ def get_suggestions(request, uuid):
         # Generate new suggestions if none exist
         print(f"Retrieved {len(columns)} columns, getting AI suggestions")
         try:
-            suggestions = ai_service.get_column_suggestions(columns)
+            suggestions = ai_service.get_column_suggestions(
+                columns, metadata["dataset_type"]
+            )
         except TokenLimitExceededError as e:
             return Response(
                 {
@@ -141,15 +173,22 @@ def get_suggestions(request, uuid):
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
 
 
-@api_view(["GET"])
+@api_view(["POST"])
 def deduplicate_csv(request, uuid):
     try:
+        # Get column_ids from request body
+        column_ids = request.data.get("column_ids", [])
+        if not column_ids:
+            return Response(
+                {"error": "No column_ids provided"}, status=status.HTTP_400_BAD_REQUEST
+            )
+
         # Get the existing classified data
         columns = csv_service.get_data(str(uuid))
         column_defs, rows = csv_service.transform_to_row_format(columns)
 
         # Perform deduplication
-        result = deduplication_service.deduplicate(column_defs, rows)
+        result = deduplication_service.deduplicate(column_defs, rows, column_ids)
         return Response(result)
 
     except ValueError:
