@@ -18,11 +18,7 @@ import { clx } from "@/utils/clx"
  */
 const Root = React.forwardRef<HTMLTableElement, React.HTMLAttributes<HTMLTableElement>>(
   ({ className, ...props }, ref) => (
-    <table
-      ref={ref}
-      className={clx("text-ui-fg-subtle txt-compact-small w-full", className)}
-      {...props}
-    />
+    <table ref={ref} className={clx("txt-compact-small w-full", className)} {...props} />
   )
 )
 Root.displayName = "Table"
@@ -81,7 +77,11 @@ const Body = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <tbody ref={ref} className={clx("border-ui-border-base border-b", className)} {...props} />
+  <tbody
+    ref={ref}
+    className={clx("text-ui-fg-subtle border-ui-border-base border-b", className)}
+    {...props}
+  />
 ))
 Body.displayName = "Table.Body"
 
