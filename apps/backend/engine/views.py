@@ -42,7 +42,7 @@ def upload_csv(request):
     # Detect dataset type using AI
     try:
         dataset_type_result = ai_service.detect_dataset_type(columns)
-        metadata["dataset_type"] = dataset_type_result.dataset_type
+        metadata["dataset_type"] = dataset_type_result
     except TokenLimitExceededError:
         # If too many tokens we don't detect the dataset type
         metadata["dataset_type"] = None
