@@ -6,8 +6,8 @@ from enum import StrEnum
 
 
 class DatasetType(StrEnum):
-    PERSON = "person"
-    COMPANY = "company"
+    PERSON = "PERSON"
+    COMPANY = "COMPANY"
 
 
 class OperationError(Exception):

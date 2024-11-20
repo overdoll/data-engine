@@ -30,27 +30,43 @@ def upload_csv(request):
     df = csv_service.parse_csv(file)
     file_uuid = str(uuid.uuid4())
 
-    # Create metadata
+    # Create metadata with detected dataset type
     metadata: Metadata = {
-        "storageEngine": "v1",
-        "originalFilename": file.name,
+        "storage_engine": "v1",
+        "original_filename": file.name,
     }
 
-    # Convert DataFrame to column-based format and save
+    # Convert DataFrame to column-based format
     columns = csv_service.convert_df_to_columns(df)
+
+    # Detect dataset type using AI
+    try:
+        dataset_type_result = ai_service.detect_dataset_type(columns)
+        metadata["dataset_type"] = dataset_type_result.dataset_type
+    except TokenLimitExceededError:
+        # If too many tokens we don't detect the dataset type
+        metadata["dataset_type"] = None
+
+    # Save data and metadata
     csv_service.save_data(file_uuid, columns)
     csv_service.save_metadata(file_uuid, metadata)
 
-    return Response({"uuid": file_uuid})
+    return Response(
+        {
+            "uuid": file_uuid,
+            "metadata": metadata,
+        }
+    )
 
 
 @api_view(["GET"])
 def get_csv(request, uuid):
     try:
+        metadata = csv_service.get_metadata(str(uuid))
         columns = csv_service.get_data(str(uuid))
         column_defs, rows = csv_service.transform_to_row_format(columns)
 
-        return Response({"columns": column_defs, "rows": rows})
+        return Response({"columns": column_defs, "rows": rows, "metadata": metadata})
     except ValueError:
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
 

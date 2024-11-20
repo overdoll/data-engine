@@ -41,7 +41,7 @@ class TransformationResponse(BaseModel):
 
 class AIService:
     def __init__(self):
-        self.model = "openai/gpt-4o-2024-08-06"
+        self.model = "openai/gpt-4o"
         self.tokenizer_encoding = "o200k_base"  # Base model name for tokenizer
         self.token_limit = 10000  # Add token limit as class attribute
         self.column_sample_size = 10
@@ -287,3 +287,36 @@ class AIService:
         }
 
         return valid_transformations
+
+    def detect_dataset_type(self, columns: List[ColumnDef]) -> DatasetTypeResponse:
+        """Detect the type of dataset based on column contents"""
+        columns_context = self._get_column_context(columns)
+
+        messages = [
+            {
+                "role": "system",
+                "content": (
+                    "You are a data classifier that analyzes CSV contents to determine the type of dataset. "
+                    "Available dataset types are:\n"
+                    "- PERSON: Contains personal/individual information like names, emails, addresses\n"
+                    "- COMPANY: Contains business/organizational data like company names, revenue, employees\n"
+                    "\nAnalyze the column contents and determine if this is PERSON or COMPANY data."
+                ),
+            },
+            {
+                "role": "user",
+                "content": f"Analyze these columns and determine the dataset type:\n{columns_context}",
+            },
+        ]
+
+        token_count = self._count_tokens(messages)
+        if token_count > self.token_limit:
+            raise TokenLimitExceededError(token_count, self.token_limit)
+
+        response = self.client.beta.chat.completions.parse(
+            model="openai/gpt-4o-mini",  # so it is fast
+            messages=messages,
+            response_format=DatasetTypeResponse,
+        )
+
+        return response.choices[0].message.parsed
