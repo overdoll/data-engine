@@ -367,7 +367,7 @@ class ColumnOperationService:
             return ClassifyColumnOperation(
                 kwargs["column_id"], kwargs["classification"]
             )
-        elif action == "update_column":
+        elif action == "update_column_values":
             return UpdateColumnValuesOperation(kwargs["column_id"], kwargs["updates"])
         else:
             raise InvalidActionError(f"Invalid action: {action}")

@@ -282,7 +282,7 @@ def apply_transformations(request, uuid):
 
         # Create and apply the update operation
         operation = column_operation_service.create_operation(
-            action="update_column", column_id=column_id, updates=transformations
+            action="update_column_values", column_id=column_id, updates=transformations
         )
 
         updated_columns = column_operation_service.apply_operations(
