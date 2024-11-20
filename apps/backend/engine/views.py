@@ -280,33 +280,15 @@ def apply_transformations(request, uuid):
         # Get all columns
         columns = csv_service.get_data(str(uuid))
 
-        # Find the target column
-        target_column = next((col for col in columns if col["id"] == column_id), None)
+        # Create and apply the update operation
+        operation = column_operation_service.create_operation(
+            action="update_column", column_id=column_id, updates=transformations
+        )
 
-        if not target_column:
-            return Response(
-                {"error": f"Column {column_id} not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        # Apply transformations to column data
-        # TODO create a new operation called UpdateColumnOperation (similar to CreateColumnOperation)
-        # TODO move this logic to update_csv
-        updated_data = [
-            transformations.get(val.strip(), val) if val and val.strip() else val
-            for val in target_column["data"]
-        ]
-
-        # Update the column data
-        target_column["data"] = updated_data
-
-        # Save the updated data
-        for i, col in enumerate(columns):
-            if col["id"] == column_id:
-                columns[i] = target_column
-                break
-
-        csv_service.save_data(str(uuid), columns)
+        updated_columns = column_operation_service.apply_operations(
+            columns, [operation]
+        )
+        csv_service.save_data(str(uuid), updated_columns)
 
         return Response(
             {
@@ -316,5 +298,10 @@ def apply_transformations(request, uuid):
             }
         )
 
+    except ColumnNotFoundError:
+        return Response(
+            {"error": f"Column {column_id} not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )
     except ValueError:
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)

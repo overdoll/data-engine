@@ -84,6 +84,26 @@ class AddColumnOperation(BaseOperation):
         return columns
 
 
+class UpdateColumnValuesOperation(BaseOperation):
+    def __init__(self, column_id: str, updates: dict[str, str]):
+        self.column_id = column_id
+        self.updates = updates
+
+    def apply(self, columns: List[ColumnDef]) -> List[ColumnDef]:
+        target_column = next(
+            (col for col in columns if col["id"] == self.column_id), None
+        )
+        if not target_column:
+            raise ColumnNotFoundError(f"Column not found: {self.column_id}")
+
+        # Create a mapping of old value to new value
+        for i, value in enumerate(target_column["data"]):
+            if value in self.updates:
+                target_column["data"][i] = self.updates[value]
+
+        return columns
+
+
 class ClassifyColumnOperation(BaseOperation):
     def __init__(self, column_id: str, classification: str):
         self.column_id = column_id
@@ -347,6 +367,8 @@ class ColumnOperationService:
             return ClassifyColumnOperation(
                 kwargs["column_id"], kwargs["classification"]
             )
+        elif action == "update_column":
+            return UpdateColumnValuesOperation(kwargs["column_id"], kwargs["updates"])
         else:
             raise InvalidActionError(f"Invalid action: {action}")
 

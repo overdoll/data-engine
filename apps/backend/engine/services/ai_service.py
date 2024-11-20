@@ -253,6 +253,7 @@ class AIService:
                     "Respond with a mapping of original values to transformed values. "
                     "Only transform values if they match the user's requirements. "
                     "If a value should not be transformed, still include it in the response."
+                    "Do not completely overwrite the value, unless the user requests it. The new value should be similar to the original."
                 ),
             },
             {
