@@ -213,7 +213,7 @@ export const useApplySuggestion = (fileId: string) => {
 
 // Add new interface for transformation response
 export interface Transformation {
-  [key: string]: string  // Original value -> transformed value mapping
+  [key: string]: string // Original value -> transformed value mapping
 }
 
 // Add new mutation for generating transformations
@@ -221,7 +221,7 @@ export const useGenerateTransformation = (fileId: string) => {
   return useMutation({
     mutationFn: async ({ columnId, prompt }: { columnId: string; prompt: string }) => {
       const { data } = await apiClient.post<Transformation>(
-        `/csv/${fileId}/generate-transformation`,
+        `/csv/${fileId}/generate-column-values`,
         {
           column_id: columnId,
           prompt,
@@ -235,22 +235,19 @@ export const useGenerateTransformation = (fileId: string) => {
 // Add new mutation for applying transformations
 export const useApplyTransformations = (fileId: string) => {
   const queryClient = useQueryClient()
-  
+
   return useMutation({
-    mutationFn: async ({ 
-      columnId, 
-      transformations 
-    }: { 
-      columnId: string; 
-      transformations: Record<string, string>; 
+    mutationFn: async ({
+      columnId,
+      transformations,
+    }: {
+      columnId: string
+      transformations: Record<string, string>
     }) => {
-      const { data } = await apiClient.post(
-        `/csv/${fileId}/apply-transformations`,
-        {
-          column_id: columnId,
-          transformations,
-        }
-      )
+      const { data } = await apiClient.post(`/csv/${fileId}/update-column-values`, {
+        column_id: columnId,
+        transformations,
+      })
       return data
     },
     onSuccess: async () => {

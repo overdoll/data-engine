@@ -212,7 +212,7 @@ def deduplicate_csv(request, uuid):
 
 
 @api_view(["POST"])
-def generate_transformation(request, uuid):
+def generate_column_values(request, uuid):
     try:
         column_id = request.data.get("column_id")
         prompt = request.data.get("prompt")
@@ -259,8 +259,8 @@ def generate_transformation(request, uuid):
 
 
 @api_view(["POST"])
-def apply_transformations(request, uuid):
-    """Apply a set of transformations to a column"""
+def update_column_values(request, uuid):
+    """Update values in a column based on provided transformations"""
     try:
         column_id = request.data.get("column_id")
         transformations = request.data.get("transformations")
