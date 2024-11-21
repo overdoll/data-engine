@@ -167,6 +167,34 @@ class AIService:
 
         return valid_suggestions
 
+    def _make_completion_call(
+        self,
+        messages: List[Dict[str, str]],
+        response_format: type[BaseModel],
+        model: str | None = None,
+    ):
+        """
+        Make a standardized completion call with token validation
+
+        Args:
+            messages: List of message dictionaries
+            response_format: Pydantic model to parse response into
+            model: Optional model override. Uses self.model if not specified
+        """
+        token_count = self._count_tokens(messages)
+        print(f"Token count for request: {token_count}")
+
+        if token_count > self.token_limit:
+            raise TokenLimitExceededError(token_count, self.token_limit)
+
+        response = self.client.beta.chat.completions.parse(
+            model=model or self.model,
+            messages=messages,
+            response_format=response_format,
+        )
+
+        return response.choices[0].message.parsed
+
     def get_column_suggestions(
         self, columns: List[ColumnDef], dataset_type: DatasetType
     ) -> List[ColumnClassification]:
@@ -201,37 +229,16 @@ class AIService:
             },
         ]
 
-        token_count = self._count_tokens(messages)
-        print(f"Token count for request: {token_count}")
+        raw_suggestions = self._make_completion_call(
+            messages, ClassificationResponse
+        ).classifications
 
-        if token_count > self.token_limit:
-            print(f"Context: {messages}")
-            raise TokenLimitExceededError(token_count, self.token_limit)
-
-        response = self.client.beta.chat.completions.parse(
-            model=self.model,
-            messages=messages,
-            response_format=ClassificationResponse,
-        )
-
-        raw_suggestions = response.choices[0].message.parsed.classifications
         return self._validate_suggestions(raw_suggestions, columns)
 
     def generate_column_transformation(
         self, column: ColumnDef, prompt: str, max_unique_values: int = 100
     ) -> Dict:
-        """
-        Generate transformation suggestions for column values based on user prompt
-
-        Args:
-            column: Column to transform
-            prompt: User's transformation request
-            max_unique_values: Maximum number of unique values to process
-
-        Returns:
-            Dictionary containing column_id and transformations mapping
-        """
-        # Get unique values for the column
+        """Generate transformation suggestions for column values"""
         unique_values = set(
             val.strip() for val in column["data"] if val and val.strip()
         )
@@ -241,7 +248,6 @@ class AIService:
                 f"Maximum allowed is {max_unique_values}"
             )
 
-        # Build context string
         column_context = f"Unique Values: {', '.join(unique_values)}"
 
         messages = [
@@ -265,29 +271,15 @@ class AIService:
             },
         ]
 
-        token_count = self._count_tokens(messages)
-        print(f"Token count for transformation request: {token_count}")
+        mappings = self._make_completion_call(
+            messages, TransformationResponse
+        ).transformations
 
-        if token_count > self.token_limit:
-            raise TokenLimitExceededError(token_count, self.token_limit)
-
-        response = self.client.beta.chat.completions.parse(
-            model=self.model,
-            messages=messages,
-            response_format=TransformationResponse,
-        )
-
-        # Get the first (and only) mapping from response
-        mappings = response.choices[0].message.parsed.transformations
-
-        # Validate transformations
-        valid_transformations = {
+        return {
             mapping.original: mapping.transformed
             for mapping in mappings
             if mapping.original in unique_values
         }
-
-        return valid_transformations
 
     def detect_dataset_type(self, columns: List[ColumnDef]) -> DatasetTypeResponse:
         """Detect the type of dataset based on column contents"""
@@ -310,14 +302,8 @@ class AIService:
             },
         ]
 
-        token_count = self._count_tokens(messages)
-        if token_count > self.token_limit:
-            raise TokenLimitExceededError(token_count, self.token_limit)
-
-        response = self.client.beta.chat.completions.parse(
-            model="openai/gpt-4o-mini",  # so it is fast
-            messages=messages,
-            response_format=DatasetTypeResponse,
-        )
-
-        return response.choices[0].message.parsed
+        return self._make_completion_call(
+            messages,
+            DatasetTypeResponse,
+            model="openai/gpt-4o-mini",  # Using mini model for speed
+        ).dataset_type
