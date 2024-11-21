@@ -6,8 +6,8 @@ from .column_processor import get_classifier
 
 
 class DeduplicationService:
-    def __init__(self, threshold: float = 0.8):
-        self.threshold = threshold
+    def __init__(self):
+        self.threshold = 0.8
         self.db_api = DuckDBAPI()
 
     def deduplicate(
@@ -35,7 +35,7 @@ class DeduplicationService:
 
         # Get predictions
         pairwise_predictions = linker.inference.predict(
-            threshold_match_probability=0.90
+            threshold_match_probability=self.threshold
         )
 
         # Cluster results
