@@ -14,8 +14,6 @@ export function TypeSelectionModal({ fileId }: TypeSelectionModalProps) {
   const { data: csvMetadata, isLoading } = useCsvMetadata(fileId)
   const [open, onOpenChange] = useState(mostRecentFileId === fileId)
 
-  if (isLoading || !csvMetadata) return <></>
-
   return (
     <Prompt open={open} onOpenChange={onOpenChange} variant="confirmation">
       {isLoading || !csvMetadata ? (
