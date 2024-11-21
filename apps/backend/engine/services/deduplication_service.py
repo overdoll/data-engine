@@ -1,5 +1,5 @@
 from typing import Dict, List, Tuple
-from splink import DuckDBAPI, Linker, SettingsCreator
+from splink import DuckDBAPI, Linker, SettingsCreator, block_on
 import pandas as pd
 from .types import ColumnDef, Row
 from .column_processor import get_classifier
@@ -7,7 +7,7 @@ from .column_processor import get_classifier
 
 class DeduplicationService:
     def __init__(self):
-        self.threshold = 0.8
+        self.threshold = 0.1
         self.db_api = DuckDBAPI()
 
     def deduplicate(
@@ -37,6 +37,14 @@ class DeduplicationService:
         pairwise_predictions = linker.inference.predict(
             threshold_match_probability=self.threshold
         )
+
+        # Check if pairwise_predictions is empty
+        if pairwise_predictions.as_pandas_dataframe().empty:
+            return {
+                "rows": rows,  # Return original rows unchanged
+                "original_count": len(rows),
+                "deduplicated_count": len(rows),  # No deduplication occurred
+            }
 
         # Cluster results
         clusters = linker.clustering.cluster_pairwise_predictions_at_threshold(
@@ -130,5 +138,7 @@ class DeduplicationService:
         return SettingsCreator(
             link_type="dedupe_only",
             comparisons=comparisons,
-            blocking_rules_to_generate_predictions=[],  # we dont use blocking rules for now - not enough data
+            blocking_rules_to_generate_predictions=[
+                block_on("emails0address_kiuk")
+            ],  # we dont use blocking rules for now - not enough data
         )
