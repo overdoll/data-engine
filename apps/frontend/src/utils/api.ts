@@ -198,8 +198,8 @@ export const useApplySuggestion = (fileId: string) => {
 
   return useMutation({
     mutationFn: async (updates: Omit<UpdatePayload, "action">[]) => {
-      const { data } = await apiClient.post(`/csv/${fileId}/update`, {
-        updates: updates.map((update) => ({ ...update, action: "classify_column" })),
+      const { data } = await apiClient.post(`/csv/${fileId}/apply-classifications`, {
+        classifications: updates.map((update) => ({ ...update })),
       })
       return data
     },

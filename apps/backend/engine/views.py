@@ -72,36 +72,62 @@ def get_csv(request, uuid):
 
 
 @api_view(["POST"])
-def update_csv(request, uuid):
+def update_dataset_type(request, uuid):
     try:
+        metadata_update = request.data.get("dataset_type")
+        if not metadata_update:
+            return Response(
+                {"error": "dataset_type is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        # Validate dataset_type value
+        if metadata_update not in [dt.value for dt in DatasetType]:
+            return Response(
+                {"error": f"Invalid dataset_type: {metadata_update}"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         columns = csv_service.get_data(str(uuid))
-        updates = request.data.get("updates", [])
-        metadata_updates = request.data.get("metadata", {})
+        # Check if any columns are already classified
+        classified_columns = [col for col in columns if col.get("classification")]
+        if classified_columns:
+            return Response(
+                {
+                    "error": "Cannot change dataset_type after columns have been classified. Please upload a new file."
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
-        # Handle dataset_type update if provided
-        if "dataset_type" in metadata_updates:
-            dataset_type = metadata_updates["dataset_type"]
-            # Validate dataset_type value
-            if not dataset_type or dataset_type not in [dt.value for dt in DatasetType]:
-                return Response(
-                    {"error": f"Invalid dataset_type: {dataset_type}"},
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        # Update metadata
+        metadata = csv_service.get_metadata(str(uuid)) or {}
+        metadata["dataset_type"] = metadata_update
+        csv_service.save_metadata(str(uuid), metadata)
 
-            # Check if any columns are already classified
-            classified_columns = [col for col in columns if col.get("classification")]
-            if classified_columns:
-                return Response(
-                    {
-                        "error": "Cannot change dataset_type after columns have been classified. Please upload a new file."
-                    },
-                    status=status.HTTP_400_BAD_REQUEST,
-                )
+        return Response({"status": "success"})
 
+    except ValueError:
+        return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+def apply_classifications(request, uuid):
+    try:
+        classifications = request.data.get("classifications", [])
+        if not classifications:
+            return Response(
+                {"error": "No classifications provided"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        columns = csv_service.get_data(str(uuid))
         operations = []
-        for update in updates:
+
+        for classification in classifications:
             try:
-                operation = column_operation_service.create_operation(**update)
+                operation = column_operation_service.create_operation(
+                    action="classify_column", **classification
+                )
                 operations.append(operation)
             except (
                 ColumnNotFoundError,
@@ -110,36 +136,21 @@ def update_csv(request, uuid):
             ) as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        if operations:
-            columns = column_operation_service.apply_operations(columns, operations)
-            csv_service.save_data(str(uuid), columns)
+        columns = column_operation_service.apply_operations(columns, operations)
+        csv_service.save_data(str(uuid), columns)
 
-        # Update metadata
-        try:
-            metadata = csv_service.get_metadata(str(uuid)) or {}
-
-            # Update dataset_type if provided
-            if "dataset_type" in metadata_updates:
-                metadata["dataset_type"] = metadata_updates["dataset_type"]
-
-            # Handle existing suggestion removal logic
-            if "suggestions" in metadata and operations:
-                classified_columns = [
-                    update["column_id"]
-                    for update in updates
-                    if update.get("action") == "classify_column"
-                ]
-                metadata["suggestions"] = [
-                    s
-                    for s in metadata["suggestions"]
-                    if s.get("column_id") not in classified_columns
-                ]
-
+        # Update metadata to remove applied suggestions
+        metadata = csv_service.get_metadata(str(uuid)) or {}
+        if "suggestions" in metadata:
+            classified_columns = [
+                classification["column_id"] for classification in classifications
+            ]
+            metadata["suggestions"] = [
+                s
+                for s in metadata["suggestions"]
+                if s.get("column_id") not in classified_columns
+            ]
             csv_service.save_metadata(str(uuid), metadata)
-        except Exception as e:
-            # Don't fail the operation if metadata update fails
-            print(f"Failed to update metadata: {str(e)}")
-            pass
 
         return Response({"status": "success"})
 
@@ -303,5 +314,34 @@ def update_column_values(request, uuid):
             {"error": f"Column {column_id} not found"},
             status=status.HTTP_404_NOT_FOUND,
         )
+    except ValueError:
+        return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+def remove_column(request, uuid):
+    try:
+        column_id = request.data.get("column_id")
+        if not column_id:
+            return Response(
+                {"error": "column_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        columns = csv_service.get_data(str(uuid))
+
+        # Create and apply remove column operation
+        try:
+            operation = column_operation_service.create_operation(
+                action="remove_column", column_id=column_id
+            )
+            columns = column_operation_service.apply_operations(columns, [operation])
+            csv_service.save_data(str(uuid), columns)
+
+            return Response({"status": "success"})
+
+        except ColumnNotFoundError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
     except ValueError:
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
