@@ -33,27 +33,6 @@ class ClassifierId(StrEnum):
     PERSON_WEBSITE = "person:website"
 
 
-COMPANY_CLASSIFIERS = (
-    ClassifierId.COMPANY_NAME,
-    ClassifierId.COMPANY_SOCIAL,
-    ClassifierId.COMPANY_WEBSITE,
-    ClassifierId.COMPANY_PHONE,
-    ClassifierId.COMPANY_EMAIL,
-)
-
-PERSON_CLASSIFIERS = (
-    ClassifierId.PERSON_NAME,
-    ClassifierId.PERSON_FIRST_NAME,
-    ClassifierId.PERSON_LAST_NAME,
-    ClassifierId.PERSON_EMAIL,
-    ClassifierId.PERSON_PHONE,
-    ClassifierId.PERSON_ROLE,
-    ClassifierId.PERSON_SOCIAL,
-    ClassifierId.PERSON_WEBSITE,
-    ClassifierId.COMPANY_NAME,
-)
-
-
 class RemoveColumnOperation(BaseOperation):
     def __init__(self, column_id: str):
         self.column_id = column_id

@@ -10,7 +10,7 @@ from .services.base import (
     InvalidClassificationError,
     DatasetType,
 )
-from .services.column_processor import ColumnOperationService
+from .services.column_processor import ColumnOperationService, get_classifier
 from .services.deduplication_service import DeduplicationService
 
 csv_service = CSVService()
@@ -62,11 +62,34 @@ def upload_csv(request):
 @api_view(["GET"])
 def get_csv(request, uuid):
     try:
+        columns = csv_service.get_data(str(uuid))
+        _, rows = csv_service.transform_to_row_format(columns)
+        return Response({"rows": rows})
+    except ValueError:
+        return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET"])
+def get_metadata(request, uuid):
+    try:
         metadata = csv_service.get_metadata(str(uuid))
         columns = csv_service.get_data(str(uuid))
-        column_defs, rows = csv_service.transform_to_row_format(columns)
+        column_defs, _ = csv_service.transform_to_row_format(columns)
 
-        return Response({"columns": column_defs, "rows": rows, "metadata": metadata})
+        # Enhance column definitions with classifier metadata
+        dataset_type = metadata.get("dataset_type")
+        for col in column_defs:
+            classification = col.get("classification")
+            if classification:
+                classifier = get_classifier(classification, col["id"])
+                if classifier:
+                    col["is_default_deduplication"] = (
+                        dataset_type in classifier.allowed_dataset_types
+                        if dataset_type
+                        else False
+                    )
+
+        return Response({"columns": column_defs, "metadata": metadata})
     except ValueError:
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
 

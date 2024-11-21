@@ -41,6 +41,9 @@ class BaseOperation(ABC):
 
 
 class BaseClassifier(ABC):
+    # Dataset types that will be used by
+    # - AI for classification
+    # - Displaying which columns can be deduplicated by
     allowed_dataset_types: tuple[DatasetType, ...] = ()
 
     def __init__(self, column_id: str | None = None):

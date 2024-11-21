@@ -27,4 +27,9 @@ urlpatterns = [
         views.update_column_values,
         name="update_column_values",
     ),
+    path(
+        "csv/<uuid:uuid>/metadata",
+        views.get_metadata,
+        name="get_metadata",
+    ),
 ]
