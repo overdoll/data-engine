@@ -1,4 +1,4 @@
-import { useCsvData } from "@/utils/api"
+import { useCsvData, useCsvMetadata } from "@/utils/api"
 import "ag-grid-enterprise"
 import { AgGridReact } from "ag-grid-react"
 import { ColDef, GridReadyEvent, IServerSideGetRowsParams } from "ag-grid-community"
@@ -36,14 +36,20 @@ interface RowData {
 }
 
 export function CsvViewer({ fileId }: CsvViewerProps) {
-  const { data, error, isLoading } = useCsvData(fileId)
+  const { data: csvData, isLoading: isCsvDataLoading, error: csvDataError } = useCsvData(fileId)
+  const {
+    data: csvMetadata,
+    isLoading: isMetadataLoading,
+    error: csvMetadataError,
+  } = useCsvMetadata(fileId)
+
   const gridRef = useRef<AgGridReact>(null)
   const { isShowingDuplicates } = useDuplicatesStore()
 
   const columnDefs = useMemo<ColDef<RowData>[]>(() => {
-    if (!data?.columns) return []
+    if (!csvMetadata?.columns) return []
 
-    const sortedColumns = [...data.columns].sort((a, b) => {
+    const sortedColumns = [...csvMetadata.columns].sort((a, b) => {
       if (a.classification && !b.classification) return -1
       if (!a.classification && b.classification) return 1
       return 0
@@ -52,19 +58,16 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
     return sortedColumns.map((col) => ({
       field: col.id,
       headerName: col.label,
-      width: calculateColumnWidth(
-        col.label,
-        data.rows.map((row) => row.data[col.id])
-      ),
+      width: calculateColumnWidth(col.label, csvData?.rows.map((row) => row.data[col.id]) || []),
       // cellClass: col.classification ? "classified-column" : undefined,
       headerClass: col.classification ? "classified-header" : undefined,
     }))
-  }, [data?.columns, data?.rows])
+  }, [csvMetadata?.columns, csvData?.rows])
 
   const serverSideDatasource = useCallback(() => {
     return {
       getRows: (params: IServerSideGetRowsParams) => {
-        if (!data?.rows) {
+        if (!csvData?.rows) {
           params.success({ rowData: [], rowCount: 0 })
           return
         }
@@ -72,7 +75,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
         const isShowingDuplicates = useDuplicatesStore.getState().isShowingDuplicates
 
         if (params.request.groupKeys.length > 0) {
-          const rows = data.rows
+          const rows = csvData.rows
             .filter(
               (row) =>
                 row.is_duplicate_of_row_id !== "" &&
@@ -96,12 +99,12 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
         if (isShowingDuplicates) {
           // Create a Set of IDs that have duplicates
           const idsWithDuplicates = new Set(
-            data.rows
+            csvData.rows
               .filter((row) => !!row.is_duplicate_of_row_id)
               .map((row) => row.is_duplicate_of_row_id)
           )
 
-          const rows = data.rows
+          const rows = csvData.rows
             .filter((row) => !row.is_duplicate_of_row_id)
             .map((row) => ({
               ...row.data,
@@ -123,7 +126,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           return
         }
 
-        const rows = data.rows
+        const rows = csvData.rows
           .filter((row) => !row.is_duplicate_of_row_id)
           .map((row) => ({
             ...row.data,
@@ -138,7 +141,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
         })
       },
     }
-  }, [data?.rows])
+  }, [csvData?.rows])
 
   const onGridReady = useCallback(
     (params: GridReadyEvent) => {
@@ -150,15 +153,15 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
     [serverSideDatasource]
   )
 
-  if (isLoading) {
+  if (isCsvDataLoading || isMetadataLoading) {
     return <div className="flex-1 p-4">Loading...</div>
   }
 
-  if (error) {
+  if (csvDataError || csvMetadataError) {
     return <div className="flex-1 p-4 text-red-500">Error loading CSV data</div>
   }
 
-  if (!data) return null
+  if (!csvData || !csvMetadata) return null
 
   return (
     <div className="flex-1 h-[calc(100vh-79px)] w-full ag-theme-quartz">

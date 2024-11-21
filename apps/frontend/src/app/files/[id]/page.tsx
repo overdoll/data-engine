@@ -10,11 +10,22 @@ import Link from "next/link"
 import { SuggestionsList } from "../../components/SuggestionsList"
 import { DuplicatesToggle } from "../../components/DuplicatesToggle"
 import { TypeSelectionModal } from "../../components/TypeSelectionModal"
+import { useEffect } from "react"
+import { useSuggestionsStore } from "@/stores/suggestions"
+import { useTransformationStore } from "@/stores/useTransformationStore"
+import { useDuplicatesStore } from "@/stores/duplicates"
 
 export default function FileViewerPage() {
   const params = useParams()
   const fileId = params.id as string
   const { data: metadata, isLoading } = useFileMetadata(fileId)
+
+  // clear all stores on initial load
+  useEffect(() => {
+    useSuggestionsStore.getState().resetState()
+    useTransformationStore.getState().resetState()
+    useDuplicatesStore.getState().resetState()
+  }, [])
 
   if (isLoading) {
     return <div>Loading...</div>

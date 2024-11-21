@@ -31,17 +31,18 @@ interface ApiError {
   status: number
 }
 
+export type DatasetType = "PERSON" | "COMPANY" | null
+
 // File types
 export interface FileUploadResponse {
   uuid: string
+  metadata: {
+    original_filename: string
+    dataset_type: DatasetType
+  }
 }
 
-export interface CsvData {
-  columns: {
-    id: string
-    label: string
-    classification?: string
-  }[]
+export interface CsvRowsData {
   rows: {
     id: string
     is_duplicate_of_row_id?: string
@@ -49,6 +50,18 @@ export interface CsvData {
       [columnId: string]: string
     }
   }[]
+}
+
+export interface CsvMetadata {
+  columns: {
+    id: string
+    label: string
+    classification?: string
+  }[]
+  metadata: {
+    original_filename: string
+    dataset_type: DatasetType
+  }
 }
 
 // Update Suggestion type to match API schema
@@ -67,6 +80,7 @@ export const queryKeys = {
   csvData: (id: string) => ["csv-data", id] as const,
   fileMetadata: (id: string) => ["file-metadata", id] as const,
   suggestions: (id: string) => ["suggestions", id] as const,
+  csvMetadata: (id: string) => ["csv-metadata", id] as const,
 }
 
 // Queries
@@ -100,9 +114,9 @@ export const useFileMetadata = (id: string) => {
 }
 
 function assignRandomDuplicates(
-  rows: CsvData["rows"],
+  rows: CsvRowsData["rows"],
   duplicatePercentage: number = 0.3
-): CsvData["rows"] {
+): CsvRowsData["rows"] {
   const rowsCopy = [...rows]
   const numDuplicates = Math.floor(rows.length * duplicatePercentage)
 
@@ -124,12 +138,22 @@ export const useCsvData = (id: string) => {
   return useQuery({
     queryKey: queryKeys.csvData(id),
     queryFn: async () => {
-      const { data } = await apiClient.get<CsvData>(`/csv/${id}`)
+      const { data } = await apiClient.get<CsvRowsData>(`/csv/${id}`)
       // Modify the data to include random duplicates
       return {
-        ...data,
         rows: assignRandomDuplicates(data.rows),
       }
+    },
+    enabled: !!id,
+  })
+}
+
+export const useCsvMetadata = (id: string) => {
+  return useQuery({
+    queryKey: queryKeys.csvMetadata(id),
+    queryFn: async () => {
+      const { data } = await apiClient.get<CsvMetadata>(`/csv/${id}/metadata`)
+      return data
     },
     enabled: !!id,
   })
@@ -167,9 +191,10 @@ export const useUploadFile = () => {
 
         const fileMetadata = {
           id: data.uuid,
-          fileName: fileData.name,
+          fileName: data.metadata.original_filename,
           uploadDate: new Date(),
           friendlyId,
+          type: data.metadata.dataset_type,
         }
 
         // Then save metadata to IndexedDB
@@ -254,6 +279,63 @@ export const useApplyTransformations = (fileId: string) => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.csvData(fileId) })
       window.gridApi?.refreshCells({ force: true })
     },
+  })
+}
+
+// Update DeduplicationResponse interface to match backend
+export interface DeduplicationResponse {
+  rows: {
+    id: string
+    data: { [key: string]: string }
+    is_duplicate_of: string | null
+  }[]
+  original_count: number
+  deduplicated_count: number
+}
+
+// Update the deduplication mutation
+export const useDeduplicate = (fileId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async () => {
+      const { data } = await apiClient.post<DeduplicationResponse>(`/csv/${fileId}/deduplicate`)
+      return data
+    },
+    onSuccess: async (data) => {
+      // Update the cache with the new rows that include duplicate information
+      queryClient.setQueryData(queryKeys.csvData(fileId), { rows: data.rows })
+      window.gridApi?.refreshCells({ force: true })
+    },
+  })
+}
+
+// Add interface for dataset type update request/response
+export interface UpdateDatasetTypeResponse {
+  success: boolean
+  dataset_type: DatasetType
+}
+
+// Add mutation for updating dataset type
+export const useUpdateDatasetType = (fileId: string) => {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (datasetType: DatasetType) => {
+      const { data } = await apiClient.post<UpdateDatasetTypeResponse>(
+        `/csv/${fileId}/update-dataset-type`,
+        {
+          dataset_type: datasetType
+        }
+      )
+      return data
+    },
+    onSuccess: async () => {
+      // Invalidate and refetch relevant queries
+      await queryClient.invalidateQueries({ queryKey: queryKeys.csvMetadata(fileId) })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.files })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(fileId) })
+    }
   })
 }
 

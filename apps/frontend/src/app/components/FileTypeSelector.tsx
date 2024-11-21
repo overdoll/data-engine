@@ -1,6 +1,8 @@
+import { DatasetType } from "@/utils/api"
+
 interface FileTypeSelectorProps {
-  selectedType: string | null
-  onTypeSelect: (type: string) => void
+  selectedType: DatasetType
+  onTypeSelect: (type: DatasetType) => void
 }
 
 export function FileTypeSelector({ selectedType, onTypeSelect }: FileTypeSelectorProps) {
@@ -10,9 +12,9 @@ export function FileTypeSelector({ selectedType, onTypeSelect }: FileTypeSelecto
         <div className="grid grid-cols-2 gap-4">
           <div
             className={`p-6 border rounded-lg cursor-pointer hover:border-blue-500 transition-colors ${
-              selectedType === "contacts" ? "border-blue-500 bg-blue-50" : ""
+              selectedType === "PERSON" ? "border-blue-500 bg-blue-50" : ""
             }`}
-            onClick={() => onTypeSelect("contacts")}
+            onClick={() => onTypeSelect("PERSON")}
           >
             <h4 className="font-medium mb-2">Contacts</h4>
             <p className="text-sm text-gray-600">Deduplicate contact records</p>
@@ -20,9 +22,9 @@ export function FileTypeSelector({ selectedType, onTypeSelect }: FileTypeSelecto
 
           <div
             className={`p-6 border rounded-lg cursor-pointer hover:border-blue-500 transition-colors ${
-              selectedType === "companies" ? "border-blue-500 bg-blue-50" : ""
+              selectedType === "COMPANY" ? "border-blue-500 bg-blue-50" : ""
             }`}
-            onClick={() => onTypeSelect("companies")}
+            onClick={() => onTypeSelect("COMPANY")}
           >
             <h4 className="font-medium mb-2">Companies</h4>
             <p className="text-sm text-gray-600">Deduplicate company records</p>

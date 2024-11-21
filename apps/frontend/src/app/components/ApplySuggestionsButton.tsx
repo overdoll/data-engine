@@ -10,7 +10,7 @@ interface ApplySuggestionsButtonProps {
 }
 
 export function ApplySuggestionsButton({ fileId }: ApplySuggestionsButtonProps) {
-  const { selectedSuggestions, clearSelections } = useSuggestionsStore()
+  const { selectedSuggestions, resetState } = useSuggestionsStore()
   const { mutateAsync: applySuggestion, isPending } = useApplySuggestion(fileId)
 
   const handleApplySelected = async () => {
@@ -27,7 +27,7 @@ export function ApplySuggestionsButton({ fileId }: ApplySuggestionsButtonProps) 
         }))
       )
       toast.success("Selected suggestions applied!")
-      clearSelections()
+      resetState()
     } catch {
       toast.error("Failed to apply suggestions")
     }
