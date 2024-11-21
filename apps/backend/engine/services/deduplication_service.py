@@ -34,6 +34,7 @@ class DeduplicationService:
         linker.training.estimate_u_using_random_sampling(max_pairs=1e6)
 
         # Get predictions
+        # TODO: why can the pairwise predictions be empty?
         pairwise_predictions = linker.inference.predict(
             threshold_match_probability=self.threshold
         )
@@ -41,9 +42,10 @@ class DeduplicationService:
         # Check if pairwise_predictions is empty
         if pairwise_predictions.as_pandas_dataframe().empty:
             return {
-                "rows": rows,  # Return original rows unchanged
+                # "rows": rows,  # Return original rows unchanged
                 "original_count": len(rows),
                 "deduplicated_count": len(rows),  # No deduplication occurred
+                "reason": "pairwise predictions empty",
             }
 
         # Cluster results
@@ -57,9 +59,10 @@ class DeduplicationService:
         )
 
         return {
-            "rows": processed_rows,
             "original_count": len(rows),
             "deduplicated_count": deduplicated_count,
+            "reason": "calculated using splink",
+            # "rows": processed_rows,
         }
 
     def _rows_to_splink(self, rows: List[Row]) -> List[Dict]:
