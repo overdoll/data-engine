@@ -78,6 +78,8 @@ def get_metadata(request, uuid):
 
         # Enhance column definitions with classifier metadata
         dataset_type = metadata.get("dataset_type")
+        # Returns everything from s3 including suggestions
+        # which is not ideal
         for col in column_defs:
             classification = col.get("classification")
             if classification:

@@ -34,7 +34,9 @@ class DeduplicationService:
         linker.training.estimate_u_using_random_sampling(max_pairs=1e6)
 
         # Get predictions
-        pairwise_predictions = linker.inference.predict(threshold_match_weight=-5)
+        pairwise_predictions = linker.inference.predict(
+            threshold_match_probability=0.90
+        )
 
         # Cluster results
         clusters = linker.clustering.cluster_pairwise_predictions_at_threshold(

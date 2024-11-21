@@ -21,6 +21,7 @@ class CSVService:
 
     @classmethod
     def generate_column_id(cls, label: str) -> str:
+        """Generate friendly column ID so its easier to debug on BE + FE"""
         # Convert to lowercase and replace all non-alphanumeric chars with underscore
         formatted_label = re.sub(r"[^a-z0-9_]", "_", label.lower())
 
