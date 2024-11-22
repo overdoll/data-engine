@@ -59,10 +59,6 @@ class DeduplicationService:
             blocking_rules[0]
         )
 
-        linker.training.estimate_parameters_using_expectation_maximisation(
-            blocking_rules[0]
-        )
-
         # Get predictions
         pairwise_predictions = linker.inference.predict(threshold_match_weight=-5)
 
