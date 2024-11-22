@@ -39,6 +39,8 @@ class DeduplicationService:
         # TODO: use
         # https://moj-analytical-services.github.io/splink/getting_started.html
         # to figure this out
+        # TODO: also try deterministic dedupe
+        # https://moj-analytical-services.github.io/splink/demos/examples/duckdb/deterministic_dedupe.html
         blocking_rules = self._get_blocking_rules(column_defs, column_ids)
         if not blocking_rules:
             return {
