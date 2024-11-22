@@ -249,7 +249,7 @@ class PersonEmailClassifier(BaseEmailClassifier):
 
     @property
     def splink_comparator(self) -> cl.EmailComparison:
-        return cl.EmailComparison(self.column_id)  # TODO weights
+        return cl.EmailComparison(self.column_id)
 
     @property
     def situation(self) -> str:

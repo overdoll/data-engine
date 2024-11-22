@@ -2,26 +2,32 @@ from typing import Dict, List, Tuple
 from splink import DuckDBAPI, Linker, SettingsCreator, block_on
 import pandas as pd
 from .types import ColumnDef, Row
-from .column_processor import get_classifier
+from .column_processor import get_classifier, ClassifierId
 
 
 class DeduplicationService:
     def __init__(self):
-        self.threshold = 0.1
+        self.threshold = 0.5
         self.db_api = DuckDBAPI()
+        # Define blocking rule combinations in order of priority
+        self.blocking_rules = [
+            # Multi-column blocks
+            (ClassifierId.PERSON_EMAIL, ClassifierId.PERSON_LAST_NAME),
+            (ClassifierId.PERSON_FIRST_NAME, ClassifierId.PERSON_LAST_NAME),
+            # Single column blocks
+            (ClassifierId.PERSON_EMAIL,),
+            (ClassifierId.COMPANY_EMAIL,),
+            (ClassifierId.PERSON_LAST_NAME,),
+            (ClassifierId.PERSON_PHONE,),
+            (ClassifierId.COMPANY_PHONE,),
+        ]
 
     def deduplicate(
         self, column_defs: List[ColumnDef], rows: List[Row], column_ids: List[str]
     ) -> Dict:
         """
-        Deduplicate data using Splink with Polars
-
-        Args:
-            column_defs: List of column definitions with id, label, and classification
-            rows: List of rows where each row has an id and data dict keyed by column id
-            column_ids: List of column IDs to use for deduplication
+        Deduplicate data using Splink with parameter estimation
         """
-
         # Transform data to format expected by Splink
         transformed_rows = self._rows_to_splink(rows)
         df = pd.DataFrame(transformed_rows)
@@ -30,21 +36,41 @@ class DeduplicationService:
         settings = self._create_splink_settings(column_defs, column_ids)
         linker = Linker(df, settings, self.db_api)
 
-        # Train the model
+        # TODO: use
+        # https://moj-analytical-services.github.io/splink/getting_started.html
+        # to figure this out
+        blocking_rules = self._get_blocking_rules(column_defs, column_ids)
+        if not blocking_rules:
+            return {
+                "original_count": len(rows),
+                "deduplicated_count": 0,
+                "reason": "no blocking rules available",
+                "grouped_results": [],
+            }
+
+        linker.training.estimate_probability_two_random_records_match(
+            blocking_rules,
+            recall=0.7,
+        )
+
         linker.training.estimate_u_using_random_sampling(max_pairs=1e6)
 
-        # Get predictions
-        # TODO: why can the pairwise predictions be empty?
-        pairwise_predictions = linker.inference.predict(
-            threshold_match_probability=self.threshold
+        linker.training.estimate_parameters_using_expectation_maximisation(
+            blocking_rules[0]
         )
+
+        linker.training.estimate_parameters_using_expectation_maximisation(
+            blocking_rules[0]
+        )
+
+        # Get predictions
+        pairwise_predictions = linker.inference.predict(threshold_match_weight=-5)
 
         # Check if pairwise_predictions is empty
         if pairwise_predictions.as_pandas_dataframe().empty:
             return {
-                # "rows": rows,  # Return original rows unchanged
                 "original_count": len(rows),
-                "deduplicated_count": len(rows),  # No deduplication occurred
+                "deduplicated_count": 0,  # No deduplication occurred
                 "reason": "pairwise predictions empty",
             }
 
@@ -62,7 +88,6 @@ class DeduplicationService:
             "original_count": len(rows),
             "deduplicated_count": deduplicated_count,
             "reason": "calculated using splink",
-            # "rows": processed_rows,
         }
 
     def _rows_to_splink(self, rows: List[Row]) -> List[Dict]:
@@ -121,27 +146,71 @@ class DeduplicationService:
 
         return processed_rows, deduplicated_count
 
+    def _get_blocking_rules(
+        self, column_defs: List[ColumnDef], column_ids: List[str]
+    ) -> List[block_on]:
+        """Generate blocking rules based on available classified columns"""
+        # Step 1: Get classified columns that match our column_ids
+        classified_columns = {
+            col["id"]: col["classification"]
+            for col in column_defs
+            if col["id"] in column_ids and col.get("classification")
+        }
+
+        # Step 2: Get valid classifiers for our columns
+        column_classifiers = {
+            col_id: get_classifier(classification, col_id)
+            for col_id, classification in classified_columns.items()
+        }
+
+        # Step 3: Generate blocking rules based on available classifiers
+        blocking_rules = []
+
+        # Check each blocking rule combination
+        for rule_combination in self.blocking_rules:
+            # Get column IDs that match the classifiers in this rule
+            matching_columns = []
+            for classifier_id in rule_combination:
+                # Find column that has this classification
+                matching_col = next(
+                    (
+                        col_id
+                        for col_id, classifier in column_classifiers.items()
+                        if classifier and classifier.id() == classifier_id.value
+                    ),
+                    None,
+                )
+                if matching_col:
+                    matching_columns.append(matching_col)
+
+            # If we found all needed columns for this rule, add it
+            if len(matching_columns) == len(rule_combination):
+                blocking_rules.append(block_on(*matching_columns))
+
+        return blocking_rules
+
     def _create_splink_settings(
         self, column_defs: List[ColumnDef], column_ids: List[str]
     ) -> SettingsCreator:
-        """Create Splink settings based on classified columns"""
+        """Create Splink settings with blocking rules"""
+        # Get comparisons from classifiers
         comparisons = []
-
-        # Filter columns first
-        filtered_columns = [col for col in column_defs if col["id"] in column_ids]
-
-        for col in filtered_columns:
-            classification = col.get("classification")
-            if classification:
-                classifier = get_classifier(classification, col["id"])
+        for col in column_defs:
+            if col["id"] in column_ids and col.get("classification"):
+                classifier = get_classifier(col["classification"], col["id"])
                 if classifier and classifier.splink_comparator:
-                    comparison = classifier.splink_comparator
-                    comparisons.append(comparison)
+                    comparisons.append(classifier.splink_comparator)
+
+        # Get blocking rules
+        blocking_rules = self._get_blocking_rules(column_defs, column_ids)
+
+        if not blocking_rules:
+            raise ValueError("No suitable blocking rules could be generated")
 
         return SettingsCreator(
             link_type="dedupe_only",
             comparisons=comparisons,
-            blocking_rules_to_generate_predictions=[
-                block_on("emails0address_kiuk")
-            ],  # we dont use blocking rules for now - not enough data
+            blocking_rules_to_generate_predictions=blocking_rules,
+            em_convergence=0.1,
+            max_iterations=10,
         )
