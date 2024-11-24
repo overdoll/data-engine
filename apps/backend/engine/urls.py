@@ -32,4 +32,14 @@ urlpatterns = [
         views.get_metadata,
         name="get_metadata",
     ),
+    path(
+        "deduplicate/visualize",
+        views.visualize_deduplication,
+        name="visualize_deduplication",
+    ),
+    path(
+        "csv/<uuid:uuid>/deduplicate/visualize",
+        views.visualize_deduplication,
+        name="visualize_deduplication",
+    ),
 ]

@@ -3,6 +3,8 @@ from splink import DuckDBAPI, Linker, SettingsCreator, block_on
 import pandas as pd
 from .types import ColumnDef, Row, BlockingRuleType
 from .column_processor import get_classifier, ClassifierId
+from pathlib import Path
+import tempfile
 
 
 class BlockingRule(NamedTuple):
@@ -38,7 +40,11 @@ class DeduplicationService:
         ]
 
     def deduplicate(
-        self, column_defs: List[ColumnDef], rows: List[Row], column_ids: List[str]
+        self,
+        column_defs: List[ColumnDef],
+        rows: List[Row],
+        column_ids: List[str],
+        uuid: str,
     ) -> Dict:
         """
         Deduplicate data using Splink with parameter estimation
@@ -48,8 +54,8 @@ class DeduplicationService:
         df = pd.DataFrame(transformed_rows)
 
         # Create settings using column IDs
-        settings = self._create_splink_settings(column_defs, column_ids)
-        linker = Linker(df, settings, self.db_api)
+        splink_settings = self._create_splink_settings(column_defs, column_ids)
+        linker = Linker(df, splink_settings, self.db_api)
 
         blocking_rules = self._get_blocking_rules(column_defs, column_ids)
 
@@ -95,13 +101,8 @@ class DeduplicationService:
             pairwise_predictions, self.threshold
         )
 
-        linker.visualisations.cluster_studio_dashboard(
-            pairwise_predictions,
-            clusters,
-            "cluster_studio.html",
-            sampling_method="by_cluster_size",
-            overwrite=True,
-        )
+        # Generate visualization
+        self._generate_visualization(linker, pairwise_predictions, clusters, uuid)
 
         duplicate_mapping = self._create_duplicate_mapping(clusters)
         processed_rows, deduplicated_count = self._process_rows_with_duplicates(
@@ -237,3 +238,42 @@ class DeduplicationService:
             retain_matching_columns=True,
             blocking_rules_to_generate_predictions=[],  # Empty list for blocking rules
         )
+
+    def _generate_visualization(
+        self,
+        linker,
+        pairwise_predictions,
+        clusters,
+        uuid: str,
+    ) -> Path:
+        """
+        Generate and save the cluster studio visualization
+
+        Args:
+            linker: Splink linker instance
+            pairwise_predictions: Splink pairwise predictions
+            clusters: Splink clusters
+            uuid: UUID of the CSV file
+
+        Returns:
+            Path to the generated visualization file
+        """
+        # Create temp directory if it doesn't exist
+        tmp_dir = Path(tempfile.gettempdir()) / "cluster_studio"
+        tmp_dir.mkdir(exist_ok=True)
+
+        # Create visualization path
+        visualization_path = tmp_dir / f"{uuid}_cluster_studio.html"
+
+        # Generate visualization
+        linker.visualisations.cluster_studio_dashboard(
+            pairwise_predictions,
+            clusters,
+            str(
+                visualization_path
+            ),  # Convert to string as Splink expects a string path
+            sampling_method="by_cluster_size",
+            overwrite=True,
+        )
+
+        return visualization_path

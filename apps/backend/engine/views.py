@@ -12,6 +12,9 @@ from .services.base import (
 )
 from .services.column_processor import ColumnOperationService, get_classifier
 from .services.deduplication_service import DeduplicationService
+from django.http import HttpResponse
+from pathlib import Path
+import tempfile
 
 csv_service = CSVService()
 column_operation_service = ColumnOperationService()
@@ -239,7 +242,7 @@ def deduplicate_csv(request, uuid):
     column_defs, rows = csv_service.transform_to_row_format(columns)
 
     # Perform deduplication
-    result = deduplication_service.deduplicate(column_defs, rows, column_ids)
+    result = deduplication_service.deduplicate(column_defs, rows, column_ids, uuid)
     return Response(result)
 
 
@@ -366,3 +369,25 @@ def remove_column(request, uuid):
 
     except ValueError:
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["GET"])
+def visualize_deduplication(request, uuid):
+    try:
+        tmp_dir = Path(tempfile.gettempdir()) / "cluster_studio"
+        file_path = tmp_dir / f"{uuid}_cluster_studio.html"
+
+        if not file_path.exists():
+            return Response(
+                {"error": "Visualization not found. Please run deduplication first."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        with file_path.open("r", encoding="utf-8") as f:
+            content = f.read()
+            return HttpResponse(content, content_type="text/html")
+
+    except FileNotFoundError:
+        return Response(
+            {"error": "Visualization not found"}, status=status.HTTP_404_NOT_FOUND
+        )
