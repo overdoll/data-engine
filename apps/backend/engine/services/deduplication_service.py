@@ -246,32 +246,18 @@ class DeduplicationService:
         clusters,
         uuid: str,
     ) -> Path:
-        """
-        Generate and save the cluster studio visualization
-
-        Args:
-            linker: Splink linker instance
-            pairwise_predictions: Splink pairwise predictions
-            clusters: Splink clusters
-            uuid: UUID of the CSV file
-
-        Returns:
-            Path to the generated visualization file
-        """
         # Create temp directory if it doesn't exist
-        tmp_dir = Path(tempfile.gettempdir()) / "cluster_studio"
-        tmp_dir.mkdir(exist_ok=True)
+        tmp_dir = Path(tempfile.gettempdir()) / "cluster_studio" / str(uuid)
+        tmp_dir.mkdir(parents=True, exist_ok=True)
 
         # Create visualization path
-        visualization_path = tmp_dir / f"{uuid}_cluster_studio.html"
+        visualization_path = tmp_dir / "cluster_studio.html"
 
         # Generate visualization
         linker.visualisations.cluster_studio_dashboard(
             pairwise_predictions,
             clusters,
-            str(
-                visualization_path
-            ),  # Convert to string as Splink expects a string path
+            str(visualization_path),
             sampling_method="by_cluster_size",
             overwrite=True,
         )

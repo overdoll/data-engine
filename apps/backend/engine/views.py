@@ -246,6 +246,27 @@ def deduplicate_csv(request, uuid):
     return Response(result)
 
 
+@api_view(["GET"])
+def visualize_deduplication(request, uuid):
+    try:
+        # Get the visualization file
+        tmp_dir = Path(tempfile.gettempdir()) / "cluster_studio" / str(uuid)
+        file_path = tmp_dir / "cluster_studio.html"
+
+        if not file_path.exists():
+            return Response(
+                {"error": "Visualization not found. Please run deduplication first."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        with file_path.open("r", encoding="utf-8") as f:
+            content = f.read()
+            return HttpResponse(content, content_type="text/html")
+
+    except FileNotFoundError:
+        return Response({"error": "File not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
 @api_view(["POST"])
 def generate_column_values(request, uuid):
     try:
@@ -369,25 +390,3 @@ def remove_column(request, uuid):
 
     except ValueError:
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
-
-
-@api_view(["GET"])
-def visualize_deduplication(request, uuid):
-    try:
-        tmp_dir = Path(tempfile.gettempdir()) / "cluster_studio"
-        file_path = tmp_dir / f"{uuid}_cluster_studio.html"
-
-        if not file_path.exists():
-            return Response(
-                {"error": "Visualization not found. Please run deduplication first."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        with file_path.open("r", encoding="utf-8") as f:
-            content = f.read()
-            return HttpResponse(content, content_type="text/html")
-
-    except FileNotFoundError:
-        return Response(
-            {"error": "Visualization not found"}, status=status.HTTP_404_NOT_FOUND
-        )
