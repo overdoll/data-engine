@@ -227,24 +227,20 @@ def get_suggestions(request, uuid):
 
 @api_view(["POST"])
 def deduplicate_csv(request, uuid):
-    try:
-        # Get column_ids from request body
-        column_ids = request.data.get("column_ids", [])
-        if not column_ids:
-            return Response(
-                {"error": "No column_ids provided"}, status=status.HTTP_400_BAD_REQUEST
-            )
+    # Get column_ids from request body
+    column_ids = request.data.get("column_ids", [])
+    if not column_ids:
+        return Response(
+            {"error": "No column_ids provided"}, status=status.HTTP_400_BAD_REQUEST
+        )
 
-        # Get the existing classified data
-        columns = csv_service.get_data(str(uuid))
-        column_defs, rows = csv_service.transform_to_row_format(columns)
+    # Get the existing classified data
+    columns = csv_service.get_data(str(uuid))
+    column_defs, rows = csv_service.transform_to_row_format(columns)
 
-        # Perform deduplication
-        result = deduplication_service.deduplicate(column_defs, rows, column_ids)
-        return Response(result)
-
-    except ValueError:
-        return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
+    # Perform deduplication
+    result = deduplication_service.deduplicate(column_defs, rows, column_ids)
+    return Response(result)
 
 
 @api_view(["POST"])

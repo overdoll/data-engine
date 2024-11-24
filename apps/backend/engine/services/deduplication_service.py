@@ -1,25 +1,40 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, NamedTuple
 from splink import DuckDBAPI, Linker, SettingsCreator, block_on
 import pandas as pd
-from .types import ColumnDef, Row
+from .types import ColumnDef, Row, BlockingRuleType
 from .column_processor import get_classifier, ClassifierId
+
+
+class BlockingRule(NamedTuple):
+    classifiers: Tuple[ClassifierId, ...]
+    rule_type: BlockingRuleType
 
 
 class DeduplicationService:
     def __init__(self):
         self.threshold = 0.5
         self.db_api = DuckDBAPI()
-        # Define blocking rule combinations in order of priority
+        # Define blocking rule combinations with their types
         self.blocking_rules = [
-            # Multi-column blocks
-            (ClassifierId.PERSON_EMAIL, ClassifierId.PERSON_LAST_NAME),
-            (ClassifierId.PERSON_FIRST_NAME, ClassifierId.PERSON_LAST_NAME),
-            # Single column blocks
-            (ClassifierId.PERSON_EMAIL,),
-            (ClassifierId.COMPANY_EMAIL,),
-            (ClassifierId.PERSON_LAST_NAME,),
-            (ClassifierId.PERSON_PHONE,),
-            (ClassifierId.COMPANY_PHONE,),
+            # High match rate rules
+            BlockingRule(
+                (ClassifierId.PERSON_EMAIL,), BlockingRuleType.HIGH_MATCH_RATE
+            ),
+            BlockingRule(
+                (ClassifierId.PERSON_PHONE,), BlockingRuleType.HIGH_MATCH_RATE
+            ),
+            BlockingRule(
+                (ClassifierId.COMPANY_PHONE,), BlockingRuleType.HIGH_MATCH_RATE
+            ),
+            BlockingRule(
+                (ClassifierId.COMPANY_EMAIL,), BlockingRuleType.HIGH_MATCH_RATE
+            ),
+            BlockingRule(
+                (ClassifierId.PERSON_FIRST_NAME, ClassifierId.PERSON_LAST_NAME),
+                BlockingRuleType.HIGH_MATCH_RATE,
+            ),
+            # Standard rules
+            BlockingRule((ClassifierId.PERSON_LAST_NAME,), BlockingRuleType.STANDARD),
         ]
 
     def deduplicate(
@@ -37,7 +52,8 @@ class DeduplicationService:
         linker = Linker(df, settings, self.db_api)
 
         blocking_rules = self._get_blocking_rules(column_defs, column_ids)
-        if not blocking_rules:
+
+        if not any(rules for rules in blocking_rules.values()):
             return {
                 "original_count": len(rows),
                 "deduplicated_count": 0,
@@ -45,21 +61,23 @@ class DeduplicationService:
                 "grouped_results": [],
             }
 
-        # TODO add this back in
-        # if you have rules that result in a high probability of matches
-        # email, phone number, social, etc.
-        # or a combination of last name + something else
-        # linker.training.estimate_probability_two_random_records_match(
-        #     blocking_rules,
-        #     recall=0.7,
-        # )
-
+        # Estimate u values using random sampling
         linker.training.estimate_u_using_random_sampling(max_pairs=1e6)
 
-        linker.training.estimate_parameters_using_expectation_maximisation(
-            blocking_rules[0],
-            populate_probability_two_random_records_match_from_trained_values=True,
-        )
+        # First estimate parameters using high match rate rules if available
+        high_match_rules = blocking_rules[BlockingRuleType.HIGH_MATCH_RATE]
+        if high_match_rules:
+            for rule in high_match_rules:
+                linker.training.estimate_parameters_using_expectation_maximisation(
+                    rule,
+                )
+
+        # Then estimate using standard rules if no high match rate rules were available
+        if not high_match_rules and blocking_rules[BlockingRuleType.STANDARD]:
+            linker.training.estimate_parameters_using_expectation_maximisation(
+                blocking_rules[BlockingRuleType.STANDARD][0],
+                populate_probability_two_random_records_match_from_trained_values=True,
+            )
 
         # Get predictions
         pairwise_predictions = linker.inference.predict(threshold_match_weight=-5)
@@ -154,29 +172,31 @@ class DeduplicationService:
 
     def _get_blocking_rules(
         self, column_defs: List[ColumnDef], column_ids: List[str]
-    ) -> List[block_on]:
+    ) -> Dict[BlockingRuleType, List[block_on]]:
         """Generate blocking rules based on available classified columns"""
-        # Step 1: Get classified columns that match our column_ids
+        # Get classified columns that match our column_ids
         classified_columns = {
             col["id"]: col["classification"]
             for col in column_defs
             if col["id"] in column_ids and col.get("classification")
         }
 
-        # Step 2: Get valid classifiers for our columns
+        # Get valid classifiers for our columns
         column_classifiers = {
             col_id: get_classifier(classification, col_id)
             for col_id, classification in classified_columns.items()
         }
 
-        # Step 3: Generate blocking rules based on available classifiers
-        blocking_rules = []
+        # Generate blocking rules based on available classifiers
+        blocking_rules: Dict[BlockingRuleType, List[block_on]] = {
+            BlockingRuleType.HIGH_MATCH_RATE: [],
+            BlockingRuleType.STANDARD: [],
+        }
 
         # Check each blocking rule combination
-        for rule_combination in self.blocking_rules:
-            # Get column IDs that match the classifiers in this rule
+        for rule in self.blocking_rules:
             matching_columns = []
-            for classifier_id in rule_combination:
+            for classifier_id in rule.classifiers:
                 # Find column that has this classification
                 matching_col = next(
                     (
@@ -190,15 +210,15 @@ class DeduplicationService:
                     matching_columns.append(matching_col)
 
             # If we found all needed columns for this rule, add it
-            if len(matching_columns) == len(rule_combination):
-                blocking_rules.append(block_on(*matching_columns))
+            if len(matching_columns) == len(rule.classifiers):
+                blocking_rules[rule.rule_type].append(block_on(*matching_columns))
 
         return blocking_rules
 
     def _create_splink_settings(
         self, column_defs: List[ColumnDef], column_ids: List[str]
     ) -> SettingsCreator:
-        """Create Splink settings with blocking rules"""
+        """Create Splink settings with comparisons but no blocking rules"""
         # Get comparisons from classifiers
         comparisons = []
         for col in column_defs:
@@ -207,16 +227,13 @@ class DeduplicationService:
                 if classifier and classifier.splink_comparator:
                     comparisons.append(classifier.splink_comparator)
 
-        # Get blocking rules
-        blocking_rules = self._get_blocking_rules(column_defs, column_ids)
-
-        if not blocking_rules:
-            raise ValueError("No suitable blocking rules could be generated")
+        if not comparisons:
+            raise ValueError("No suitable comparisons could be generated")
 
         return SettingsCreator(
             link_type="dedupe_only",
             comparisons=comparisons,
-            blocking_rules_to_generate_predictions=blocking_rules,
-            em_convergence=0.1,
-            max_iterations=10,
+            retain_intermediate_calculation_columns=True,
+            retain_matching_columns=True,
+            blocking_rules_to_generate_predictions=[],  # Empty list for blocking rules
         )
