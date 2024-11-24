@@ -4,8 +4,9 @@ import { AgGridReact } from "ag-grid-react"
 import { ColDef, GridReadyEvent, IServerSideGetRowsParams } from "ag-grid-community"
 import "ag-grid-community/styles/ag-grid.css"
 import "ag-grid-community/styles/ag-theme-quartz.css"
-import { useMemo, useCallback, useRef } from "react"
+import { useMemo, useCallback, useRef, useEffect } from "react"
 import { useDuplicatesStore } from "@/stores/duplicates"
+import { useDeduplicate } from "@/utils/api"
 
 declare global {
   interface Window {
@@ -45,6 +46,22 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
 
   const gridRef = useRef<AgGridReact>(null)
   const { isShowingDuplicates } = useDuplicatesStore()
+
+  const { mutate: deduplicate } = useDeduplicate(fileId)
+  const { setSelectedColumns } = useDuplicatesStore()
+
+  useEffect(() => {
+    if (csvMetadata?.columns) {
+      const defaultColumns = csvMetadata.columns
+        .filter(col => col.default_deduplicate && col.classification)
+        .map(col => col.id)
+      
+      setSelectedColumns(defaultColumns)
+      if (defaultColumns.length > 0) {
+        deduplicate()
+      }
+    }
+  }, [csvMetadata, deduplicate, setSelectedColumns])
 
   const columnDefs = useMemo<ColDef<RowData>[]>(() => {
     if (!csvMetadata?.columns) return []

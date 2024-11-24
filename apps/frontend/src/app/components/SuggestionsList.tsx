@@ -46,7 +46,7 @@ export function SuggestionsList({ fileId }: { fileId: string }) {
               onCheckedChange={handleSelectAll}
             />
             <Label className="text-md font-semibold">
-              Possible fixes ({suggestions?.length || 0})
+              Available fixes ({suggestions?.length || 0})
             </Label>
           </div>
           <ApplySuggestionsButton fileId={fileId} />

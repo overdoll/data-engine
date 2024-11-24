@@ -3,7 +3,7 @@ import { Label } from "@/components/label"
 import { Textarea } from "@/components/textarea"
 import { FixButton } from "./FixButton"
 import { Select } from "@/components/select"
-import { useCsvData, useCsvMetadata, useGenerateTransformation } from "@/utils/api"
+import { useCsvData, useCsvMetadata, useGenerateColumnValues } from "@/utils/api"
 import { Button } from "@/components/button"
 import { Loader2 } from "lucide-react"
 import { TransformationPreviewTable } from "./TransformationPreviewTable"
@@ -32,7 +32,7 @@ export function CustomTransformationModal({
   const { data } = useCsvData(fileId)
   const { data: metadata } = useCsvMetadata(fileId)
 
-  const generateTransformation = useGenerateTransformation(fileId)
+  const generateTransformation = useGenerateColumnValues(fileId)
 
   const {
     description,

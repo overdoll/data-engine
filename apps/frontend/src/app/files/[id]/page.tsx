@@ -7,13 +7,13 @@ import { Label } from "@/components/label"
 import { ExportDropdown } from "../../components/ExportDropdown"
 import Head from "next/head"
 import Link from "next/link"
-import { SuggestionsList } from "../../components/SuggestionsList"
 import { DuplicatesToggle } from "../../components/DuplicatesToggle"
 import { TypeSelectionModal } from "../../components/TypeSelectionModal"
 import { useEffect } from "react"
 import { useSuggestionsStore } from "@/stores/suggestions"
 import { useTransformationStore } from "@/stores/useTransformationStore"
 import { useDuplicatesStore } from "@/stores/duplicates"
+import { Sidebar } from "../../components/Sidebar"
 
 export default function FileViewerPage() {
   const params = useParams()
@@ -49,15 +49,12 @@ export default function FileViewerPage() {
           </Label>
         </div>
         <div className="flex items-center gap-2">
-          <DuplicatesToggle />
           <ExportDropdown fileName={metadata.fileName} />
         </div>
       </div>
       <div className="flex gap-4 px-2">
         <CsvViewer fileId={metadata.id} />
-        <div className="h-[calc(100vh-79px)] bg-ui-bg-base border-ui-border-base flex flex-col rounded-lg border w-[300px]">
-          <SuggestionsList fileId={metadata.id} />
-        </div>
+        <Sidebar fileId={metadata.id} />
       </div>
       <TypeSelectionModal fileId={metadata.id} />
     </main>

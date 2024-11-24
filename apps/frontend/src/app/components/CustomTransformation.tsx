@@ -4,11 +4,11 @@ import { Plus } from "lucide-react"
 import { useState } from "react"
 import { CustomTransformationModal } from "./CustomTransformationModal"
 import { Label } from "@/components/label"
-import { useApplyTransformations } from "@/utils/api"
+import { useUpdateColumnValues } from "@/utils/api"
 
 export function CustomTransformation({ fileId }: { fileId: string }) {
   const [open, setOpen] = useState(false)
-  const applyTransformations = useApplyTransformations(fileId)
+  const applyTransformations = useUpdateColumnValues(fileId)
 
   const handleSubmit = async (data: {
     description: string

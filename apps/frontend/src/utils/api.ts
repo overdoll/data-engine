@@ -57,6 +57,7 @@ export interface CsvMetadata {
     id: string
     label: string
     classification?: string
+    default_deduplicate?: boolean
   }[]
   metadata: {
     original_filename: string
@@ -113,36 +114,12 @@ export const useFileMetadata = (id: string) => {
   })
 }
 
-function assignRandomDuplicates(
-  rows: CsvRowsData["rows"],
-  duplicatePercentage: number = 0.3
-): CsvRowsData["rows"] {
-  const rowsCopy = [...rows]
-  const numDuplicates = Math.floor(rows.length * duplicatePercentage)
-
-  // Randomly select rows to be marked as duplicates
-  for (let i = 0; i < numDuplicates; i++) {
-    const randomIndex = Math.floor(Math.random() * rowsCopy.length)
-    const randomTargetIndex = Math.floor(Math.random() * rowsCopy.length)
-
-    // Don't create self-references or duplicate existing relationships
-    if (randomIndex !== randomTargetIndex && !rowsCopy[randomIndex].is_duplicate_of_row_id) {
-      rowsCopy[randomIndex].is_duplicate_of_row_id = rowsCopy[randomTargetIndex].id
-    }
-  }
-
-  return rowsCopy
-}
-
 export const useCsvData = (id: string) => {
   return useQuery({
     queryKey: queryKeys.csvData(id),
     queryFn: async () => {
       const { data } = await apiClient.get<CsvRowsData>(`/csv/${id}`)
-      // Modify the data to include random duplicates
-      return {
-        rows: assignRandomDuplicates(data.rows),
-      }
+      return data
     },
     enabled: !!id,
   })
@@ -242,7 +219,7 @@ export interface Transformation {
 }
 
 // Add new mutation for generating transformations
-export const useGenerateTransformation = (fileId: string) => {
+export const useGenerateColumnValues = (fileId: string) => {
   return useMutation({
     mutationFn: async ({ columnId, prompt }: { columnId: string; prompt: string }) => {
       const { data } = await apiClient.post<Transformation>(
@@ -258,7 +235,7 @@ export const useGenerateTransformation = (fileId: string) => {
 }
 
 // Add new mutation for applying transformations
-export const useApplyTransformations = (fileId: string) => {
+export const useUpdateColumnValues = (fileId: string) => {
   const queryClient = useQueryClient()
 
   return useMutation({
@@ -325,7 +302,7 @@ export const useUpdateDatasetType = (fileId: string) => {
       const { data } = await apiClient.post<UpdateDatasetTypeResponse>(
         `/csv/${fileId}/update-dataset-type`,
         {
-          dataset_type: datasetType
+          dataset_type: datasetType,
         }
       )
       return data
@@ -335,7 +312,7 @@ export const useUpdateDatasetType = (fileId: string) => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.csvMetadata(fileId) })
       await queryClient.invalidateQueries({ queryKey: queryKeys.files })
       await queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(fileId) })
-    }
+    },
   })
 }
 
