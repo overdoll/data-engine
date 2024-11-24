@@ -36,11 +36,6 @@ class DeduplicationService:
         settings = self._create_splink_settings(column_defs, column_ids)
         linker = Linker(df, settings, self.db_api)
 
-        # TODO: use
-        # https://moj-analytical-services.github.io/splink/getting_started.html
-        # to figure this out
-        # TODO: also try deterministic dedupe
-        # https://moj-analytical-services.github.io/splink/demos/examples/duckdb/deterministic_dedupe.html
         blocking_rules = self._get_blocking_rules(column_defs, column_ids)
         if not blocking_rules:
             return {
@@ -49,6 +44,15 @@ class DeduplicationService:
                 "reason": "no blocking rules available",
                 "grouped_results": [],
             }
+
+        # TODO add this back in
+        # if you have rules that result in a high probability of matches
+        # email, phone number, social, etc.
+        # or a combination of last name + something else
+        # linker.training.estimate_probability_two_random_records_match(
+        #     blocking_rules,
+        #     recall=0.7,
+        # )
 
         linker.training.estimate_u_using_random_sampling(max_pairs=1e6)
 
