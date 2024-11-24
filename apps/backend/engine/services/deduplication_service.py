@@ -50,15 +50,11 @@ class DeduplicationService:
                 "grouped_results": [],
             }
 
-        linker.training.estimate_probability_two_random_records_match(
-            blocking_rules,
-            recall=0.7,
-        )
-
         linker.training.estimate_u_using_random_sampling(max_pairs=1e6)
 
         linker.training.estimate_parameters_using_expectation_maximisation(
-            blocking_rules[0]
+            blocking_rules[0],
+            populate_probability_two_random_records_match_from_trained_values=True,
         )
 
         # Get predictions
@@ -75,6 +71,14 @@ class DeduplicationService:
         # Cluster results
         clusters = linker.clustering.cluster_pairwise_predictions_at_threshold(
             pairwise_predictions, self.threshold
+        )
+
+        linker.visualisations.cluster_studio_dashboard(
+            pairwise_predictions,
+            clusters,
+            "cluster_studio.html",
+            sampling_method="by_cluster_size",
+            overwrite=True,
         )
 
         duplicate_mapping = self._create_duplicate_mapping(clusters)
