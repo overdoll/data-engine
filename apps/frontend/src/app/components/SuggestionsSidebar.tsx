@@ -10,8 +10,9 @@ import { useEffect, useRef } from "react"
 import { SingleColumnPageSkeleton } from "@/components/skeleton"
 import { useMostRecentUpload } from "@/stores/mostRecentUpload"
 import { CustomTransformation } from "./CustomTransformation"
+import { SidebarHeader } from "./Sidebar"
 
-export function SuggestionsList({ fileId }: { fileId: string }) {
+export function SuggestionsSidebar({ fileId }: { fileId: string }) {
   const { toggleSuggestion, isSelected } = useSuggestionsStore()
   const mostRecentFileId = useMostRecentUpload((state) => state.fileId)
   const hasSelectedOnce = useRef(false)
@@ -37,21 +38,19 @@ export function SuggestionsList({ fileId }: { fileId: string }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-4 border-b">
-        <div className="flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Checkbox
-              disabled={!suggestions || suggestions?.length === 0}
-              checked={suggestions && suggestions?.length > 0 ? isSelected(suggestions) : false}
-              onCheckedChange={handleSelectAll}
-            />
-            <Label className="text-md font-semibold">
-              Available fixes ({suggestions?.length || 0})
-            </Label>
-          </div>
-          <ApplySuggestionsButton fileId={fileId} />
+      <SidebarHeader>
+        <div className="flex items-center gap-2">
+          <Checkbox
+            disabled={!suggestions || suggestions?.length === 0}
+            checked={suggestions && suggestions?.length > 0 ? isSelected(suggestions) : false}
+            onCheckedChange={handleSelectAll}
+          />
+          <Label className="text-md font-semibold">
+            Available fixes ({suggestions?.length || 0})
+          </Label>
         </div>
-      </div>
+        <ApplySuggestionsButton fileId={fileId} />
+      </SidebarHeader>
       <div className="flex-1 overflow-auto p-4">
         <div className="flex flex-col gap-4">
           {suggestions?.map((suggestion) => (

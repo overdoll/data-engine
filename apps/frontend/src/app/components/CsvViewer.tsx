@@ -7,6 +7,7 @@ import "ag-grid-community/styles/ag-theme-quartz.css"
 import { useMemo, useCallback, useRef, useEffect } from "react"
 import { useDuplicatesStore } from "@/stores/duplicates"
 import { useDeduplicate } from "@/utils/api"
+import { useModeStore } from "@/stores/mode"
 
 declare global {
   interface Window {
@@ -45,7 +46,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   } = useCsvMetadata(fileId)
 
   const gridRef = useRef<AgGridReact>(null)
-  const { isShowingDuplicates } = useDuplicatesStore()
+  const { mode } = useModeStore()
 
   const { mutate: deduplicate } = useDeduplicate(fileId)
   const { setSelectedColumns } = useDuplicatesStore()
@@ -53,9 +54,9 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   useEffect(() => {
     if (csvMetadata?.columns) {
       const defaultColumns = csvMetadata.columns
-        .filter(col => col.default_deduplicate && col.classification)
-        .map(col => col.id)
-      
+        .filter((col) => col.default_deduplicate && col.classification)
+        .map((col) => col.id)
+
       setSelectedColumns(defaultColumns)
       if (defaultColumns.length > 0) {
         deduplicate()
@@ -89,7 +90,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           return
         }
 
-        const isShowingDuplicates = useDuplicatesStore.getState().isShowingDuplicates
+        const isShowingDuplicates = useModeStore.getState().mode === "deduplicate"
 
         if (params.request.groupKeys.length > 0) {
           const rows = csvData.rows
@@ -199,7 +200,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
         suppressRowTransform={true}
         enableCellTextSelection={true}
         suppressRowClickSelection={true}
-        treeData={isShowingDuplicates}
+        treeData={mode === "deduplicate"}
         getDataPath={(data: RowData) => {
           return [data.id]
         }}
@@ -220,7 +221,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           return classes.join(" ")
         }}
         isServerSideGroup={(dataItem) => {
-          return dataItem.has_duplicates && isShowingDuplicates
+          return dataItem.has_duplicates && mode === "deduplicate"
         }}
         getServerSideGroupKey={(dataItem) => {
           return dataItem.id

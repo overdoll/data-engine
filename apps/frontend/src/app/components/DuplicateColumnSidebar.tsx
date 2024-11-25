@@ -1,19 +1,15 @@
 "use client"
 
-import { useCsvMetadata } from "@/utils/api"
+import { CsvColumn, useCsvMetadata } from "@/utils/api"
 import { Tooltip, TooltipProvider } from "@/components/tooltip/tooltip"
 import { useDuplicatesStore } from "@/stores/duplicates"
 import { Checkbox } from "@/components/checkbox"
 import { Label } from "@/components/label"
 import { Alert } from "@/components/alert"
 import React from "react"
-import { DuplicatesToggle } from "./DuplicatesToggle"
+import { SidebarHeader } from "./Sidebar"
 
-interface DuplicateColumnSelectorProps {
-  fileId: string
-}
-
-export function DuplicateColumnSelector({ fileId }: DuplicateColumnSelectorProps) {
+export function DuplicateColumnSidebar({ fileId }: { fileId: string }) {
   const { data: metadata } = useCsvMetadata(fileId)
   const { selectedColumns, toggleColumn } = useDuplicatesStore()
 
@@ -48,31 +44,24 @@ export function DuplicateColumnSelector({ fileId }: DuplicateColumnSelectorProps
   }
 
   return (
-    <div className="flex flex-col gap-2 p-4 h-full">
-      <div className="flex flex-col gap-3 border-b">
-        <div className="flex justify-between items-center mb-2 sticky top-0 z-10 pb-2">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-2">
-              <Checkbox
-                disabled={!hasClassifiedColumns}
-                checked={allClassifiedSelected && hasClassifiedColumns}
-                onCheckedChange={handleSelectAll}
-              />
-              <Label className="text-md font-semibold">
-                Available columns ({classifiedColumns.length || 0})
-              </Label>
-            </div>
+    <div className="flex flex-col h-full">
+      <SidebarHeader>
+        <div className="flex flex-col gap-2 my-auto">
+          <div className="flex items-center gap-2 my-auto">
+            <Checkbox
+              disabled={!hasClassifiedColumns}
+              checked={allClassifiedSelected && hasClassifiedColumns}
+              onCheckedChange={handleSelectAll}
+            />
+            <Label className="text-md font-semibold">
+              Available columns ({classifiedColumns.length || 0})
+            </Label>
           </div>
-          <DuplicatesToggle />
         </div>
+      </SidebarHeader>
 
-        {!hasClassifiedColumns && (
-          <Alert variant="warning" className="mb-2">
-            You need to fix columns before you can use them for deduplication.
-          </Alert>
-        )}
-
-        <div className="overflow-y-auto max-h-[calc(100vh-200px)] pr-2">
+      <div className="relative flex-1 overflow-hidden">
+        <div className="overflow-y-auto h-full p-4">
           {sortedColumns.map((column) => {
             const isClassified = !!column.classification
 
@@ -91,32 +80,43 @@ export function DuplicateColumnSelector({ fileId }: DuplicateColumnSelectorProps
 
             return (
               <TooltipProvider key={column.id}>
-                <Tooltip content="This column needs to be fixed before it can be used for deduplication">
+                <Tooltip
+                  content="This column needs to be fixed before it can be used for deduplication"
+                  side="right"
+                >
                   {row}
                 </Tooltip>
               </TooltipProvider>
             )
           })}
         </div>
+
+        {!hasClassifiedColumns && (
+          <div className="absolute inset-0 flex items-center justify-center bg-gray-100/60 p-4">
+            <Alert variant="warning" className="max-w-[95%]">
+              You need to fix columns before you can use them for deduplication.
+            </Alert>
+          </div>
+        )}
       </div>
     </div>
   )
 }
 
 interface ColumnRowProps {
-  column: {
-    id: string
-    label: string
-    classification?: string
-  }
+  column: CsvColumn
   isSelected: boolean
-  onToggle: (id: string) => void
+  onToggle: (columnId: string) => void
   disabled: boolean
 }
 
 function ColumnRow({ column, isSelected, onToggle, disabled }: ColumnRowProps) {
   return (
-    <div className={`flex items-center gap-2 ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}>
+    <div
+      className={`flex items-center gap-2 py-1 ${
+        disabled ? "opacity-50 cursor-not-allowed" : ""
+      } border-b`}
+    >
       <Checkbox
         id={column.id}
         checked={isSelected}
@@ -127,7 +127,7 @@ function ColumnRow({ column, isSelected, onToggle, disabled }: ColumnRowProps) {
         }}
         disabled={disabled}
       />
-      <Label htmlFor={column.id} className="cursor-pointer">
+      <Label htmlFor={column.id} className={disabled ? "cursor-not-allowed" : "cursor-pointer"}>
         {column.label}
       </Label>
     </div>

@@ -7,13 +7,14 @@ import { Label } from "@/components/label"
 import { ExportDropdown } from "../../components/ExportDropdown"
 import Head from "next/head"
 import Link from "next/link"
-import { DuplicatesToggle } from "../../components/DuplicatesToggle"
 import { TypeSelectionModal } from "../../components/TypeSelectionModal"
 import { useEffect } from "react"
 import { useSuggestionsStore } from "@/stores/suggestions"
 import { useTransformationStore } from "@/stores/useTransformationStore"
 import { useDuplicatesStore } from "@/stores/duplicates"
 import { Sidebar } from "../../components/Sidebar"
+import { ModeToggle } from "../../components/ModeToggle"
+import { useModeStore } from "@/stores/mode"
 
 export default function FileViewerPage() {
   const params = useParams()
@@ -25,6 +26,7 @@ export default function FileViewerPage() {
     useSuggestionsStore.getState().resetState()
     useTransformationStore.getState().resetState()
     useDuplicatesStore.getState().resetState()
+    useModeStore.getState().setMode("clean")
   }, [])
 
   if (isLoading) {
@@ -49,6 +51,7 @@ export default function FileViewerPage() {
           </Label>
         </div>
         <div className="flex items-center gap-2">
+          <ModeToggle />
           <ExportDropdown fileName={metadata.fileName} />
         </div>
       </div>

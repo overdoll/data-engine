@@ -52,13 +52,15 @@ export interface CsvRowsData {
   }[]
 }
 
+export interface CsvColumn {
+  id: string
+  label: string
+  classification?: string
+  default_deduplicate?: boolean
+}
+
 export interface CsvMetadata {
-  columns: {
-    id: string
-    label: string
-    classification?: string
-    default_deduplicate?: boolean
-  }[]
+  columns: CsvColumn[]
   metadata: {
     original_filename: string
     dataset_type: DatasetType
@@ -207,6 +209,7 @@ export const useApplySuggestion = (fileId: string) => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.csvData(fileId) })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.csvMetadata(fileId) })
       window.gridApi?.refreshCells({ force: true })
       await queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(fileId) })
     },
