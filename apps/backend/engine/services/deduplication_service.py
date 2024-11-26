@@ -131,7 +131,8 @@ class DeduplicationService:
             )
 
             # Generate visualization
-            self._generate_visualization(linker, pairwise_predictions, clusters, uuid)
+            # TODO: this fails sometimes
+            # self._generate_visualization(linker, pairwise_predictions, clusters, uuid)
 
             # Process results
             duplicate_mapping = self._create_duplicate_mapping(clusters)
