@@ -150,6 +150,7 @@ class DeduplicationService:
                 "deduplication_type": "deterministic"
                 if rule_type == BlockingRuleType.DETERMINISTIC
                 else "probabilistic",
+                "rows": processed_rows,
             }
         except DeduplicationError as e:
             return {
