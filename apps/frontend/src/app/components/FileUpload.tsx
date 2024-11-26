@@ -26,7 +26,7 @@ export function FileUpload() {
           onSuccess: (response) => {
             setPendingFile(undefined)
             setMostRecentFileId(response.id)
-            router.push(`/files/${response.friendlyId}`)
+            router.push(`/files/${response.id}`)
           },
         })
       }}

@@ -2,7 +2,6 @@ interface FileMetadata {
   id: string
   fileName: string
   uploadDate: Date
-  friendlyId: string
 }
 
 const STORAGE_KEY = "dataset-files"
@@ -23,15 +22,4 @@ export function getFiles(): FileMetadata[] {
     ...file,
     uploadDate: new Date(file.uploadDate),
   }))
-}
-
-export function getFile(friendlyId: string): FileMetadata | undefined {
-  const files = getFiles()
-  return files.find((file) => file.friendlyId === friendlyId)
-}
-
-export function removeFile(friendlyId: string): void {
-  const files = getFiles()
-  const updatedFiles = files.filter((file) => file.friendlyId !== friendlyId)
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedFiles))
 }

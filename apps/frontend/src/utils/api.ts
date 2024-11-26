@@ -1,7 +1,6 @@
 import axios from "axios"
 import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { addFile, getFile, getFiles } from "./db"
-import { nanoid } from "nanoid"
+import { addFile, getFiles } from "./db"
 import { useDuplicatesStore } from "../stores/duplicates"
 
 // Default cache settings
@@ -63,6 +62,7 @@ export interface CsvColumn {
 export interface CsvMetadata {
   columns: CsvColumn[]
   metadata: {
+    id: string
     original_filename: string
     dataset_type: DatasetType
   }
@@ -107,16 +107,6 @@ export const useFile = (id: string) => {
   })
 }
 
-export const useFileMetadata = (id: string) => {
-  return useQuery({
-    queryKey: queryKeys.fileMetadata(id),
-    queryFn: async () => {
-      return getFile(id)
-    },
-    enabled: !!id,
-  })
-}
-
 export const useCsvData = (id: string) => {
   return useQuery({
     queryKey: queryKeys.csvData(id),
@@ -133,7 +123,7 @@ export const useCsvMetadata = (id: string) => {
     queryKey: queryKeys.csvMetadata(id),
     queryFn: async () => {
       const { data } = await apiClient.get<CsvMetadata>(`/csv/${id}/metadata`)
-      return data
+      return { ...data, metadata: { ...data.metadata, id } }
     },
     enabled: !!id,
   })
@@ -165,15 +155,10 @@ export const useUploadFile = () => {
 
       const fileData = file.get("file")
       if (fileData instanceof File) {
-        const sanitizedName = fileData.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase()
-        const randomId = nanoid(6)
-        const friendlyId = `${sanitizedName}-${randomId}`
-
         const fileMetadata = {
           id: data.uuid,
           fileName: data.metadata.original_filename,
           uploadDate: new Date(),
-          friendlyId,
           type: data.metadata.dataset_type,
         }
 
@@ -287,6 +272,8 @@ export const useDeduplicate = (fileId: string) => {
       return data
     },
     onSuccess: async (data) => {
+      if (!data) return
+
       // Create a map of original rows to their duplicates
       const duplicateMap: Record<string, string[]> = {}
       data.rows.forEach((row) => {

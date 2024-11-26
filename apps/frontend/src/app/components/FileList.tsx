@@ -13,8 +13,8 @@ export function FileList() {
     <div className="flex flex-col">
       {files?.map((file) => (
         <Link
-          key={file.friendlyId}
-          href={`/files/${file.friendlyId}`}
+          key={file.id}
+          href={`/files/${file.id}`}
           className="animate-in fade-in-0 duration-200 py-1 px-3 text-center text-gray-500 hover:text-blue-500 flex items-center justify-between"
         >
           <span>{file.fileName}</span>
