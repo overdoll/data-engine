@@ -28,6 +28,10 @@ class BlockingRule(NamedTuple):
     blocking_rules: Tuple[Tuple[ClassifierId, ...], ...]
 
 
+# TODO:
+# two choices here with deduplication rules:
+# either get AI to generate this
+# or we hardcode it based on our experience
 DEDUPLICATION_RULES = {
     DatasetType.PERSON: [
         BlockingRule(
@@ -143,7 +147,7 @@ class DeduplicationService:
             return {
                 "original_count": len(rows),
                 "deduplicated_count": deduplicated_count,
-                "reason": "deterministic"
+                "deduplication_type": "deterministic"
                 if rule_type == BlockingRuleType.DETERMINISTIC
                 else "probabilistic",
             }
@@ -151,7 +155,7 @@ class DeduplicationService:
             return {
                 "original_count": len(rows),
                 "deduplicated_count": 0,
-                "reason": str(e),
+                "error": str(e),
             }
 
     def _get_deterministic_predictions(
