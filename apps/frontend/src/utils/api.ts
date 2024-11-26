@@ -31,7 +31,7 @@ interface ApiError {
   status: number
 }
 
-export type DatasetType = "PERSON" | "COMPANY" | null
+export type DatasetType = "PERSON" | "COMPANY"
 
 // File types
 export interface FileUploadResponse {

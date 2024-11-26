@@ -1,25 +1,18 @@
 import { Label } from "@/components/label"
 import { Tooltip, TooltipProvider } from "@/components/tooltip"
-import Buildings from "@/icons/buildings"
-import User from "@/icons/user"
+import { DatasetTypeIcon } from "./DatasetTypeIcon"
+import { DATASET_TYPES } from "@/utils/dataset-types"
+import { DatasetType as DatasetTypeEnum } from "@/utils/api"
 
-export function DatasetType({ datasetType }: { datasetType: "COMPANY" | "PERSON" }) {
+export function DatasetType({ datasetType }: { datasetType: DatasetTypeEnum }) {
+  const type = DATASET_TYPES.find((t) => t.id === datasetType)!
+
   return (
     <TooltipProvider>
       <Tooltip content="Dataset type cannot be changed after initial selection">
         <div className="flex items-center gap-2">
-          {datasetType === "COMPANY" && (
-            <>
-              <Buildings className="h-4 w-4" />
-              <Label size="large">Company</Label>
-            </>
-          )}
-          {datasetType === "PERSON" && (
-            <>
-              <User className="h-4 w-4" />
-              <Label size="large">Person</Label>
-            </>
-          )}
+          <DatasetTypeIcon type={datasetType} />
+          <Label size="large">{type.label}</Label>
         </div>
       </Tooltip>
     </TooltipProvider>
