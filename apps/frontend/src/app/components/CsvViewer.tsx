@@ -4,10 +4,10 @@ import { AgGridReact } from "ag-grid-react"
 import { ColDef, GridReadyEvent, IServerSideGetRowsParams } from "ag-grid-community"
 import "ag-grid-community/styles/ag-grid.css"
 import "ag-grid-community/styles/ag-theme-quartz.css"
-import { useMemo, useCallback, useRef, useEffect } from "react"
+import { useMemo, useCallback, useRef } from "react"
 import { useDuplicatesStore } from "@/stores/duplicates"
-import { useDeduplicate } from "@/utils/api"
 import { useModeStore } from "@/stores/mode"
+import { useDeduplicateListener } from "./useDeduplicateListener"
 
 declare global {
   interface Window {
@@ -48,21 +48,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   const gridRef = useRef<AgGridReact>(null)
   const { mode } = useModeStore()
 
-  const { mutate: deduplicate } = useDeduplicate(fileId)
-  const { setSelectedColumns } = useDuplicatesStore()
-
-  useEffect(() => {
-    if (csvMetadata?.columns) {
-      const defaultColumns = csvMetadata.columns
-        .filter((col) => col.default_deduplicate && col.classification)
-        .map((col) => col.id)
-
-      setSelectedColumns(defaultColumns)
-      if (defaultColumns.length > 0) {
-        deduplicate()
-      }
-    }
-  }, [csvMetadata, deduplicate, setSelectedColumns])
+  useDeduplicateListener(fileId)
 
   const columnDefs = useMemo<ColDef<RowData>[]>(() => {
     if (!csvMetadata?.columns) return []
@@ -83,6 +69,10 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   }, [csvMetadata?.columns, csvData?.rows])
 
   const serverSideDatasource = useCallback(() => {
+    // do NOT modify the following lines- they must be in the function, otherwise, we will get stale state
+    const duplicateRows = useDuplicatesStore.getState().duplicateRows
+    const isShowingDuplicates = useModeStore.getState().mode === "deduplicate"
+
     return {
       getRows: (params: IServerSideGetRowsParams) => {
         if (!csvData?.rows) {
@@ -90,48 +80,35 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           return
         }
 
-        const isShowingDuplicates = useModeStore.getState().mode === "deduplicate"
-
         if (params.request.groupKeys.length > 0) {
+          const parentId = params.request.groupKeys[0]
+          const duplicateIds = duplicateRows[parentId] || []
+
           const rows = csvData.rows
-            .filter(
-              (row) =>
-                row.is_duplicate_of_row_id !== "" &&
-                params.request.groupKeys.includes(row.is_duplicate_of_row_id!) &&
-                !params.request.groupKeys.includes(row.id)
-            )
+            .filter((row) => duplicateIds.includes(row.id))
             .map((row) => ({
               ...row.data,
               id: row.id,
-              is_duplicate_of_row_id: row.is_duplicate_of_row_id,
+              is_duplicate_of_row_id: parentId,
             }))
 
           params.success({
             rowData: rows,
             rowCount: rows.length,
           })
-
           return
         }
 
         if (isShowingDuplicates) {
-          // Create a Set of IDs that have duplicates
-          const idsWithDuplicates = new Set(
-            csvData.rows
-              .filter((row) => !!row.is_duplicate_of_row_id)
-              .map((row) => row.is_duplicate_of_row_id)
-          )
-
           const rows = csvData.rows
             .filter((row) => !row.is_duplicate_of_row_id)
             .map((row) => ({
               ...row.data,
               id: row.id,
               is_duplicate_of_row_id: undefined,
-              has_duplicates: idsWithDuplicates.has(row.id),
+              has_duplicates: !!duplicateRows[row.id]?.length,
             }))
             .sort((a, b) => {
-              // Sort by has_duplicates (true first)
               if (a.has_duplicates && !b.has_duplicates) return -1
               if (!a.has_duplicates && b.has_duplicates) return 1
               return 0
@@ -144,6 +121,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           return
         }
 
+        // Regular view (no duplicates)
         const rows = csvData.rows
           .filter((row) => !row.is_duplicate_of_row_id)
           .map((row) => ({

@@ -6,10 +6,13 @@ interface SuggestionsState {
   toggleSuggestion: (suggestions: Suggestion | Suggestion[]) => void
   isSelected: (suggestions: Suggestion | Suggestion[]) => boolean
   resetState: () => void
+  hasAutoSelected: boolean
+  setHasAutoSelected: () => void
 }
 
 export const useSuggestionsStore = create<SuggestionsState>((set, get) => ({
   selectedSuggestions: [],
+  hasAutoSelected: false,
 
   toggleSuggestion: (suggestionOrSuggestions) => {
     const suggestions = Array.isArray(suggestionOrSuggestions)
@@ -34,12 +37,12 @@ export const useSuggestionsStore = create<SuggestionsState>((set, get) => ({
 
   isSelected: (suggestions) => {
     const suggests = Array.isArray(suggestions) ? suggestions : [suggestions]
-
     const state = get()
     const selectedIds = new Set(state.selectedSuggestions.map((s) => s.suggestion_id))
-
     return suggests.every((suggestion) => selectedIds.has(suggestion.suggestion_id))
   },
 
-  resetState: () => set({ selectedSuggestions: [] }),
+  resetState: () => set({ selectedSuggestions: [], hasAutoSelected: false }),
+  
+  setHasAutoSelected: () => set({ hasAutoSelected: true }),
 }))

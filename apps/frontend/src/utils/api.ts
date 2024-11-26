@@ -2,6 +2,7 @@ import axios from "axios"
 import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { addFile, getFile, getFiles } from "./db"
 import { nanoid } from "nanoid"
+import { useDuplicatesStore } from "../stores/duplicates"
 
 // Default cache settings
 const defaultCacheTime = 1000 * 60 * 5 // 5 minutes
@@ -276,13 +277,30 @@ export interface DeduplicationResponse {
 // Update the deduplication mutation
 export const useDeduplicate = (fileId: string) => {
   const queryClient = useQueryClient()
+  const setDuplicateRows = useDuplicatesStore((state) => state.setDuplicateRows)
 
   return useMutation({
-    mutationFn: async () => {
-      const { data } = await apiClient.post<DeduplicationResponse>(`/csv/${fileId}/deduplicate`)
+    mutationFn: async (columnIds: string[]) => {
+      const { data } = await apiClient.post<DeduplicationResponse>(`/csv/${fileId}/deduplicate`, {
+        column_ids: columnIds,
+      })
       return data
     },
     onSuccess: async (data) => {
+      // Create a map of original rows to their duplicates
+      const duplicateMap: Record<string, string[]> = {}
+      data.rows.forEach((row) => {
+        if (row.is_duplicate_of) {
+          if (!duplicateMap[row.is_duplicate_of]) {
+            duplicateMap[row.is_duplicate_of] = []
+          }
+          duplicateMap[row.is_duplicate_of].push(row.id)
+        }
+      })
+
+      // Store the duplicate mapping
+      setDuplicateRows(duplicateMap)
+
       // Update the cache with the new rows that include duplicate information
       queryClient.setQueryData(queryKeys.csvData(fileId), { rows: data.rows })
       window.gridApi?.refreshCells({ force: true })

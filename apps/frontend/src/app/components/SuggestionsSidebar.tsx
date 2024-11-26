@@ -6,25 +6,24 @@ import { useSuggestions } from "@/utils/api"
 import { Suggestion } from "./Suggestion"
 import { ApplySuggestionsButton } from "./ApplySuggestionsButton"
 import { useSuggestionsStore } from "@/stores/suggestions"
-import { useEffect, useRef } from "react"
+import { useEffect } from "react"
 import { SingleColumnPageSkeleton } from "@/components/skeleton"
 import { useMostRecentUpload } from "@/stores/mostRecentUpload"
 import { CustomTransformation } from "./CustomTransformation"
 import { SidebarHeader } from "./Sidebar"
 
 export function SuggestionsSidebar({ fileId }: { fileId: string }) {
-  const { toggleSuggestion, isSelected } = useSuggestionsStore()
+  const { toggleSuggestion, isSelected, hasAutoSelected, setHasAutoSelected } = useSuggestionsStore()
   const mostRecentFileId = useMostRecentUpload((state) => state.fileId)
-  const hasSelectedOnce = useRef(false)
 
   const { data: suggestions, isLoading } = useSuggestions(fileId, !mostRecentFileId)
 
   useEffect(() => {
-    if (suggestions && !isLoading && !hasSelectedOnce.current) {
+    if (suggestions && !isLoading && !hasAutoSelected) {
       toggleSuggestion(suggestions)
-      hasSelectedOnce.current = true
+      setHasAutoSelected()
     }
-  }, [suggestions, isLoading, toggleSuggestion])
+  }, [suggestions, isLoading, toggleSuggestion, hasAutoSelected, setHasAutoSelected])
 
   if (isLoading) {
     return <SingleColumnPageSkeleton />
