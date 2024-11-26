@@ -238,11 +238,18 @@ def deduplicate_csv(request, uuid):
         )
 
     # Get the existing classified data
+    metadata = csv_service.get_metadata(str(uuid))
     columns = csv_service.get_data(str(uuid))
     column_defs, rows = csv_service.transform_to_row_format(columns)
 
     # Perform deduplication
-    result = deduplication_service.deduplicate(column_defs, rows, column_ids, uuid)
+    result = deduplication_service.deduplicate(
+        column_defs,
+        rows,
+        column_ids,
+        uuid,
+        metadata["dataset_type"],
+    )
     return Response(result)
 
 

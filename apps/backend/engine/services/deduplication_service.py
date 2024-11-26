@@ -1,43 +1,94 @@
 from typing import Dict, List, Tuple, NamedTuple
 from splink import DuckDBAPI, Linker, SettingsCreator, block_on
 import pandas as pd
-from .types import ColumnDef, Row, BlockingRuleType
+from .types import ColumnDef, Row
 from .column_processor import get_classifier, ClassifierId
 from pathlib import Path
 import tempfile
+from enum import Enum
+
+from .base import (
+    DatasetType,
+)
+
+
+class BlockingRuleType(Enum):
+    PROBABILISTIC = "probabilistic"
+    DETERMINISTIC = "deterministic"
 
 
 class BlockingRule(NamedTuple):
-    classifiers: Tuple[ClassifierId, ...]
     rule_type: BlockingRuleType
+    # required_columns: All columns that must exist in the input data for this rule to be used
+    # For example, to use first_name + last_name blocking, both columns must be present
+    required_columns: Tuple[ClassifierId, ...]
+    # blocking_rules: Each inner tuple represents a combination of columns to block on
+    # Records are compared only within blocks that match on these column combinations
+    # Multiple rules allow for different blocking strategies (e.g. match on first_name OR last_name)
+    blocking_rules: Tuple[Tuple[ClassifierId, ...], ...]
+
+
+# TODO:
+# two choices here with deduplication rules:
+# either get AI to generate this
+# or we hardcode it based on our experience
+DEDUPLICATION_RULES = {
+    DatasetType.PERSON: [
+        BlockingRule(
+            rule_type=BlockingRuleType.DETERMINISTIC,
+            required_columns=(ClassifierId.PERSON_EMAIL,),
+            blocking_rules=((ClassifierId.PERSON_EMAIL,),),
+        ),
+        BlockingRule(
+            rule_type=BlockingRuleType.DETERMINISTIC,
+            required_columns=(ClassifierId.PERSON_PHONE,),
+            blocking_rules=((ClassifierId.PERSON_PHONE,),),
+        ),
+        BlockingRule(
+            rule_type=BlockingRuleType.DETERMINISTIC,
+            required_columns=(ClassifierId.PERSON_LAST_NAME,),
+            blocking_rules=((ClassifierId.PERSON_LAST_NAME,),),
+        ),
+        BlockingRule(
+            rule_type=BlockingRuleType.PROBABILISTIC,
+            required_columns=(
+                ClassifierId.PERSON_FIRST_NAME,
+                ClassifierId.PERSON_LAST_NAME,
+            ),
+            blocking_rules=((ClassifierId.PERSON_LAST_NAME,),),
+        ),
+        BlockingRule(
+            rule_type=BlockingRuleType.PROBABILISTIC,
+            required_columns=(
+                ClassifierId.PERSON_FIRST_NAME,
+                ClassifierId.PERSON_LAST_NAME,
+                ClassifierId.PERSON_EMAIL,
+            ),
+            blocking_rules=(
+                (ClassifierId.PERSON_FIRST_NAME, ClassifierId.PERSON_LAST_NAME),
+                (ClassifierId.PERSON_EMAIL,),
+            ),
+        ),
+    ],
+    DatasetType.COMPANY: [
+        BlockingRule(
+            rule_type=BlockingRuleType.PROBABILISTIC,
+            required_columns=(ClassifierId.COMPANY_NAME,),
+            blocking_rules=((ClassifierId.COMPANY_NAME,),),
+        ),
+    ],
+}
+
+
+class DeduplicationError(Exception):
+    """Base exception for deduplication errors"""
+
+    pass
 
 
 class DeduplicationService:
     def __init__(self):
-        self.threshold = 0.5
         self.db_api = DuckDBAPI()
-        # Define blocking rule combinations with their types
-        self.blocking_rules = [
-            # High match rate rules
-            BlockingRule(
-                (ClassifierId.PERSON_EMAIL,), BlockingRuleType.HIGH_MATCH_RATE
-            ),
-            BlockingRule(
-                (ClassifierId.PERSON_PHONE,), BlockingRuleType.HIGH_MATCH_RATE
-            ),
-            BlockingRule(
-                (ClassifierId.COMPANY_PHONE,), BlockingRuleType.HIGH_MATCH_RATE
-            ),
-            BlockingRule(
-                (ClassifierId.COMPANY_EMAIL,), BlockingRuleType.HIGH_MATCH_RATE
-            ),
-            BlockingRule(
-                (ClassifierId.PERSON_FIRST_NAME, ClassifierId.PERSON_LAST_NAME),
-                BlockingRuleType.HIGH_MATCH_RATE,
-            ),
-            # Standard rules
-            BlockingRule((ClassifierId.PERSON_LAST_NAME,), BlockingRuleType.STANDARD),
-        ]
 
     def deduplicate(
         self,
@@ -45,75 +96,112 @@ class DeduplicationService:
         rows: List[Row],
         column_ids: List[str],
         uuid: str,
+        dataset_type: str,
     ) -> Dict:
-        """
-        Deduplicate data using Splink with parameter estimation
-        """
-        # Transform data to format expected by Splink
-        transformed_rows = self._rows_to_splink(rows)
-        df = pd.DataFrame(transformed_rows)
+        try:
+            if not column_ids:
+                raise DeduplicationError("No columns selected for deduplication")
 
-        # Create settings using column IDs
-        splink_settings = self._create_splink_settings(column_defs, column_ids)
-        linker = Linker(df, splink_settings, self.db_api)
+            dataset_type = DatasetType(dataset_type)
 
-        blocking_rules = self._get_blocking_rules(column_defs, column_ids)
+            # Transform data to format expected by Splink
+            transformed_rows = self._rows_to_splink(rows)
+            df = pd.DataFrame(transformed_rows)
 
-        if not any(rules for rules in blocking_rules.values()):
+            # Get matching approach, blocking rules, and comparisons
+            rule_type, blocking_rules, comparisons = self._get_blocking_rules(
+                column_defs, column_ids, dataset_type
+            )
+
+            # Get predictions based on deduplication type
+            if rule_type == BlockingRuleType.DETERMINISTIC:
+                pairwise_predictions, linker = self._get_deterministic_predictions(
+                    df, blocking_rules
+                )
+                threshold = None
+            else:
+                pairwise_predictions, linker = self._get_probabilistic_predictions(
+                    df, blocking_rules, comparisons
+                )
+                threshold = 0.5
+
+            # Check if pairwise_predictions is empty
+            if pairwise_predictions.as_pandas_dataframe().empty:
+                raise DeduplicationError("No matches found")
+
+            # Cluster predictions
+            clusters = linker.clustering.cluster_pairwise_predictions_at_threshold(
+                pairwise_predictions, threshold_match_probability=threshold
+            )
+
+            # Generate visualization
+            # TODO: this fails sometimes
+            # self._generate_visualization(linker, pairwise_predictions, clusters, uuid)
+
+            # Process results
+            duplicate_mapping = self._create_duplicate_mapping(clusters)
+            processed_rows, deduplicated_count = self._process_rows_with_duplicates(
+                rows, duplicate_mapping
+            )
+
+            return {
+                "original_count": len(rows),
+                "deduplicated_count": deduplicated_count,
+                "deduplication_type": "deterministic"
+                if rule_type == BlockingRuleType.DETERMINISTIC
+                else "probabilistic",
+            }
+        except DeduplicationError as e:
             return {
                 "original_count": len(rows),
                 "deduplicated_count": 0,
-                "reason": "no blocking rules available",
-                "grouped_results": [],
+                "error": str(e),
             }
 
-        # Estimate u values using random sampling
-        linker.training.estimate_u_using_random_sampling(max_pairs=1e6)
+    def _get_deterministic_predictions(
+        self, df: pd.DataFrame, blocking_rules: List[block_on]
+    ):
+        """Get predictions using deterministic matching"""
+        settings = SettingsCreator(
+            link_type="dedupe_only",
+            retain_intermediate_calculation_columns=True,
+            retain_matching_columns=True,
+            blocking_rules_to_generate_predictions=blocking_rules,
+        )
 
-        # First estimate parameters using high match rate rules if available
-        high_match_rules = blocking_rules[BlockingRuleType.HIGH_MATCH_RATE]
-        if high_match_rules:
-            for rule in high_match_rules:
-                linker.training.estimate_parameters_using_expectation_maximisation(
-                    rule,
-                )
+        linker = Linker(df, settings, self.db_api)
+        return linker.inference.deterministic_link(), linker
 
-        # Then estimate using standard rules if no high match rate rules were available
-        if not high_match_rules and blocking_rules[BlockingRuleType.STANDARD]:
-            linker.training.estimate_parameters_using_expectation_maximisation(
-                blocking_rules[BlockingRuleType.STANDARD][0],
-                populate_probability_two_random_records_match_from_trained_values=True,
+    def _get_probabilistic_predictions(
+        self,
+        df: pd.DataFrame,
+        blocking_rules: List[block_on],
+        comparisons: List,
+    ):
+        """Get predictions using probabilistic matching"""
+        if not comparisons:
+            raise DeduplicationError(
+                "No valid comparison columns available after blocking"
             )
 
-        # Get predictions
-        pairwise_predictions = linker.inference.predict(threshold_match_weight=-5)
-
-        # Check if pairwise_predictions is empty
-        if pairwise_predictions.as_pandas_dataframe().empty:
-            return {
-                "original_count": len(rows),
-                "deduplicated_count": 0,  # No deduplication occurred
-                "reason": "pairwise predictions empty",
-            }
-
-        # Cluster results
-        clusters = linker.clustering.cluster_pairwise_predictions_at_threshold(
-            pairwise_predictions, self.threshold
+        splink_settings = SettingsCreator(
+            link_type="dedupe_only",
+            comparisons=comparisons,
+            retain_intermediate_calculation_columns=True,
+            retain_matching_columns=True,
+            blocking_rules_to_generate_predictions=[],
         )
 
-        # Generate visualization
-        self._generate_visualization(linker, pairwise_predictions, clusters, uuid)
+        linker = Linker(df, splink_settings, self.db_api)
 
-        duplicate_mapping = self._create_duplicate_mapping(clusters)
-        processed_rows, deduplicated_count = self._process_rows_with_duplicates(
-            rows, duplicate_mapping
-        )
+        # Estimate u values using random sampling
+        linker.training.estimate_u_using_random_sampling(max_pairs=1e9)
 
-        return {
-            "original_count": len(rows),
-            "deduplicated_count": deduplicated_count,
-            "reason": "calculated using splink",
-        }
+        # We train the m values for each blocking rule
+        for rule in blocking_rules:
+            linker.training.estimate_parameters_using_expectation_maximisation(rule)
+
+        return linker.inference.predict(threshold_match_weight=-5), linker
 
     def _rows_to_splink(self, rows: List[Row]) -> List[Dict]:
         """Transform rows to format expected by Splink"""
@@ -172,72 +260,77 @@ class DeduplicationService:
         return processed_rows, deduplicated_count
 
     def _get_blocking_rules(
-        self, column_defs: List[ColumnDef], column_ids: List[str]
-    ) -> Dict[BlockingRuleType, List[block_on]]:
-        """Generate blocking rules based on available classified columns"""
-        # Get classified columns that match our column_ids
-        classified_columns = {
-            col["id"]: col["classification"]
-            for col in column_defs
-            if col["id"] in column_ids and col.get("classification")
-        }
-
-        # Get valid classifiers for our columns
-        column_classifiers = {
-            col_id: get_classifier(classification, col_id)
-            for col_id, classification in classified_columns.items()
-        }
-
-        # Generate blocking rules based on available classifiers
-        blocking_rules: Dict[BlockingRuleType, List[block_on]] = {
-            BlockingRuleType.HIGH_MATCH_RATE: [],
-            BlockingRuleType.STANDARD: [],
-        }
-
-        # Check each blocking rule combination
-        for rule in self.blocking_rules:
-            matching_columns = []
-            for classifier_id in rule.classifiers:
-                # Find column that has this classification
-                matching_col = next(
-                    (
-                        col_id
-                        for col_id, classifier in column_classifiers.items()
-                        if classifier and classifier.id() == classifier_id.value
-                    ),
-                    None,
-                )
-                if matching_col:
-                    matching_columns.append(matching_col)
-
-            # If we found all needed columns for this rule, add it
-            if len(matching_columns) == len(rule.classifiers):
-                blocking_rules[rule.rule_type].append(block_on(*matching_columns))
-
-        return blocking_rules
-
-    def _create_splink_settings(
-        self, column_defs: List[ColumnDef], column_ids: List[str]
-    ) -> SettingsCreator:
-        """Create Splink settings with comparisons but no blocking rules"""
-        # Get comparisons from classifiers
+        self,
+        column_defs: List[ColumnDef],
+        column_ids: List[str],
+        dataset_type: DatasetType,
+    ) -> Tuple[BlockingRuleType, List[block_on], List]:
+        """
+        Determine blocking rules, matching approach, and comparisons based on available columns
+        Returns tuple of (rule_type, blocking_rules, comparisons)
+        """
+        # Map columns to their classifiers and collect comparisons
+        column_classifiers: Dict[ClassifierId, str] = {}
         comparisons = []
+
         for col in column_defs:
             if col["id"] in column_ids and col.get("classification"):
                 classifier = get_classifier(col["classification"], col["id"])
-                if classifier and classifier.splink_comparator:
-                    comparisons.append(classifier.splink_comparator)
+                if classifier:
+                    column_classifiers[ClassifierId(classifier.id())] = col["id"]
+                    if classifier.splink_comparator:
+                        comparisons.append(classifier.splink_comparator)
 
-        if not comparisons:
-            raise ValueError("No suitable comparisons could be generated")
+        if not column_classifiers:
+            raise DeduplicationError(
+                "No valid classified columns available for matching"
+            )
 
-        return SettingsCreator(
-            link_type="dedupe_only",
-            comparisons=comparisons,
-            retain_intermediate_calculation_columns=True,
-            retain_matching_columns=True,
-            blocking_rules_to_generate_predictions=[],  # Empty list for blocking rules
+        # Get applicable rules for this dataset type
+        dataset_rules = DEDUPLICATION_RULES.get(dataset_type, [])
+        if not dataset_rules:
+            raise DeduplicationError(
+                f"No deduplication rules defined for {dataset_type}"
+            )
+
+        # Find matching rules based on available columns
+        matching_rules: List[BlockingRule] = []
+        for rule in dataset_rules:
+            if all(col_id in column_classifiers for col_id in rule.required_columns):
+                matching_rules.append(rule)
+
+        if not matching_rules:
+            raise DeduplicationError(
+                "No matching rules found for the selected column combination"
+            )
+
+        # Convert matching rules to Splink blocking rules
+        splink_rules = []
+        for rule in matching_rules:
+            for blocking_combo in rule.blocking_rules:
+                block_columns = [
+                    column_classifiers[col_id] for col_id in blocking_combo
+                ]
+                splink_rules.append(block_on(*block_columns))
+
+        # Determine matching approach
+        has_deterministic = any(
+            rule.rule_type == BlockingRuleType.DETERMINISTIC for rule in matching_rules
         )
+        has_probabilistic = any(
+            rule.rule_type == BlockingRuleType.PROBABILISTIC for rule in matching_rules
+        )
+
+        if has_deterministic and not has_probabilistic:
+            return BlockingRuleType.DETERMINISTIC, splink_rules, []
+        elif has_probabilistic:
+            if not comparisons:
+                raise DeduplicationError(
+                    "No valid comparisons available for probabilistic matching"
+                )
+            return BlockingRuleType.PROBABILISTIC, splink_rules, comparisons
+        else:
+            raise DeduplicationError("No valid matching rules found")
 
     def _generate_visualization(
         self,
