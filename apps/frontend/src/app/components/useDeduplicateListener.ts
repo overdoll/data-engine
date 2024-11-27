@@ -1,9 +1,11 @@
 import { useEffect } from "react"
 import { useCsvMetadata, useDeduplicate } from "@/utils/api"
 import { useDuplicatesStore } from "@/stores/duplicates"
+import { useModeStore } from "@/stores/mode"
 
 export function useDeduplicateListener(fileId: string) {
   const { mutateAsync: deduplicate, isPending } = useDeduplicate(fileId)
+  const { mode } = useModeStore()
   const {
     setSelectedColumns,
     selectedColumns,
@@ -30,6 +32,11 @@ export function useDeduplicateListener(fileId: string) {
   }, [isPending, setIsDeduplicating])
 
   useEffect(() => {
+    window.gridApi?.refreshCells({ force: true })
+    window.gridApi?.refreshServerSide()
+  }, [mode])
+
+  useEffect(() => {
     async function handleDeduplicate() {
       if (selectedColumns.length === 0) {
         setError("SELECT_COLUMNS")
@@ -50,6 +57,8 @@ export function useDeduplicateListener(fileId: string) {
         totalRows: stats.original_count,
       })
 
+      console.log(stats.rows)
+
       // Create a map of original rows to their duplicates
       const duplicateMap: Record<string, string[]> = {}
       stats.rows.forEach((row) => {
@@ -63,8 +72,6 @@ export function useDeduplicateListener(fileId: string) {
 
       // Store the duplicate mapping
       setDuplicateRows(duplicateMap)
-
-      console.log(duplicateMap)
 
       window.gridApi?.refreshCells({ force: true })
       window.gridApi?.refreshServerSide()
