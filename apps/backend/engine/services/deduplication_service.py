@@ -242,7 +242,6 @@ class DeduplicationService:
             row_copy = row.copy()
             row_id = row["id"]
             row_copy["is_duplicate_of"] = duplicate_mapping.get(row_id, None)
-            print("duplicate_mapping", duplicate_mapping.get(row_id, None))
             processed_rows.append(row_copy)
 
         deduplicated_count = len(rows) - len(duplicate_mapping)
@@ -322,7 +321,6 @@ class DeduplicationService:
                         splink_rules.append(block_on(*block_columns))
                         block_rules.append(block_columns)
 
-        print("Using blocking rules:", block_rules)
         # Determine matching approach
         has_deterministic = any(
             rule.rule_type == BlockingRuleType.DETERMINISTIC for rule in matching_rules
