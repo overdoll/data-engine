@@ -63,6 +63,8 @@ export function useDeduplicateListener(fileId: string) {
       // Store the duplicate mapping
       setDuplicateRows(duplicateMap)
 
+      console.log(duplicateMap)
+
       window.gridApi?.refreshCells({ force: true })
       window.gridApi?.refreshServerSide()
     }

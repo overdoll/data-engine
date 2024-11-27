@@ -10,6 +10,7 @@ import React from "react"
 import { SidebarHeader } from "./Sidebar"
 import Spinner from "@/icons/spinner"
 import ArrowRightMini from "@/icons/arrow-right-mini"
+import { useDeduplicateListener } from "./useDeduplicateListener"
 
 export function DuplicateColumnSidebar({ fileId }: { fileId: string }) {
   const { data: metadata } = useCsvMetadata(fileId)
@@ -118,6 +119,7 @@ export function DuplicateColumnSidebar({ fileId }: { fileId: string }) {
           </div>
         )}
       </div>
+      <Listener fileId={fileId} />
     </div>
   )
 }
@@ -151,4 +153,9 @@ function ColumnRow({ column, isSelected, onToggle, disabled }: ColumnRowProps) {
       </Label>
     </div>
   )
+}
+
+function Listener({ fileId }: { fileId: string }) {
+  useDeduplicateListener(fileId)
+  return null
 }

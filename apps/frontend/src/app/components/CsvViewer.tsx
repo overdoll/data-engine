@@ -7,7 +7,6 @@ import "ag-grid-community/styles/ag-theme-quartz.css"
 import { useMemo, useCallback, useRef } from "react"
 import { useDuplicatesStore } from "@/stores/duplicates"
 import { useModeStore } from "@/stores/mode"
-import { useDeduplicateListener } from "./useDeduplicateListener"
 
 declare global {
   interface Window {
@@ -48,8 +47,6 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   const gridRef = useRef<AgGridReact>(null)
   const { mode } = useModeStore()
 
-  useDeduplicateListener(fileId)
-
   const columnDefs = useMemo<ColDef<RowData>[]>(() => {
     if (!csvMetadata?.columns) return []
 
@@ -73,7 +70,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
     const duplicateRows = useDuplicatesStore.getState().duplicateRows
     const isShowingDuplicates = useModeStore.getState().mode === "deduplicate"
 
-    console.log(duplicateRows)
+    console.log(duplicateRows, isShowingDuplicates)
 
     return {
       getRows: (params: IServerSideGetRowsParams) => {
