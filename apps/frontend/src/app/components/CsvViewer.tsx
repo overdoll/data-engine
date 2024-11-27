@@ -168,7 +168,11 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           filter: false,
           resizable: true,
           suppressMovable: true,
+          suppressMenu: true,
+          menuTabs: [],
         }}
+        suppressContextMenu={true}
+        suppressMenuHide={true}
         rowModelType="serverSide"
         domLayout="normal"
         className="h-full w-full"

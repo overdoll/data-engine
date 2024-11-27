@@ -10,7 +10,6 @@ import React from "react"
 import { SidebarHeader } from "./Sidebar"
 import Spinner from "@/icons/spinner"
 import ArrowRightMini from "@/icons/arrow-right-mini"
-import { useDeduplicateListener } from "./useDeduplicateListener"
 
 export function DuplicateColumnSidebar({ fileId }: { fileId: string }) {
   const { data: metadata } = useCsvMetadata(fileId)
