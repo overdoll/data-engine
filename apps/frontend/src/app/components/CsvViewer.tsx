@@ -73,6 +73,8 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
     const duplicateRows = useDuplicatesStore.getState().duplicateRows
     const isShowingDuplicates = useModeStore.getState().mode === "deduplicate"
 
+    console.log(duplicateRows)
+
     return {
       getRows: (params: IServerSideGetRowsParams) => {
         if (!csvData?.rows) {

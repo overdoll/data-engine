@@ -8,10 +8,12 @@ import { Label } from "@/components/label"
 import { Alert } from "@/components/alert"
 import React from "react"
 import { SidebarHeader } from "./Sidebar"
+import Spinner from "@/icons/spinner"
+import ArrowRightMini from "@/icons/arrow-right-mini"
 
 export function DuplicateColumnSidebar({ fileId }: { fileId: string }) {
   const { data: metadata } = useCsvMetadata(fileId)
-  const { selectedColumns, toggleColumn } = useDuplicatesStore()
+  const { selectedColumns, toggleColumn, isDeduplicating, stats, error } = useDuplicatesStore()
 
   if (!metadata) return null
 
@@ -46,7 +48,7 @@ export function DuplicateColumnSidebar({ fileId }: { fileId: string }) {
   return (
     <div className="flex flex-col h-full">
       <SidebarHeader>
-        <div className="flex flex-col gap-2 my-auto">
+        <div className="flex gap-2 my-auto w-full">
           <div className="flex items-center gap-2 my-auto">
             <Checkbox
               disabled={!hasClassifiedColumns}
@@ -57,11 +59,28 @@ export function DuplicateColumnSidebar({ fileId }: { fileId: string }) {
               Available columns ({classifiedColumns.length || 0})
             </Label>
           </div>
+          {isDeduplicating && (
+            <div className="flex items-center gap-2 px-2 py-1 rounded-md ml-auto">
+              <Label className="text-xsmall text-gray-400">Deduplicating</Label>
+              <Spinner className="h-4 w-4 animate-spin" />
+            </div>
+          )}
+          {!error && stats && !isDeduplicating && (
+            <div className="flex gap-2 items-center text-sm border rounded-md px-2 py-1 ml-auto">
+              <span className="font-semibold">{stats.totalRows}</span>
+              <ArrowRightMini className="h-4 w-4 text-gray-400" />
+              <span className="font-semibold text-green-500">{stats.duplicateRows}</span>
+            </div>
+          )}
         </div>
       </SidebarHeader>
-
+      {error && !isDeduplicating && (
+        <Alert variant="error" className="mx-4 my-2 items-center">
+          Select more columns to start deduplication
+        </Alert>
+      )}
       <div className="relative flex-1 overflow-hidden">
-        <div className="overflow-y-auto h-full p-4">
+        <div className="overflow-y-auto h-full px-4 py-2">
           {sortedColumns.map((column) => {
             const isClassified = !!column.classification
 
@@ -70,7 +89,7 @@ export function DuplicateColumnSidebar({ fileId }: { fileId: string }) {
                 column={column}
                 isSelected={selectedColumns.includes(column.id)}
                 onToggle={toggleColumn}
-                disabled={!isClassified}
+                disabled={!isClassified || isDeduplicating}
               />
             )
 
