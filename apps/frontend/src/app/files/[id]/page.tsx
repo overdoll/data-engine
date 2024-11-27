@@ -17,6 +17,7 @@ import { ModeToggle } from "../../components/ModeToggle"
 import { useModeStore } from "@/stores/mode"
 import { DatasetType } from "../../components/DatasetType"
 import { TopBar } from "../../components/TopBar"
+import { useDeduplicateListener } from "../../components/useDeduplicateListener"
 
 export default function FileViewerPage() {
   const params = useParams()
@@ -38,6 +39,12 @@ export default function FileViewerPage() {
         <Sidebar fileId={fileId} />
       </div>
       <TypeSelectionModal fileId={fileId} />
+      <Listener fileId={fileId} />
     </main>
   )
+}
+
+function Listener({ fileId }: { fileId: string }) {
+  useDeduplicateListener(fileId)
+  return null
 }

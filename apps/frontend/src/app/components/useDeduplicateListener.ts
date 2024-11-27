@@ -22,7 +22,8 @@ export function useDeduplicateListener(fileId: string) {
 
       setSelectedColumns(defaultColumns)
     }
-  }, [csvMetadata, setSelectedColumns])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Empty dependency array ensures this only runs once
 
   useEffect(() => {
     setIsDeduplicating(isPending)
