@@ -1,5 +1,5 @@
 from typing import Dict, List, Tuple, NamedTuple
-from splink import DuckDBAPI, Linker, SettingsCreator, block_on
+from splink import Linker, SettingsCreator, block_on, DuckDBAPI
 from splink.blocking_rule_library import CustomRule
 import pandas as pd
 from .types import ColumnDef, Row
@@ -58,7 +58,7 @@ DEDUPLICATION_RULES = {
     ],
     DatasetType.COMPANY: [
         BlockingRule(
-            rule_type=BlockingRuleType.PROBABILISTIC,
+            rule_type=BlockingRuleType.DETERMINISTIC,
             required_columns=(ClassifierId.COMPANY_NAME,),
             blocking_rules=((ClassifierId.COMPANY_NAME,),),
         ),
@@ -73,9 +73,6 @@ class DeduplicationError(Exception):
 
 
 class DeduplicationService:
-    def __init__(self):
-        self.db_api = DuckDBAPI()
-
     def deduplicate(
         self,
         column_defs: List[ColumnDef],
@@ -126,6 +123,7 @@ class DeduplicationService:
 
             # Process results
             duplicate_mapping = self._create_duplicate_mapping(clusters)
+            print(duplicate_mapping)
             processed_rows, deduplicated_count = self._process_rows_with_duplicates(
                 rows, duplicate_mapping
             )
@@ -149,6 +147,8 @@ class DeduplicationService:
         self, df: pd.DataFrame, blocking_rules: List[block_on]
     ):
         """Get predictions using deterministic matching"""
+        db_api = DuckDBAPI()
+
         settings = SettingsCreator(
             link_type="dedupe_only",
             retain_intermediate_calculation_columns=True,
@@ -156,7 +156,7 @@ class DeduplicationService:
             blocking_rules_to_generate_predictions=blocking_rules,
         )
 
-        linker = Linker(df, settings, self.db_api)
+        linker = Linker(df, settings, db_api)
         return linker.inference.deterministic_link(), linker
 
     def _get_probabilistic_predictions(
@@ -179,7 +179,9 @@ class DeduplicationService:
             blocking_rules_to_generate_predictions=[],
         )
 
-        linker = Linker(df, splink_settings, self.db_api)
+        db_api = DuckDBAPI()
+
+        linker = Linker(df, splink_settings, db_api)
 
         # Estimate u values using random sampling
         linker.training.estimate_u_using_random_sampling(max_pairs=1e6)
@@ -240,6 +242,7 @@ class DeduplicationService:
             row_copy = row.copy()
             row_id = row["id"]
             row_copy["is_duplicate_of"] = duplicate_mapping.get(row_id, None)
+            print("duplicate_mapping", duplicate_mapping.get(row_id, None))
             processed_rows.append(row_copy)
 
         deduplicated_count = len(rows) - len(duplicate_mapping)
