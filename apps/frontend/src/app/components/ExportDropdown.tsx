@@ -26,6 +26,8 @@ export function ExportDropdown({ fileName }: ExportDropdownProps) {
     const csvData = gridApi.getDataAsCsv({
       skipHeader: false,
       columnSeparator: ",",
+      skipColumnGroupHeaders: true,
+      skipRowGroups: true,
     })
 
     // Create and trigger download
@@ -33,7 +35,7 @@ export function ExportDropdown({ fileName }: ExportDropdownProps) {
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
-    link.setAttribute("download", `${fileName || "export"}.csv`)
+    link.setAttribute("download", `Cleaned by DMT - ${fileName || "export"}`)
     link.style.visibility = "hidden "
     document.body.appendChild(link)
     link.click()

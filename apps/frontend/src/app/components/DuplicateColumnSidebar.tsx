@@ -65,7 +65,7 @@ export function DuplicateColumnSidebar({ fileId }: { fileId: string }) {
               <Spinner className="h-4 w-4 animate-spin" />
             </div>
           )}
-          {!error && stats && !isDeduplicating && (
+          {hasClassifiedColumns && !error && stats && !isDeduplicating && (
             <div className="flex gap-2 items-center text-sm border rounded-md px-2 py-1 ml-auto">
               <span className="font-semibold">{stats.totalRows}</span>
               <ArrowRightMini className="h-4 w-4 text-gray-400" />
@@ -74,7 +74,7 @@ export function DuplicateColumnSidebar({ fileId }: { fileId: string }) {
           )}
         </div>
       </SidebarHeader>
-      {error && !isDeduplicating && (
+      {hasClassifiedColumns && error && !isDeduplicating && (
         <Alert variant="error" className="mx-4 my-2 items-center">
           Select more columns to start deduplication
         </Alert>

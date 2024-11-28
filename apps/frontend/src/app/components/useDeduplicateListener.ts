@@ -61,8 +61,6 @@ export function useDeduplicateListener(fileId: string) {
         }
       })
 
-      console.log(stats.rows)
-
       // Store the duplicate mapping
       setDuplicateRows(duplicateMap)
 

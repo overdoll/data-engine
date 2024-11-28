@@ -119,14 +119,6 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           return
         }
 
-        console.log(
-          "regular view",
-          allDuplicateRows.length,
-          csvData.rows.map((row) => row.id),
-          csvData.rows.filter((row) => !allDuplicateRows.includes(row.id)).length,
-          duplicateRows
-        )
-
         // Regular view (no duplicates)
         const rows = csvData.rows
           .filter((row) => !allDuplicateRows.includes(row.id))

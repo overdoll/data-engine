@@ -251,7 +251,6 @@ export const useUpdateColumnValues = (fileId: string) => {
 export interface DeduplicationResponse {
   rows: {
     id: string
-    data: { [key: string]: string }
     is_duplicate_of: string | null
   }[]
   original_count: number
