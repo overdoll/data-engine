@@ -35,6 +35,18 @@ class BlockingRule(NamedTuple):
 # or we hardcode it based on our experience
 DEDUPLICATION_RULES = {
     DatasetType.PERSON: [
+        # Exact name match
+        BlockingRule(
+            rule_type=BlockingRuleType.DETERMINISTIC,
+            required_columns=(
+                ClassifierId.PERSON_FIRST_NAME,
+                ClassifierId.PERSON_LAST_NAME,
+            ),
+            blocking_rules=(
+                f"l.{ClassifierId.PERSON_LAST_NAME} = r.{ClassifierId.PERSON_LAST_NAME} AND l.{ClassifierId.PERSON_FIRST_NAME} = r.{ClassifierId.PERSON_FIRST_NAME}",
+            ),
+        ),
+        # Fuzzy first name + exact last name
         BlockingRule(
             rule_type=BlockingRuleType.DETERMINISTIC,
             required_columns=(
@@ -45,22 +57,85 @@ DEDUPLICATION_RULES = {
                 f"l.{ClassifierId.PERSON_LAST_NAME} = r.{ClassifierId.PERSON_LAST_NAME} AND levenshtein(l.{ClassifierId.PERSON_FIRST_NAME}, r.{ClassifierId.PERSON_FIRST_NAME}) < 3",
             ),
         ),
+        # Email match
         BlockingRule(
             rule_type=BlockingRuleType.DETERMINISTIC,
             required_columns=(ClassifierId.PERSON_EMAIL,),
             blocking_rules=((ClassifierId.PERSON_EMAIL,),),
         ),
+        # Phone match
         BlockingRule(
             rule_type=BlockingRuleType.DETERMINISTIC,
             required_columns=(ClassifierId.PERSON_PHONE,),
             blocking_rules=((ClassifierId.PERSON_PHONE,),),
         ),
+        # Social media profile match
+        BlockingRule(
+            rule_type=BlockingRuleType.DETERMINISTIC,
+            required_columns=(ClassifierId.PERSON_SOCIAL,),
+            blocking_rules=((ClassifierId.PERSON_SOCIAL,),),
+        ),
+        # Website match
+        BlockingRule(
+            rule_type=BlockingRuleType.DETERMINISTIC,
+            required_columns=(ClassifierId.PERSON_WEBSITE,),
+            blocking_rules=((ClassifierId.PERSON_WEBSITE,),),
+        ),
+        # Last name + phone combination
+        BlockingRule(
+            rule_type=BlockingRuleType.DETERMINISTIC,
+            required_columns=(
+                ClassifierId.PERSON_LAST_NAME,
+                ClassifierId.PERSON_PHONE,
+            ),
+            blocking_rules=(
+                f"l.{ClassifierId.PERSON_LAST_NAME} = r.{ClassifierId.PERSON_LAST_NAME} AND l.{ClassifierId.PERSON_PHONE} = r.{ClassifierId.PERSON_PHONE}",
+            ),
+        ),
+        # Last name + email domain combination
+        BlockingRule(
+            rule_type=BlockingRuleType.DETERMINISTIC,
+            required_columns=(
+                ClassifierId.PERSON_LAST_NAME,
+                ClassifierId.PERSON_EMAIL,
+            ),
+            blocking_rules=(
+                f"l.{ClassifierId.PERSON_LAST_NAME} = r.{ClassifierId.PERSON_LAST_NAME} AND split_part(l.{ClassifierId.PERSON_EMAIL}, '@', 2) = split_part(r.{ClassifierId.PERSON_EMAIL}, '@', 2)",
+            ),
+        ),
     ],
     DatasetType.COMPANY: [
+        # Exact company name match
         BlockingRule(
             rule_type=BlockingRuleType.DETERMINISTIC,
             required_columns=(ClassifierId.COMPANY_NAME,),
             blocking_rules=((ClassifierId.COMPANY_NAME,),),
+        ),
+        # Fuzzy company name match
+        BlockingRule(
+            rule_type=BlockingRuleType.DETERMINISTIC,
+            required_columns=(ClassifierId.COMPANY_NAME,),
+            blocking_rules=(
+                f"levenshtein(l.{ClassifierId.COMPANY_NAME}, r.{ClassifierId.COMPANY_NAME}) < 3",
+            ),
+        ),
+        # Website match
+        BlockingRule(
+            rule_type=BlockingRuleType.DETERMINISTIC,
+            required_columns=(ClassifierId.COMPANY_WEBSITE,),
+            blocking_rules=((ClassifierId.COMPANY_WEBSITE,),),
+        ),
+        # Phone match
+        BlockingRule(
+            rule_type=BlockingRuleType.DETERMINISTIC,
+            required_columns=(ClassifierId.COMPANY_PHONE,),
+            blocking_rules=((ClassifierId.COMPANY_PHONE,),),
+        ),
+        # Social media profile match
+        BlockingRule(
+            rule_type=BlockingRuleType.DETERMINISTIC,
+            required_columns=(ClassifierId.COMPANY_SOCIAL,),
+            blocking_rules=((ClassifierId.COMPANY_SOCIAL,),),
         ),
     ],
 }
