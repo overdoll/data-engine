@@ -93,12 +93,12 @@ class CSVService:
         return json.loads(data)
 
     def convert_df_to_columns(self, df: pl.DataFrame) -> List[ColumnDef]:
+        # Generate row IDs once
+        row_ids = [str(uuid.uuid4()) for _ in range(len(df))]
+
         columns: List[ColumnDef] = []
         for col_name in df.columns:
-            # Generate a simple ID by combining the column name with 4 random letters
-            column_id = (
-                f"{col_name}_{''.join(random.choices(string.ascii_lowercase, k=4))}"
-            )
+            column_id = self.generate_column_id(col_name)
             column_data = df[col_name].to_list()
             # Convert all values to strings
             column_data = [str(val) if val is not None else None for val in column_data]
@@ -111,6 +111,17 @@ class CSVService:
                     "data": column_data,
                 }
             )
+
+        # Add row_id column
+        columns.append(
+            {
+                "id": "row_id",
+                "label": "Row ID",
+                "classification": None,
+                "data": row_ids,
+            }
+        )
+
         return columns
 
     def transform_to_row_format(
@@ -119,7 +130,7 @@ class CSVService:
         if not columns or not columns[0]["data"]:
             return [], []
 
-        # Extract column definitions without data
+        # Extract column definitions without data and row_id column
         column_defs = [
             {
                 "id": col["id"],
@@ -127,17 +138,24 @@ class CSVService:
                 "classification": col["classification"],
             }
             for col in columns
+            if col["id"] != "row_id"
         ]
 
-        # Transform to row format using simple numeric IDs
+        # Find row_id column
+        row_id_column = next((col for col in columns if col["id"] == "row_id"), None)
+        if not row_id_column:
+            raise ValueError("Row ID column not found")
+
+        # Transform to row format using stored row IDs
         num_rows = len(columns[0]["data"])
         rows = []
 
         for row_idx in range(num_rows):
             row_data = {}
             for col in columns:
-                row_data[col["id"]] = col["data"][row_idx]
+                if col["id"] != "row_id":  # Skip row_id column in data
+                    row_data[col["id"]] = col["data"][row_idx]
 
-            rows.append({"id": str(uuid.uuid4()), "data": row_data})
+            rows.append({"id": row_id_column["data"][row_idx], "data": row_data})
 
         return column_defs, rows

@@ -314,8 +314,9 @@ class DeduplicationService:
         processed_rows = []
 
         for row in rows:
-            row_copy = row.copy()
+            row_copy = {}
             row_id = row["id"]
+            row_copy["id"] = row_id
             row_copy["is_duplicate_of"] = duplicate_mapping.get(row_id, None)
             processed_rows.append(row_copy)
 
