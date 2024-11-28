@@ -70,7 +70,14 @@ class CSVService:
         # Create a list of columns that have at least one non-empty value
         # (not null AND not empty string)
         non_empty_cols = [
-            col for col in df.columns if df[col].str.strip().is_not_null().any()
+            col
+            for col in df.columns
+            if df[col]
+            .fill_null("")  # Replace nulls with empty string
+            .cast(pl.Utf8)  # Convert to string type
+            .str.strip_chars()  # Strip whitespace
+            .ne("")  # Check if not empty string
+            .any()  # Check if any value is True
         ]
 
         # If we have no non-empty columns, keep all columns to prevent empty DataFrame
