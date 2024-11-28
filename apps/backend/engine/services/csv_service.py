@@ -100,8 +100,13 @@ class CSVService:
         for col_name in df.columns:
             column_id = self.generate_column_id(col_name)
             column_data = df[col_name].to_list()
-            # Convert all values to strings
-            column_data = [str(val) if val is not None else None for val in column_data]
+            # Convert values to strings, treating empty/whitespace strings as None
+            column_data = [
+                str(val)
+                if val is not None and str(val).strip() not in ["", "None"]
+                else None
+                for val in column_data
+            ]
 
             columns.append(
                 {
