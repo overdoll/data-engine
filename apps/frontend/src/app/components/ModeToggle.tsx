@@ -9,6 +9,8 @@ export function ModeToggle() {
 
   const toggle = () => {
     setMode(mode === "clean" ? "deduplicate" : "clean")
+    window.gridApi?.refreshCells({ force: true })
+    window.gridApi?.refreshServerSide()
   }
 
   return (

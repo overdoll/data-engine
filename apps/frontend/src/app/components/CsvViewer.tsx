@@ -66,18 +66,17 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   }, [csvMetadata?.columns, csvData?.rows])
 
   const serverSideDatasource = useCallback(() => {
-    // do NOT modify the following lines- they must be in the function, otherwise, we will get stale state
-    const duplicateRows = useDuplicatesStore.getState().duplicateRows
-    const isShowingDuplicates = useModeStore.getState().mode === "deduplicate"
-
-    console.log(duplicateRows, isShowingDuplicates)
-
     return {
       getRows: (params: IServerSideGetRowsParams) => {
         if (!csvData?.rows) {
           params.success({ rowData: [], rowCount: 0 })
           return
         }
+
+        const duplicateRows = useDuplicatesStore.getState().duplicateRows
+        const isShowingDuplicates = useModeStore.getState().mode === "deduplicate"
+
+        const allDuplicateRows = Object.values(duplicateRows).flat()
 
         if (params.request.groupKeys.length > 0) {
           const parentId = params.request.groupKeys[0]
@@ -100,7 +99,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
 
         if (isShowingDuplicates) {
           const rows = csvData.rows
-            .filter((row) => !row.is_duplicate_of_row_id)
+            .filter((row) => !allDuplicateRows.includes(row.id))
             .map((row) => ({
               ...row.data,
               id: row.id,
@@ -120,9 +119,17 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           return
         }
 
+        console.log(
+          "regular view",
+          allDuplicateRows.length,
+          csvData.rows.map((row) => row.id),
+          csvData.rows.filter((row) => !allDuplicateRows.includes(row.id)).length,
+          duplicateRows
+        )
+
         // Regular view (no duplicates)
         const rows = csvData.rows
-          .filter((row) => !row.is_duplicate_of_row_id)
+          .filter((row) => !allDuplicateRows.includes(row.id))
           .map((row) => ({
             ...row.data,
             id: row.id,

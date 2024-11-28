@@ -36,7 +36,13 @@ export const useDuplicatesStore = create<DuplicatesState>((set) => ({
   setIsDeduplicating: (loading) => set({ isDeduplicating: loading }),
   setStats: (stats) => set({ stats }),
   resetState: () =>
-    set({ selectedColumns: [], isDeduplicating: false, stats: null, duplicateRows: {}, error: null }),
+    set({
+      selectedColumns: [],
+      isDeduplicating: false,
+      stats: null,
+      duplicateRows: {},
+      error: null,
+    }),
   setDuplicateRows: (duplicateRows) => set({ duplicateRows }),
   setError: (error) => set({ error }),
 }))
