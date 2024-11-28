@@ -67,14 +67,20 @@ class CSVService:
         return self._process_dataframe(df)
 
     def _process_dataframe(self, df: pl.DataFrame) -> pl.DataFrame:
-        # Create a list of columns that have at least one non-null value
-        # while preserving their original order
-        non_empty_cols = [col for col in df.columns if df[col].null_count() < len(df)]
+        # Create a list of columns that have at least one non-empty value
+        # (not null AND not empty string)
+        non_empty_cols = [
+            col for col in df.columns if df[col].str.strip().is_not_null().any()
+        ]
+
+        # If we have no non-empty columns, keep all columns to prevent empty DataFrame
+        if not non_empty_cols:
+            non_empty_cols = df.columns
 
         # Filter to keep only non-empty columns in original order
         df = df.select(non_empty_cols)
 
-        # Rename unnamed columns to "(No name)" while preserving order
+        # Rename unnamed or empty string columns to "(No name)" while preserving order
         new_names = {col: "(No name)" if not col.strip() else col for col in df.columns}
         df = df.rename(new_names)
 
