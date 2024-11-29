@@ -8,6 +8,8 @@ import { CubeSolid } from "@/icons/index"
 import { Prompt } from "@/components/prompt"
 import { Input } from "@/components/input"
 import { Label } from "@/components/label"
+import { useFeatureRequest } from "@/utils/api"
+import { Textarea } from "@/components/textarea"
 
 interface ExportDropdownProps {
   fileName: string
@@ -15,7 +17,7 @@ interface ExportDropdownProps {
 
 export function ExportDropdown({ fileName }: ExportDropdownProps) {
   const [modalOpen, setModalOpen] = useState(false)
-  const [selectedFeature, setSelectedFeature] = useState<string>("")
+  const [selectedFeature, setSelectedFeature] = useState<"hubspot" | "salesforce" | null>(null)
 
   const handleExportCsv = () => {
     // Get the grid API from CsvViewer
@@ -28,6 +30,12 @@ export function ExportDropdown({ fileName }: ExportDropdownProps) {
       columnSeparator: ",",
       skipColumnGroupHeaders: true,
       skipRowGroups: true,
+      skipGroups: true,
+      suppressGroupRows: true,
+      onlySelected: false,
+      allColumns: true,
+      processGroupHeaderCallback: () => "", // Skip group header rows
+      shouldRowBeSkipped: (params: any) => params.node.group, // Skip grouped rows
     })
 
     // Create and trigger download
@@ -83,15 +91,26 @@ export function ExportDropdown({ fileName }: ExportDropdownProps) {
 interface PremiumFeatureModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  featureName: string
+  featureName: "hubspot" | "salesforce" | null
 }
 
 export function PremiumFeatureModal({ open, onOpenChange, featureName }: PremiumFeatureModalProps) {
-  const [email, setEmail] = useState("")
+  const [text, setText] = useState("")
+  const { mutateAsync: submitFeatureRequest, isPending } = useFeatureRequest()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // TODO: Handle email submission to API
+
+    // Submit feature request
+    if (featureName) {
+      await submitFeatureRequest({
+        feature_type: featureName === "hubspot" ? "export-hubspot" : "export-salesforce",
+        text, // Using email as the text field
+      })
+    }
+
+    setText("")
+
     onOpenChange(false)
   }
 
@@ -104,22 +123,21 @@ export function PremiumFeatureModal({ open, onOpenChange, featureName }: Premium
             {featureName} export is a premium feature. Sign up to get early access when it launches!
           </Prompt.Description>
         </Prompt.Header>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div>
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
-          </div>
-        </form>
+        <div className="space-y-1 p-6">
+          <Label htmlFor="text">Tell us more</Label>
+          <Textarea
+            id="text"
+            placeholder={`Tell us about what you would do with this data in your ${featureName} account`}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            rows={4}
+          />
+        </div>
         <Prompt.Footer>
           <Prompt.Cancel>Cancel</Prompt.Cancel>
-          <Prompt.Action onClick={handleSubmit}>Sign up for early access</Prompt.Action>
+          <Prompt.Action disabled={text.length < 3 || isPending} onClick={handleSubmit}>
+            Sign up for early access
+          </Prompt.Action>
         </Prompt.Footer>
       </Prompt.Content>
     </Prompt>

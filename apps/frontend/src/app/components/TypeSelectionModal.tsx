@@ -1,7 +1,7 @@
 import { Prompt } from "@/components/prompt"
 import { useState } from "react"
 import { useMostRecentUpload } from "@/stores/mostRecentUpload"
-import { DatasetType, useCsvMetadata, useUpdateDatasetType } from "@/utils/api"
+import { DatasetType, useCsvMetadata, useUpdateDatasetType, useFeatureRequest } from "@/utils/api"
 import { Skeleton } from "@/components/skeleton"
 import { X } from "lucide-react"
 import { Textarea } from "@/components/textarea"
@@ -48,6 +48,7 @@ function TypeSelectionModalContent({
   onClose,
 }: TypeSelectionModalContentProps) {
   const { mutateAsync: updateDatasetType } = useUpdateDatasetType(fileId)
+  const { mutateAsync: submitFeatureRequest } = useFeatureRequest()
   const { setFileId: setMostRecentFileId } = useMostRecentUpload()
   const [selectedType, setSelectedType] = useState<DatasetType>(datasetType)
   const [showOtherInput, setShowOtherInput] = useState(false)
@@ -57,6 +58,14 @@ function TypeSelectionModalContent({
     if (selectedType !== datasetType) {
       await updateDatasetType(selectedType)
     }
+    
+    if (showOtherInput && otherDescription.trim()) {
+      await submitFeatureRequest({
+        feature_type: 'unsupported-dataset-type',
+        text: otherDescription.trim()
+      })
+    }
+    
     setMostRecentFileId(null)
     onClose()
   }
@@ -92,6 +101,12 @@ function TypeSelectionModalContent({
                 >
                   <X className="h-4 w-4" />
                 </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label className="text-gray-400 text-xs">
+                  We only support contacts and companies right now, but we&apos;re more than
+                  interested in hearing about your use-case and what you&apos;re trying to do!
+                </Label>
               </div>
               <Textarea
                 id="other-description"

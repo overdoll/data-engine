@@ -299,6 +299,22 @@ export const useUpdateDatasetType = (fileId: string) => {
   })
 }
 
+// Add new interface for feature request
+export interface FeatureRequest {
+  feature_type: "export-hubspot" | "export-salesforce" | "unsupported-dataset-type"
+  text?: string
+}
+
+// Add new mutation for feature requests
+export const useFeatureRequest = () => {
+  return useMutation({
+    mutationFn: async (request: FeatureRequest) => {
+      const { data } = await apiClient.post("/feature-request", request)
+      return data
+    },
+  })
+}
+
 // Error handling interceptor
 apiClient.interceptors.response.use(
   (response) => response,

@@ -185,10 +185,11 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           return [data.id]
         }}
         autoGroupColumnDef={{
-          headerName: "",
+          headerName: "Unique ID",
           minWidth: 48,
           resizable: false,
           flex: 1,
+          headerComponent: () => null,
         }}
         getRowClass={(params) => {
           const classes = []

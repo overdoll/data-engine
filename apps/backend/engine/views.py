@@ -397,3 +397,34 @@ def remove_column(request, uuid):
 
     except ValueError:
         return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+def feature_request(request):
+    """Handle feature requests from users"""
+    VALID_FEATURE_TYPES = [
+        'export-hubspot',
+        'export-salesforce', 
+        'unsupported-dataset-type'
+    ]
+    
+    feature_type = request.data.get('feature_type')
+    text = request.data.get('text', '')  # Optional text field
+    
+    if not feature_type:
+        return Response(
+            {"error": "feature_type is required"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+        
+    if feature_type not in VALID_FEATURE_TYPES:
+        return Response(
+            {"error": f"Invalid feature_type. Must be one of: {', '.join(VALID_FEATURE_TYPES)}"},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+
+    # For now just return success. In the future, this would store the request or send notifications
+    return Response({
+        "status": "success",
+        "message": "Feature request received"
+    })
