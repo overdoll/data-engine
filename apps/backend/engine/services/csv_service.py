@@ -19,6 +19,10 @@ class CSVService:
         )
         self.bucket = settings.AWS_STORAGE_BUCKET_NAME
 
+    def _get_user_path(self, user_id: str, file_uuid: str) -> str:
+        """Generate the S3 path prefix for a user's file"""
+        return f"{user_id}/{file_uuid}"
+
     @classmethod
     def generate_column_id(cls, label: str) -> str:
         """Generate friendly column ID so its easier to debug on BE + FE"""
@@ -46,19 +50,21 @@ class CSVService:
             f"{formatted_label}_{''.join(random.choices(string.ascii_lowercase, k=4))}"
         )
 
-    def get_metadata(self, file_uuid: str) -> Metadata:
+    def get_metadata(self, user_id: str, file_uuid: str) -> Metadata:
         try:
+            path = self._get_user_path(user_id, file_uuid)
             metadata_obj = self.s3.get_object(
-                Bucket=self.bucket, Key=f"{file_uuid}/metadata.json"
+                Bucket=self.bucket, Key=f"{path}/metadata.json"
             )
             return json.loads(metadata_obj["Body"].read())
         except self.s3.exceptions.NoSuchKey:
             raise ValueError("Metadata not found")
 
-    def save_metadata(self, file_uuid: str, metadata: Metadata):
+    def save_metadata(self, user_id: str, file_uuid: str, metadata: Metadata):
+        path = self._get_user_path(user_id, file_uuid)
         self.s3.put_object(
             Bucket=self.bucket,
-            Key=f"{file_uuid}/metadata.json",
+            Key=f"{path}/metadata.json",
             Body=json.dumps(metadata),
         )
 
@@ -93,17 +99,22 @@ class CSVService:
 
         return df
 
-    def save_data(self, file_uuid: str, columns: List[ColumnDef]):
+    def save_data(self, user_id: str, file_uuid: str, columns: List[ColumnDef]):
+        path = self._get_user_path(user_id, file_uuid)
         self.s3.put_object(
             Bucket=self.bucket,
-            Key=f"{file_uuid}/data.json",
+            Key=f"{path}/data.json",
             Body=json.dumps(columns),
         )
 
-    def get_data(self, file_uuid: str) -> List[ColumnDef]:
-        data_obj = self.s3.get_object(Bucket=self.bucket, Key=f"{file_uuid}/data.json")
-        data = data_obj["Body"].read()
-        return json.loads(data)
+    def get_data(self, user_id: str, file_uuid: str) -> List[ColumnDef]:
+        path = self._get_user_path(user_id, file_uuid)
+        try:
+            data_obj = self.s3.get_object(Bucket=self.bucket, Key=f"{path}/data.json")
+            data = data_obj["Body"].read()
+            return json.loads(data)
+        except self.s3.exceptions.NoSuchKey:
+            raise ValueError("Data not found")
 
     def convert_df_to_columns(self, df: pl.DataFrame) -> List[ColumnDef]:
         # Generate row IDs once

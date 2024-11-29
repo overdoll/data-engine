@@ -1,5 +1,9 @@
 import uuid
-from rest_framework.decorators import api_view
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+)
 from rest_framework.response import Response
 from rest_framework import status
 from .services.csv_service import CSVService, Metadata
@@ -15,6 +19,8 @@ from .services.deduplication_service import DeduplicationService
 from django.http import HttpResponse
 from pathlib import Path
 import tempfile
+from rest_framework.permissions import IsAuthenticated
+from .authentication import ClerkJWTAuthentication
 
 csv_service = CSVService()
 column_operation_service = ColumnOperationService()
@@ -23,6 +29,8 @@ deduplication_service = DeduplicationService()
 
 
 @api_view(["POST"])
+@authentication_classes([ClerkJWTAuthentication])
+@permission_classes([IsAuthenticated])
 def upload_csv(request):
     if "file" not in request.FILES:
         return Response(
@@ -33,10 +41,11 @@ def upload_csv(request):
     df = csv_service.parse_csv(file)
     file_uuid = str(uuid.uuid4())
 
-    # Create metadata with detected dataset type
+    # Create metadata with detected dataset type and user information
     metadata: Metadata = {
         "storage_engine": "v1",
         "original_filename": file.name,
+        "user_id": request.user.id,  # Add user ID to metadata
     }
 
     # Convert DataFrame to column-based format
@@ -51,8 +60,8 @@ def upload_csv(request):
         metadata["dataset_type"] = None
 
     # Save data and metadata
-    csv_service.save_data(file_uuid, columns)
-    csv_service.save_metadata(file_uuid, metadata)
+    csv_service.save_data(request.user.id, file_uuid, columns)
+    csv_service.save_metadata(request.user.id, file_uuid, metadata)
 
     return Response(
         {
@@ -63,9 +72,11 @@ def upload_csv(request):
 
 
 @api_view(["GET"])
+@authentication_classes([ClerkJWTAuthentication])
+@permission_classes([IsAuthenticated])
 def get_csv(request, uuid):
     try:
-        columns = csv_service.get_data(str(uuid))
+        columns = csv_service.get_data(request.user.id, str(uuid))
         _, rows = csv_service.transform_to_row_format(columns)
         return Response({"rows": rows})
     except ValueError:
@@ -73,10 +84,12 @@ def get_csv(request, uuid):
 
 
 @api_view(["GET"])
+@authentication_classes([ClerkJWTAuthentication])
+@permission_classes([IsAuthenticated])
 def get_metadata(request, uuid):
     try:
-        metadata = csv_service.get_metadata(str(uuid))
-        columns = csv_service.get_data(str(uuid))
+        metadata = csv_service.get_metadata(request.user.id, str(uuid))
+        columns = csv_service.get_data(request.user.id, str(uuid))
         column_defs, _ = csv_service.transform_to_row_format(columns)
 
         # Enhance column definitions with classifier metadata
@@ -100,6 +113,8 @@ def get_metadata(request, uuid):
 
 
 @api_view(["POST"])
+@authentication_classes([ClerkJWTAuthentication])
+@permission_classes([IsAuthenticated])
 def update_dataset_type(request, uuid):
     try:
         metadata_update = request.data.get("dataset_type")
@@ -116,7 +131,7 @@ def update_dataset_type(request, uuid):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        columns = csv_service.get_data(str(uuid))
+        columns = csv_service.get_data(request.user.id, str(uuid))
         # Check if any columns are already classified
         classified_columns = [col for col in columns if col.get("classification")]
         if classified_columns:
@@ -128,9 +143,9 @@ def update_dataset_type(request, uuid):
             )
 
         # Update metadata
-        metadata = csv_service.get_metadata(str(uuid)) or {}
+        metadata = csv_service.get_metadata(request.user.id, str(uuid)) or {}
         metadata["dataset_type"] = metadata_update
-        csv_service.save_metadata(str(uuid), metadata)
+        csv_service.save_metadata(request.user.id, str(uuid), metadata)
 
         return Response({"status": "success"})
 
@@ -139,6 +154,8 @@ def update_dataset_type(request, uuid):
 
 
 @api_view(["POST"])
+@authentication_classes([ClerkJWTAuthentication])
+@permission_classes([IsAuthenticated])
 def apply_classifications(request, uuid):
     try:
         classifications = request.data.get("classifications", [])
@@ -148,7 +165,7 @@ def apply_classifications(request, uuid):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        columns = csv_service.get_data(str(uuid))
+        columns = csv_service.get_data(request.user.id, str(uuid))
         operations = []
 
         for classification in classifications:
@@ -165,10 +182,10 @@ def apply_classifications(request, uuid):
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         columns = column_operation_service.apply_operations(columns, operations)
-        csv_service.save_data(str(uuid), columns)
+        csv_service.save_data(request.user.id, str(uuid), columns)
 
         # Update metadata to remove applied suggestions
-        metadata = csv_service.get_metadata(str(uuid)) or {}
+        metadata = csv_service.get_metadata(request.user.id, str(uuid)) or {}
         if "suggestions" in metadata:
             classified_columns = [
                 classification["column_id"] for classification in classifications
@@ -178,7 +195,7 @@ def apply_classifications(request, uuid):
                 for s in metadata["suggestions"]
                 if s.get("column_id") not in classified_columns
             ]
-            csv_service.save_metadata(str(uuid), metadata)
+            csv_service.save_metadata(request.user.id, str(uuid), metadata)
 
         return Response({"status": "success"})
 
@@ -187,17 +204,19 @@ def apply_classifications(request, uuid):
 
 
 @api_view(["GET"])
+@authentication_classes([ClerkJWTAuthentication])
+@permission_classes([IsAuthenticated])
 def get_suggestions(request, uuid):
     print(f"Received suggestion request for UUID: {uuid}")
     try:
-        metadata = csv_service.get_metadata(str(uuid))
+        metadata = csv_service.get_metadata(request.user.id, str(uuid))
 
         # Check if we have cached suggestions
         if metadata and "suggestions" in metadata:
             print("Returning cached suggestions from metadata")
             return Response(metadata["suggestions"])
 
-        columns = csv_service.get_data(str(uuid))
+        columns = csv_service.get_data(request.user.id, str(uuid))
 
         # Generate new suggestions if none exist
         print(f"Retrieved {len(columns)} columns, getting AI suggestions")
@@ -218,7 +237,7 @@ def get_suggestions(request, uuid):
         # Update metadata with new suggestions
         metadata = metadata or {}
         metadata["suggestions"] = suggestions
-        csv_service.save_metadata(str(uuid), metadata)
+        csv_service.save_metadata(request.user.id, str(uuid), metadata)
 
         print("Successfully got and cached suggestions")
         return Response(suggestions)
@@ -229,6 +248,8 @@ def get_suggestions(request, uuid):
 
 
 @api_view(["POST"])
+@authentication_classes([ClerkJWTAuthentication])
+@permission_classes([IsAuthenticated])
 def deduplicate_csv(request, uuid):
     # Get column_ids from request body
     column_ids = request.data.get("column_ids", [])
@@ -238,8 +259,8 @@ def deduplicate_csv(request, uuid):
         )
 
     # Get the existing classified data
-    metadata = csv_service.get_metadata(str(uuid))
-    columns = csv_service.get_data(str(uuid))
+    metadata = csv_service.get_metadata(request.user.id, str(uuid))
+    columns = csv_service.get_data(request.user.id, str(uuid))
     column_defs, rows = csv_service.transform_to_row_format(columns)
 
     # Perform deduplication
@@ -254,6 +275,8 @@ def deduplicate_csv(request, uuid):
 
 
 @api_view(["GET"])
+@authentication_classes([ClerkJWTAuthentication])
+@permission_classes([IsAuthenticated])
 def visualize_deduplication(request, uuid):
     try:
         # Get the visualization file
@@ -275,6 +298,39 @@ def visualize_deduplication(request, uuid):
 
 
 @api_view(["POST"])
+@authentication_classes([ClerkJWTAuthentication])
+@permission_classes([IsAuthenticated])
+def remove_column(request, uuid):
+    try:
+        column_id = request.data.get("column_id")
+        if not column_id:
+            return Response(
+                {"error": "column_id is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        columns = csv_service.get_data(request.user.id, str(uuid))
+
+        # Create and apply remove column operation
+        try:
+            operation = column_operation_service.create_operation(
+                action="remove_column", column_id=column_id
+            )
+            columns = column_operation_service.apply_operations(columns, [operation])
+            csv_service.save_data(request.user.id, str(uuid), columns)
+
+            return Response({"status": "success"})
+
+        except ColumnNotFoundError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+    except ValueError:
+        return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
+
+
+@api_view(["POST"])
+@authentication_classes([ClerkJWTAuthentication])
+@permission_classes([IsAuthenticated])
 def generate_column_values(request, uuid):
     try:
         column_id = request.data.get("column_id")
@@ -287,7 +343,7 @@ def generate_column_values(request, uuid):
             )
 
         # Get all columns
-        columns = csv_service.get_data(str(uuid))
+        columns = csv_service.get_data(request.user.id, str(uuid))
 
         # Find the target column
         target_column = next((col for col in columns if col["id"] == column_id), None)
@@ -322,6 +378,8 @@ def generate_column_values(request, uuid):
 
 
 @api_view(["POST"])
+@authentication_classes([ClerkJWTAuthentication])
+@permission_classes([IsAuthenticated])
 def update_column_values(request, uuid):
     """Update values in a column based on provided transformations"""
     try:
@@ -341,7 +399,7 @@ def update_column_values(request, uuid):
             )
 
         # Get all columns
-        columns = csv_service.get_data(str(uuid))
+        columns = csv_service.get_data(request.user.id, str(uuid))
 
         # Create and apply the update operation
         operation = column_operation_service.create_operation(
@@ -351,7 +409,7 @@ def update_column_values(request, uuid):
         updated_columns = column_operation_service.apply_operations(
             columns, [operation]
         )
-        csv_service.save_data(str(uuid), updated_columns)
+        csv_service.save_data(request.user.id, str(uuid), updated_columns)
 
         return Response(
             {
@@ -371,60 +429,29 @@ def update_column_values(request, uuid):
 
 
 @api_view(["POST"])
-def remove_column(request, uuid):
-    try:
-        column_id = request.data.get("column_id")
-        if not column_id:
-            return Response(
-                {"error": "column_id is required"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        columns = csv_service.get_data(str(uuid))
-
-        # Create and apply remove column operation
-        try:
-            operation = column_operation_service.create_operation(
-                action="remove_column", column_id=column_id
-            )
-            columns = column_operation_service.apply_operations(columns, [operation])
-            csv_service.save_data(str(uuid), columns)
-
-            return Response({"status": "success"})
-
-        except ColumnNotFoundError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-    except ValueError:
-        return Response({"error": "CSV not found"}, status=status.HTTP_404_NOT_FOUND)
-
-
-@api_view(["POST"])
 def feature_request(request):
     """Handle feature requests from users"""
     VALID_FEATURE_TYPES = [
-        'export-hubspot',
-        'export-salesforce', 
-        'unsupported-dataset-type'
+        "export-hubspot",
+        "export-salesforce",
+        "unsupported-dataset-type",
     ]
-    
-    feature_type = request.data.get('feature_type')
-    text = request.data.get('text', '')  # Optional text field
-    
+
+    feature_type = request.data.get("feature_type")
+    text = request.data.get("text", "")  # Optional text field
+
     if not feature_type:
         return Response(
-            {"error": "feature_type is required"},
-            status=status.HTTP_400_BAD_REQUEST
+            {"error": "feature_type is required"}, status=status.HTTP_400_BAD_REQUEST
         )
-        
+
     if feature_type not in VALID_FEATURE_TYPES:
         return Response(
-            {"error": f"Invalid feature_type. Must be one of: {', '.join(VALID_FEATURE_TYPES)}"},
-            status=status.HTTP_400_BAD_REQUEST
+            {
+                "error": f"Invalid feature_type. Must be one of: {', '.join(VALID_FEATURE_TYPES)}"
+            },
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
     # For now just return success. In the future, this would store the request or send notifications
-    return Response({
-        "status": "success",
-        "message": "Feature request received"
-    })
+    return Response({"status": "success", "message": "Feature request received"})
