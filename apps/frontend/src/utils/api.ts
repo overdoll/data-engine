@@ -1,6 +1,7 @@
 import axios from "axios"
 import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { addFile, getFiles } from "./db"
+import { useAuth } from "@clerk/nextjs"
 
 // Default cache settings
 const defaultCacheTime = 1000 * 60 * 5 // 5 minutes
@@ -17,12 +18,19 @@ export const queryClient = new QueryClient({
 })
 
 // Base API client
-const apiClient = axios.create({
-  baseURL: "http://localhost:8000/api",
-  headers: {
-    "Content-Type": "application/json",
-  },
-})
+
+const getApiClient = async () => {
+  const { getToken } = useAuth()
+
+  const token = await getToken()
+  return axios.create({
+    baseURL: "http://localhost:8000/api",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+  })
+}
 
 // Error type
 interface ApiError {
@@ -100,6 +108,7 @@ export const useFile = (id: string) => {
   return useQuery({
     queryKey: queryKeys.file(id),
     queryFn: async () => {
+      const apiClient = await getApiClient()
       const { data } = await apiClient.get<FileUploadResponse>(`/csv/${id}`)
       return data
     },
@@ -110,6 +119,7 @@ export const useCsvData = (id: string) => {
   return useQuery({
     queryKey: queryKeys.csvData(id),
     queryFn: async () => {
+      const apiClient = await getApiClient()
       const { data } = await apiClient.get<CsvRowsData>(`/csv/${id}`)
       return data
     },
@@ -121,6 +131,7 @@ export const useCsvMetadata = (id: string) => {
   return useQuery({
     queryKey: queryKeys.csvMetadata(id),
     queryFn: async () => {
+      const apiClient = await getApiClient()
       const { data } = await apiClient.get<CsvMetadata>(`/csv/${id}/metadata`)
       return { ...data, metadata: { ...data.metadata, id } }
     },
@@ -133,6 +144,7 @@ export const useSuggestions = (id?: string, enabled: boolean = true) => {
   return useQuery({
     queryKey: queryKeys.suggestions(id!),
     queryFn: async () => {
+      const apiClient = await getApiClient()
       const { data } = await apiClient.get<Suggestion[]>(`/csv/${id}/suggestions`)
       return data
     },
@@ -146,6 +158,7 @@ export const useUploadFile = () => {
   const queryClient = useQueryClient()
   return useMutation({
     mutationFn: async (file: FormData) => {
+      const apiClient = await getApiClient()
       const { data } = await apiClient.post<FileUploadResponse>("/csv/upload", file, {
         headers: {
           "Content-Type": "multipart/form-data",
@@ -184,9 +197,9 @@ interface UpdatePayload {
 // Add new mutation
 export const useApplySuggestion = (fileId: string) => {
   const queryClient = useQueryClient()
-
   return useMutation({
     mutationFn: async (updates: Omit<UpdatePayload, "action">[]) => {
+      const apiClient = await getApiClient()
       const { data } = await apiClient.post(`/csv/${fileId}/apply-classifications`, {
         classifications: updates.map((update) => ({ ...update })),
       })
@@ -210,6 +223,7 @@ export interface Transformation {
 export const useGenerateColumnValues = (fileId: string) => {
   return useMutation({
     mutationFn: async ({ columnId, prompt }: { columnId: string; prompt: string }) => {
+      const apiClient = await getApiClient()
       const { data } = await apiClient.post<Transformation>(
         `/csv/${fileId}/generate-column-values`,
         {
@@ -225,7 +239,7 @@ export const useGenerateColumnValues = (fileId: string) => {
 // Add new mutation for applying transformations
 export const useUpdateColumnValues = (fileId: string) => {
   const queryClient = useQueryClient()
-
+  const apiClient = getApiClient()
   return useMutation({
     mutationFn: async ({
       columnId,
@@ -234,6 +248,7 @@ export const useUpdateColumnValues = (fileId: string) => {
       columnId: string
       transformations: Record<string, string>
     }) => {
+      const apiClient = await getApiClient()
       const { data } = await apiClient.post(`/csv/${fileId}/update-column-values`, {
         column_id: columnId,
         transformations,
@@ -260,8 +275,10 @@ export interface DeduplicationResponse {
 
 // Update the deduplication mutation
 export const useDeduplicate = (fileId: string) => {
+  const apiClient = getApiClient()
   return useMutation({
     mutationFn: async (columnIds: string[]) => {
+      const apiClient = await getApiClient()
       const { data } = await apiClient.post<DeduplicationResponse>(`/csv/${fileId}/deduplicate`, {
         column_ids: columnIds,
       })
@@ -279,9 +296,10 @@ export interface UpdateDatasetTypeResponse {
 // Add mutation for updating dataset type
 export const useUpdateDatasetType = (fileId: string) => {
   const queryClient = useQueryClient()
-
+  const apiClient = getApiClient()
   return useMutation({
     mutationFn: async (datasetType: DatasetType) => {
+      const apiClient = await getApiClient()
       const { data } = await apiClient.post<UpdateDatasetTypeResponse>(
         `/csv/${fileId}/update-dataset-type`,
         {
@@ -307,22 +325,12 @@ export interface FeatureRequest {
 
 // Add new mutation for feature requests
 export const useFeatureRequest = () => {
+  const apiClient = getApiClient()
   return useMutation({
     mutationFn: async (request: FeatureRequest) => {
+      const apiClient = await getApiClient()
       const { data } = await apiClient.post("/feature-request", request)
       return data
     },
   })
 }
-
-// Error handling interceptor
-apiClient.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    const apiError: ApiError = {
-      message: error.response?.data?.message || "An error occurred",
-      status: error.response?.status || 500,
-    }
-    return Promise.reject(apiError)
-  }
-)
