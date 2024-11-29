@@ -1,3 +1,4 @@
+import { HeadingSkeleton } from "@/components/skeleton"
 import { useFiles } from "@/utils/api"
 import { format } from "date-fns"
 import Link from "next/link"
@@ -5,9 +6,8 @@ import Link from "next/link"
 export function FileList() {
   const { data: files, isLoading } = useFiles()
 
-  if (isLoading) {
-    return <div>Loading...</div>
-  }
+  if (isLoading)
+    return Array.from({ length: 5 }).map((_, i) => <HeadingSkeleton characters={50} key={i} />)
 
   return (
     <div className="flex flex-col">

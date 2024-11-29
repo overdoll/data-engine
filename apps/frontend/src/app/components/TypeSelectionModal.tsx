@@ -16,16 +16,12 @@ interface TypeSelectionModalProps {
 
 export function TypeSelectionModal({ fileId }: TypeSelectionModalProps) {
   const { fileId: mostRecentFileId } = useMostRecentUpload()
-  const { data: csvMetadata, isLoading } = useCsvMetadata(fileId)
+  const { data: csvMetadata } = useCsvMetadata(fileId)
   const [open, onOpenChange] = useState(mostRecentFileId === fileId)
 
   return (
     <Prompt open={open} onOpenChange={onOpenChange} variant="confirmation">
-      {isLoading || !csvMetadata ? (
-        <div className="flex justify-center items-center p-6">
-          <Skeleton className="w-full h-12" />
-        </div>
-      ) : (
+      {csvMetadata && (
         <TypeSelectionModalContent
           fileId={fileId}
           datasetType={csvMetadata.metadata.dataset_type}
@@ -58,14 +54,14 @@ function TypeSelectionModalContent({
     if (selectedType !== datasetType) {
       await updateDatasetType(selectedType)
     }
-    
+
     if (showOtherInput && otherDescription.trim()) {
       await submitFeatureRequest({
-        feature_type: 'unsupported-dataset-type',
-        text: otherDescription.trim()
+        feature_type: "unsupported-dataset-type",
+        text: otherDescription.trim(),
       })
     }
-    
+
     setMostRecentFileId(null)
     onClose()
   }

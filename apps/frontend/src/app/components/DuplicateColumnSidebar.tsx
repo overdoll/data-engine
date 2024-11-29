@@ -113,7 +113,8 @@ export function DuplicateColumnSidebar({ fileId }: { fileId: string }) {
         {!hasClassifiedColumns && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-100/60 p-4">
             <Alert variant="warning" className="max-w-[95%]">
-              You need to fix columns before you can use them for deduplication.
+              You need to fix columns before you can use them for deduplication. Custom fixes
+              don&apos;t count towards the minimum required columns.
             </Alert>
           </div>
         )}

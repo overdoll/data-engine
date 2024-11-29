@@ -7,6 +7,7 @@ import "ag-grid-community/styles/ag-theme-quartz.css"
 import { useMemo, useCallback, useRef } from "react"
 import { useDuplicatesStore } from "@/stores/duplicates"
 import { useModeStore } from "@/stores/mode"
+import { TableSectionSkeleton } from "@/components/skeleton"
 
 declare global {
   interface Window {
@@ -148,7 +149,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   )
 
   if (isCsvDataLoading || isMetadataLoading) {
-    return <div className="flex-1 p-4">Loading...</div>
+    return <TableSectionSkeleton layout="fit" />
   }
 
   if (csvDataError || csvMetadataError) {

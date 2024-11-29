@@ -7,13 +7,14 @@ import { Suggestion } from "./Suggestion"
 import { ApplySuggestionsButton } from "./ApplySuggestionsButton"
 import { useSuggestionsStore } from "@/stores/suggestions"
 import { useEffect } from "react"
-import { SingleColumnPageSkeleton } from "@/components/skeleton"
 import { useMostRecentUpload } from "@/stores/mostRecentUpload"
 import { CustomTransformation } from "./CustomTransformation"
 import { SidebarHeader } from "./Sidebar"
+import { Skeleton } from "@/components/skeleton"
 
 export function SuggestionsSidebar({ fileId }: { fileId: string }) {
-  const { toggleSuggestion, isSelected, hasAutoSelected, setHasAutoSelected } = useSuggestionsStore()
+  const { toggleSuggestion, isSelected, hasAutoSelected, setHasAutoSelected } =
+    useSuggestionsStore()
   const mostRecentFileId = useMostRecentUpload((state) => state.fileId)
 
   const { data: suggestions, isLoading } = useSuggestions(fileId, !mostRecentFileId)
@@ -25,9 +26,14 @@ export function SuggestionsSidebar({ fileId }: { fileId: string }) {
     }
   }, [suggestions, isLoading, toggleSuggestion, hasAutoSelected, setHasAutoSelected])
 
-  if (isLoading) {
-    return <SingleColumnPageSkeleton />
-  }
+  if (isLoading)
+    return (
+      <div className="flex flex-col gap-2 p-4">
+        {Array.from({ length: 10 }).map((_, i) => (
+          <Skeleton key={i} className="h-10 w-full" />
+        ))}
+      </div>
+    )
 
   const handleSelectAll = () => {
     if (suggestions) {
