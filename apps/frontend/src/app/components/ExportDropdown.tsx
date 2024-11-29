@@ -50,7 +50,7 @@ export function ExportDropdown({ fileName }: ExportDropdownProps) {
     document.body.removeChild(link)
   }
 
-  const handlePremiumExport = (feature: string) => {
+  const handlePremiumExport = (feature: "hubspot" | "salesforce") => {
     setSelectedFeature(feature)
     setModalOpen(true)
   }
@@ -65,11 +65,11 @@ export function ExportDropdown({ fileName }: ExportDropdownProps) {
           </Button>
         </DropdownMenu.Trigger>
         <DropdownMenu.Content>
-          <DropdownMenu.Item onClick={() => handlePremiumExport("Hubspot")}>
+          <DropdownMenu.Item onClick={() => handlePremiumExport("hubspot")}>
             <Hubspot className="w-4 h-4 mr-2" />
             Hubspot
           </DropdownMenu.Item>
-          <DropdownMenu.Item onClick={() => handlePremiumExport("Salesforce")}>
+          <DropdownMenu.Item onClick={() => handlePremiumExport("salesforce")}>
             <Salesforce className="w-4 h-4 mr-2" />
             Salesforce
           </DropdownMenu.Item>
