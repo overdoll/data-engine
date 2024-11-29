@@ -12,15 +12,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Head>
           <title>Dataset Manager</title>
         </Head>
-        <header>
-          <SignedOut>
-            <SignInButton />
-          </SignedOut>
-          <SignedIn>
-            <UserButton />
-          </SignedIn>
-        </header>
         <body className={inter.className}>
+          <div>
+            <SignedOut>
+              <SignInButton />
+            </SignedOut>
+            <SignedIn>
+              <UserButton />
+            </SignedIn>
+          </div>
           <QueryClientProvider>{children}</QueryClientProvider>
         </body>
       </html>
