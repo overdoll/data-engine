@@ -148,3 +148,36 @@ CORS_ALLOWED_ORIGINS = [
 
 # Optional: Allow credentials (cookies, authorization headers)
 CORS_ALLOW_CREDENTIALS = True
+
+# Add REST Framework settings
+REST_FRAMEWORK = {
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "engine.authentication.ClerkJWTAuthentication",
+        "rest_framework.authentication.SessionAuthentication",
+    ],
+}
+
+# Clerk settings
+CLERK_JWT_PEM_PUBLIC_KEY = env(
+    "CLERK_JWT_PEM_PUBLIC_KEY", default=""
+)  # Get this from Clerk Dashboard
+CLERK_JWT_JWKS_URL = env(
+    "CLERK_JWT_JWKS_URL", default=""
+)  # Your Clerk JWKS URL (e.g., https://clerk.your-domain.com/.well-known/jwks.json)
+
+# Configure logging
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
+    },
+    "loggers": {
+        "engine.authentication": {
+            "handlers": ["console"],
+            "level": "DEBUG",
+        },
+    },
+}
