@@ -24,7 +24,7 @@ export function Sidebar({ fileId }: SidebarProps) {
 
 export function SidebarHeader({ children }: { children: React.ReactNode }) {
   return (
-    <div className="p-4 border-b h-[64px]">
+    <div className="p-4 border-b h-[52px] bg-ui-bg-component rounded-t-md">
       <div className="flex justify-between items-center h-full my-auto">{children}</div>
     </div>
   )

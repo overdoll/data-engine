@@ -11,27 +11,25 @@ export function FileUpload() {
   const setMostRecentFileId = useMostRecentUpload((state) => state.setFileId)
 
   return (
-    <div className="w-[600px]">
-      <FileUploadComponent
-        label="Upload File"
-        formats={["csv"]}
-        pendingFile={isPending ? pendingFile : undefined}
-        onUploaded={(files) => {
-          const file = files[0].file
-          setPendingFile(file.name)
+    <FileUploadComponent
+      label="Upload File"
+      formats={["csv"]}
+      pendingFile={isPending ? pendingFile : undefined}
+      onUploaded={(files) => {
+        const file = files[0].file
+        setPendingFile(file.name)
 
-          const formData = new FormData()
-          formData.append("file", file)
+        const formData = new FormData()
+        formData.append("file", file)
 
-          mutate(formData, {
-            onSuccess: (response) => {
-              setPendingFile(undefined)
-              setMostRecentFileId(response.id)
-              router.push(`/files/${response.id}`)
-            },
-          })
-        }}
-      />
-    </div>
+        mutate(formData, {
+          onSuccess: (response) => {
+            setPendingFile(undefined)
+            setMostRecentFileId(response.id)
+            router.push(`/files/${response.id}`)
+          },
+        })
+      }}
+    />
   )
 }

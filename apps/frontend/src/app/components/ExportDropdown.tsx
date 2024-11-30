@@ -9,6 +9,7 @@ import { Prompt } from "@/components/prompt"
 import { Label } from "@/components/label"
 import { useFeatureRequest } from "@/utils/api"
 import { Textarea } from "@/components/textarea"
+import { toast } from "@/utils/toast"
 
 interface ExportDropdownProps {
   fileName: string
@@ -42,7 +43,7 @@ export function ExportDropdown({ fileName }: ExportDropdownProps) {
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
-    link.setAttribute("download", `Cleaned by DMT - ${fileName || "export"}`)
+    link.setAttribute("download", `Cleaned by wispbit - ${fileName || "export"}`)
     link.style.visibility = "hidden "
     document.body.appendChild(link)
     link.click()
@@ -105,6 +106,10 @@ export function PremiumFeatureModal({ open, onOpenChange, featureName }: Premium
       await submitFeatureRequest({
         feature_type: featureName === "hubspot" ? "export-hubspot" : "export-salesforce",
         text, // Using email as the text field
+      })
+      toast("Feature request received", {
+        description: `Thanks for your interest in ${featureName} export! We'll notify you when this integration is ready. In the meantime, you can export your data as a CSV file.`,
+        duration: 10000,
       })
     }
 

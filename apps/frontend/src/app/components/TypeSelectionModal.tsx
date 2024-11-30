@@ -8,6 +8,7 @@ import { DATASET_TYPES } from "@/utils/dataset-types"
 import { DatasetTypeIcon } from "./DatasetTypeIcon"
 import { Heading } from "@/components/heading"
 import { Label } from "@/components/label"
+import { toast } from "@/utils/toast"
 
 interface TypeSelectionModalProps {
   fileId: string
@@ -58,6 +59,12 @@ function TypeSelectionModalContent({
       await submitFeatureRequest({
         feature_type: "unsupported-dataset-type",
         text: otherDescription.trim(),
+      })
+
+      toast("Feature request received", {
+        description:
+          "Thanks for letting us know more about your data! In the meantime, try using the tool with your current dataset type.",
+        duration: 10000,
       })
     }
 

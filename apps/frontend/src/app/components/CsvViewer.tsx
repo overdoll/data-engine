@@ -159,7 +159,13 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   if (!csvData || !csvMetadata) return null
 
   return (
-    <div className="flex-1 h-[calc(100vh-79px)] w-full ag-theme-quartz">
+    <div
+      className="flex-1 h-[calc(100vh-79px)] w-full ag-theme-quartz"
+      style={{
+        // @ts-expect-error this is valid css
+        "--ag-header-background-color": "rgba(250,250,250,1)", // Light gray example
+      }}
+    >
       <AgGridReact<RowData>
         ref={gridRef}
         columnDefs={columnDefs}
@@ -174,6 +180,9 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
         suppressContextMenu={true}
         suppressMenuHide={true}
         rowModelType="serverSide"
+        gridOptions={{
+          headerHeight: 52,
+        }}
         domLayout="normal"
         className="h-full w-full"
         onGridReady={onGridReady}

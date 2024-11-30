@@ -1,4 +1,5 @@
 import { PricingSection } from "./_components/PricingSection"
+import { Logo } from "../components/Logo"
 
 export default function Home() {
   return (

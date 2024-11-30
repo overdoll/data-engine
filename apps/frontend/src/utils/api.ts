@@ -60,7 +60,7 @@ export interface CsvColumn {
   default_deduplicate?: boolean
 }
 
-type Metadata = {
+export type Metadata = {
   id: string
   original_filename: string
   dataset_type: DatasetType
