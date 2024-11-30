@@ -1,4 +1,3 @@
-import { HeadingSkeleton, Skeleton } from "@/components/skeleton"
 import { useFiles } from "@/utils/api"
 import { format } from "date-fns"
 import Link from "next/link"
@@ -7,6 +6,7 @@ import { DataDeletionNotice } from "./DataDeletionNotice"
 import { Heading } from "@/components/heading"
 import { FileUpload } from "./FileUpload"
 import { useUser } from "@clerk/nextjs"
+import FileBrowserSkeleton from "./FileBrowserSkeleton"
 
 export function FileBrowser() {
   const { data: files, isLoading } = useFiles()
@@ -14,19 +14,7 @@ export function FileBrowser() {
   const { user } = useUser()
   const firstName = user?.firstName || "there"
 
-  if (isLoading)
-    return (
-      <div
-        className={`grid grid-cols-1 md:grid-cols-[1fr_0.85fr] gap-8 py-3 px-2 h-[calc(100vh-55px)]`}
-      >
-        <Skeleton className="w-[400px] h-20 m-auto" />
-        <div className="grid grid-cols-1 gap-1 p-3 min-h-[calc(100vh-64px)] mx-auto">
-          {Array.from({ length: 20 }).map((_, i) => (
-            <HeadingSkeleton characters={100} key={i} />
-          ))}
-        </div>
-      </div>
-    )
+  if (isLoading) return <FileBrowserSkeleton />
 
   return (
     <div
