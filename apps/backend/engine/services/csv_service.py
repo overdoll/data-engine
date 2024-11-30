@@ -8,6 +8,7 @@ import random
 import string
 import re
 import uuid
+from django.utils.text import slugify
 
 
 class CSVService:
@@ -22,6 +23,20 @@ class CSVService:
     def _get_user_path(self, user_id: str, file_uuid: str) -> str:
         """Generate the S3 path prefix for a user's file"""
         return f"{user_id}/{file_uuid}"
+
+    def generate_friendly_id(self, filename: str) -> str:
+        # Remove file extension
+        base_name = filename.rsplit(".", 1)[0]
+        # Create a slug from the filename
+        slug = slugify(base_name, allow_unicode=False).replace("_", "-")[
+            :30
+        ]  # Limit slug length
+        # Generate 6 random characters
+        random_chars = "".join(
+            random.choices(string.ascii_lowercase + string.digits, k=6)
+        )
+        # Combine slug and random chars
+        return f"{slug}-{random_chars}"
 
     @classmethod
     def generate_column_id(cls, label: str) -> str:
@@ -197,6 +212,8 @@ class CSVService:
             # List all objects with the user_id prefix
             response = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=f"{user_id}/")
 
+            print(response)
+
             if "Contents" not in response:
                 return []
 
@@ -207,6 +224,8 @@ class CSVService:
                 parts = obj["Key"].split("/")
                 if len(parts) == 3 and parts[2] == "metadata.json":
                     file_uuids.add(parts[1])
+
+            print(file_uuids)
 
             return list(file_uuids)
 

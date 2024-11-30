@@ -1,4 +1,3 @@
-import uuid
 from rest_framework.decorators import (
     api_view,
     authentication_classes,
@@ -39,10 +38,11 @@ def upload_csv(request):
 
     file = request.FILES["file"]
     df = csv_service.parse_csv(file)
-    file_uuid = str(uuid.uuid4())
+    file_uuid = csv_service.generate_friendly_id(file.name)
 
     # Create metadata with detected dataset type and user information
     metadata: Metadata = {
+        "uuid": file_uuid,
         "storage_engine": "v1",
         "original_filename": file.name,
         "user_id": request.user.id,  # Add user ID to metadata
@@ -464,6 +464,8 @@ def list_csv_files(request):
     try:
         # Get list of file UUIDs
         file_uuids = csv_service.list_user_files(request.user.id)
+        print("test")
+        print(file_uuids)
 
         # Fetch metadata for each file
         files = []
@@ -472,7 +474,7 @@ def list_csv_files(request):
                 metadata = csv_service.get_metadata(request.user.id, file_uuid)
                 files.append(
                     {
-                        "id": file_uuid,
+                        "uuid": file_uuid,
                         "original_filename": metadata.get("original_filename"),
                         "dataset_type": metadata.get("dataset_type"),
                         "created_at": metadata.get(

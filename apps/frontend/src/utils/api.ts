@@ -61,7 +61,7 @@ export interface CsvColumn {
 }
 
 export type Metadata = {
-  id: string
+  uuid: string
   original_filename: string
   dataset_type: DatasetType
   created_at: string | null
@@ -98,7 +98,7 @@ export const useFiles = () => {
     queryKey: queryKeys.files,
     queryFn: async () => {
       const client = await apiClient()
-      const { data } = await client.get<Metadata[]>("/csv/list")
+      const { data } = await client.get<Metadata[]>("/list-csv")
       return data
     },
   })
@@ -165,7 +165,7 @@ export const useUploadFile = () => {
   return useMutation({
     mutationFn: async (file: FormData) => {
       const client = await apiClient()
-      const { data } = await client.post<FileUploadResponse>("/csv/upload", file, {
+      const { data } = await client.post<FileUploadResponse>("/upload-csv", file, {
         headers: {
           "Content-Type": "multipart/form-data",
         },
