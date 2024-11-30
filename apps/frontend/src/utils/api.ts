@@ -1,6 +1,6 @@
 import axios from "axios"
 import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { addFile, getFiles } from "./db"
+import { addFile } from "./db"
 import { useAuth } from "@clerk/nextjs"
 
 // Default cache settings
@@ -91,10 +91,13 @@ export const queryKeys = {
 
 // Queries
 export const useFiles = () => {
+  const apiClient = useApiClient()
   return useQuery({
     queryKey: queryKeys.files,
     queryFn: async () => {
-      return getFiles()
+      const client = await apiClient()
+      const { data } = await client.get<CsvFile[]>("/csv/list")
+      return data
     },
   })
 }
@@ -341,4 +344,12 @@ export const useFeatureRequest = () => {
       return data
     },
   })
+}
+
+// Add new interface for CSV file list response
+export interface CsvFile {
+  uuid: string
+  original_filename: string
+  dataset_type: DatasetType | null
+  created_at: string | null
 }

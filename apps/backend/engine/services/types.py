@@ -4,6 +4,7 @@ from typing import TypedDict, Optional, Dict, List, Any
 class Metadata(TypedDict):
     storageEngine: str
     originalFilename: str
+    datasetType: str
 
 
 class ColumnDef(TypedDict):

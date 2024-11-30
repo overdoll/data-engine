@@ -42,9 +42,6 @@ urlpatterns = [
         views.visualize_deduplication,
         name="visualize_deduplication",
     ),
-    path(
-        "feature-request",
-        views.feature_request,
-        name="feature_request"
-    ),
+    path("feature-request", views.feature_request, name="feature_request"),
+    path("csv/list", views.list_csv_files, name="list_csv_files"),
 ]

@@ -188,3 +188,28 @@ class CSVService:
             rows.append({"id": row_id_column["data"][row_idx], "data": row_data})
 
         return column_defs, rows
+
+    def list_user_files(self, user_id: str) -> List[str]:
+        """List all CSV file UUIDs for a user"""
+        try:
+            # List all objects with the user_id prefix
+            response = self.s3.list_objects_v2(
+                Bucket=self.bucket,
+                Prefix=f"{user_id}/"
+            )
+
+            if 'Contents' not in response:
+                return []
+
+            # Get unique file UUIDs by looking at metadata.json files
+            file_uuids = set()
+            for obj in response['Contents']:
+                # Extract UUID from paths like "user_id/uuid/metadata.json"
+                parts = obj['Key'].split('/')
+                if len(parts) == 3 and parts[2] == 'metadata.json':
+                    file_uuids.add(parts[1])
+
+            return list(file_uuids)
+
+        except Exception as e:
+            raise ValueError(f"Failed to list files: {str(e)}")
