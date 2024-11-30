@@ -71,3 +71,8 @@ export function useDeduplicateListener(fileId: string) {
     handleDeduplicate()
   }, [selectedColumns, deduplicate, setStats, setError, setDuplicateRows])
 }
+
+export function DeduplicateListener({ fileId }: { fileId: string }) {
+  useDeduplicateListener(fileId)
+  return null
+}

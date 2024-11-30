@@ -10,7 +10,8 @@ import { useDuplicatesStore } from "@/stores/duplicates"
 import { Sidebar } from "../../components/Sidebar"
 import { useModeStore } from "@/stores/mode"
 import { TopBar } from "../../components/TopBar"
-import { useDeduplicateListener } from "../../components/useDeduplicateListener"
+import { DeduplicateListener } from "../../components/useDeduplicateListener"
+import { RedirectToSignIn, SignedIn, SignedOut } from "@clerk/nextjs"
 
 export default function FileViewerPage() {
   const params = useParams()
@@ -25,19 +26,21 @@ export default function FileViewerPage() {
   }, [])
 
   return (
-    <main className="flex flex-col gap-3">
-      <TopBar fileId={fileId} />
-      <div className="flex gap-4 px-2">
-        <CsvViewer fileId={fileId} />
-        <Sidebar fileId={fileId} />
-      </div>
-      <TypeSelectionModal fileId={fileId} />
-      <Listener fileId={fileId} />
-    </main>
+    <>
+      <SignedIn>
+        <div className="flex flex-col gap-3">
+          <TopBar fileId={fileId} />
+          <div className="flex gap-4 px-2">
+            <CsvViewer fileId={fileId} />
+            <Sidebar fileId={fileId} />
+          </div>
+          <TypeSelectionModal fileId={fileId} />
+          <DeduplicateListener fileId={fileId} />
+        </div>
+      </SignedIn>
+      <SignedOut>
+        <RedirectToSignIn />
+      </SignedOut>
+    </>
   )
-}
-
-function Listener({ fileId }: { fileId: string }) {
-  useDeduplicateListener(fileId)
-  return null
 }

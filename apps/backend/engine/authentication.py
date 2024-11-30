@@ -1,4 +1,5 @@
 import jwt
+from jwt.exceptions import InvalidTokenError, ExpiredSignatureError, DecodeError
 from rest_framework import authentication
 from rest_framework import exceptions
 from django.conf import settings
@@ -6,6 +7,7 @@ from urllib.request import urlopen
 import json
 import logging
 from functools import cache
+import base64
 
 logger = logging.getLogger(__name__)
 
@@ -49,7 +51,7 @@ class ClerkJWTAuthentication(authentication.BaseAuthentication):
             # Verify the token using Clerk's PEM public key
             decoded = jwt.decode(
                 token,
-                key=settings.base64.b64decode(settings.CLERK_JWT_PEM_PUBLIC_KEY),
+                key=base64.b64decode(settings.CLERK_JWT_PEM_PUBLIC_KEY),
                 algorithms=["RS256"],
             )
 
@@ -60,10 +62,13 @@ class ClerkJWTAuthentication(authentication.BaseAuthentication):
 
             return (user, None)
 
-        except jwt.ExpiredSignatureError:
+        except ExpiredSignatureError:
             logger.error("Token has expired")
             raise exceptions.AuthenticationFailed("Token has expired")
-        except jwt.InvalidTokenError as e:
+        except DecodeError as e:
+            logger.error(f"Token decode error: {str(e)}")
+            raise exceptions.AuthenticationFailed("Invalid token format")
+        except InvalidTokenError as e:
             logger.error(f"Invalid token: {str(e)}")
             raise exceptions.AuthenticationFailed("Invalid token")
         except Exception as e:
