@@ -102,7 +102,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
             </div>
           </div>
           <Prompt.Footer>
-            <Prompt.Cancel>Cancel</Prompt.Cancel>
+            <Prompt.Cancel onClick={onClose}>Cancel</Prompt.Cancel>
             <Prompt.Action type="submit" disabled={isSubmitting}>
               {isSubmitting ? "Sending..." : "Send Message"}
             </Prompt.Action>
