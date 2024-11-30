@@ -472,7 +472,7 @@ def list_csv_files(request):
                 metadata = csv_service.get_metadata(request.user.id, file_uuid)
                 files.append(
                     {
-                        "uuid": file_uuid,
+                        "id": file_uuid,
                         "original_filename": metadata.get("original_filename"),
                         "dataset_type": metadata.get("dataset_type"),
                         "created_at": metadata.get(

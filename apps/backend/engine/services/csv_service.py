@@ -56,7 +56,9 @@ class CSVService:
             metadata_obj = self.s3.get_object(
                 Bucket=self.bucket, Key=f"{path}/metadata.json"
             )
-            return json.loads(metadata_obj["Body"].read())
+            metadata = json.loads(metadata_obj["Body"].read())
+            metadata["created_at"] = metadata_obj["LastModified"].isoformat()
+            return metadata
         except self.s3.exceptions.NoSuchKey:
             raise ValueError("Metadata not found")
 
@@ -193,20 +195,17 @@ class CSVService:
         """List all CSV file UUIDs for a user"""
         try:
             # List all objects with the user_id prefix
-            response = self.s3.list_objects_v2(
-                Bucket=self.bucket,
-                Prefix=f"{user_id}/"
-            )
+            response = self.s3.list_objects_v2(Bucket=self.bucket, Prefix=f"{user_id}/")
 
-            if 'Contents' not in response:
+            if "Contents" not in response:
                 return []
 
             # Get unique file UUIDs by looking at metadata.json files
             file_uuids = set()
-            for obj in response['Contents']:
+            for obj in response["Contents"]:
                 # Extract UUID from paths like "user_id/uuid/metadata.json"
-                parts = obj['Key'].split('/')
-                if len(parts) == 3 and parts[2] == 'metadata.json':
+                parts = obj["Key"].split("/")
+                if len(parts) == 3 and parts[2] == "metadata.json":
                     file_uuids.add(parts[1])
 
             return list(file_uuids)

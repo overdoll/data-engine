@@ -1,6 +1,5 @@
 import axios from "axios"
 import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { addFile } from "./db"
 import { useAuth } from "@clerk/nextjs"
 
 // Default cache settings
@@ -61,13 +60,16 @@ export interface CsvColumn {
   default_deduplicate?: boolean
 }
 
+type Metadata = {
+  id: string
+  original_filename: string
+  dataset_type: DatasetType
+  created_at: string | null
+}
+
 export interface CsvMetadata {
   columns: CsvColumn[]
-  metadata: {
-    id: string
-    original_filename: string
-    dataset_type: DatasetType
-  }
+  metadata: Metadata
 }
 
 // Update Suggestion type to match API schema
@@ -96,7 +98,7 @@ export const useFiles = () => {
     queryKey: queryKeys.files,
     queryFn: async () => {
       const client = await apiClient()
-      const { data } = await client.get<CsvFile[]>("/csv/list")
+      const { data } = await client.get<Metadata[]>("/csv/list")
       return data
     },
   })
@@ -179,9 +181,6 @@ export const useUploadFile = () => {
           uploadDate: new Date(),
           type: data.metadata.dataset_type,
         }
-
-        // Then save metadata to IndexedDB
-        await addFile(fileMetadata)
 
         return fileMetadata
       }
@@ -344,12 +343,4 @@ export const useFeatureRequest = () => {
       return data
     },
   })
-}
-
-// Add new interface for CSV file list response
-export interface CsvFile {
-  uuid: string
-  original_filename: string
-  dataset_type: DatasetType | null
-  created_at: string | null
 }
