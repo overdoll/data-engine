@@ -1,0 +1,142 @@
+"use client"
+
+import { Button } from "@/components/button"
+import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs"
+import Link from "next/link"
+import { useState } from "react"
+import { ContactModal } from "./ContactModal"
+
+export function PricingSection() {
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false)
+
+  return (
+    <div className="py-16 bg-gradient-to-b from-white to-purple-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h2 className="text-3xl font-bold text-center mb-12">Simple, Usage-Based Pricing</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
+          {/* Free Plan */}
+          <div className="p-8 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold mb-4">Free</h3>
+              <p className="text-gray-600 mb-6">Perfect for trying out the service</p>
+              <div className="text-4xl font-bold mb-2">$0</div>
+              <div className="text-gray-500">3 files per month</div>
+            </div>
+            <ul className="space-y-4 mb-8">
+              <li className="flex items-center">
+                <svg
+                  className="w-5 h-5 text-green-500 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                Basic file merging
+              </li>
+              <li className="flex items-center">
+                <svg
+                  className="w-5 h-5 text-green-500 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                24-hour data retention
+              </li>
+            </ul>
+            <SignedOut>
+              <SignInButton mode="modal">
+                <Button className="w-full bg-purple-600 hover:bg-purple-700">Get Started</Button>
+              </SignInButton>
+            </SignedOut>
+            <SignedIn>
+              <Link href="/files">
+                <Button className="w-full bg-purple-600 hover:bg-purple-700">Go to App</Button>
+              </Link>
+            </SignedIn>
+          </div>
+
+          {/* Pro Plan */}
+          <div className="p-8 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow border-2 border-purple-500">
+            <div className="text-center mb-8">
+              <h3 className="text-2xl font-bold mb-4">Pro</h3>
+              <p className="text-gray-600 mb-6">For power users and teams</p>
+              <div className="text-4xl font-bold mb-2">$49</div>
+              <div className="text-gray-500">1,000 files per month</div>
+            </div>
+            <ul className="space-y-4 mb-8">
+              <li className="flex items-center">
+                <svg
+                  className="w-5 h-5 text-green-500 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                Everything in Free
+              </li>
+              <li className="flex items-center">
+                <svg
+                  className="w-5 h-5 text-green-500 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                Priority support
+              </li>
+              <li className="flex items-center">
+                <svg
+                  className="w-5 h-5 text-green-500 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                Advanced merging options
+              </li>
+            </ul>
+            <Button
+              onClick={() => setIsContactModalOpen(true)}
+              className="w-full bg-purple-600 hover:bg-purple-700"
+            >
+              Contact Sales
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
+    </div>
+  )
+}
