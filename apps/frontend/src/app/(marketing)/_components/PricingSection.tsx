@@ -37,7 +37,7 @@ export function PricingSection() {
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
-                Basic file merging
+                Data cleaning and merging
               </li>
               <li className="flex items-center">
                 <svg
@@ -72,7 +72,7 @@ export function PricingSection() {
           <div className="p-8 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow border-2 border-purple-500">
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold mb-4">Pro</h3>
-              <p className="text-gray-600 mb-6">For power users and teams</p>
+              <p className="text-gray-600 mb-6">For power users</p>
               <div className="text-4xl font-bold mb-2">$49</div>
               <div className="text-gray-500">1,000 files per month</div>
             </div>
@@ -107,7 +107,7 @@ export function PricingSection() {
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
-                Priority support
+                Generous file upload limit
               </li>
               <li className="flex items-center">
                 <svg
@@ -123,7 +123,7 @@ export function PricingSection() {
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
-                Advanced merging options
+                Priority support
               </li>
             </ul>
             <Button
