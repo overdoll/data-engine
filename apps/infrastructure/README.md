@@ -4,6 +4,9 @@
 
 # Set up pulumi
 
+0. Install pulumi CLI
+`brew install pulumi/tap/pulumi`
+
 1. Login to pulumi ESC and enter your personal access token
 `esc login`
 
