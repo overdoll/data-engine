@@ -1,0 +1,16 @@
+config:
+  wispbit:ai-api-key:
+    secure: AAABABoGiCUyI1B6xe7yY99jrhBPPonGLO6onFQWMcygRr+nlnoBzkYal5g3fEa9CTgNkR0lCAO0w49Jx+P1uwjlBApdYq8AERPTIsjw/6KuEkurGb1fGKRQB8G9w0Z1ov2LkJsXshGl
+  vercel:team: overdoll
+  vercel:apiToken:
+    secure: AAABAFGIVDQ6HmmTOSeORDEkBQV/HJC3UavrEQrMzo23Q5YDJRWBkJsJZcKCMziFm3hS4GqB2+I=
+  wispbit:clerk-jwt-pem-public-key:
+    secure: AAABAJ7yWB87rBVtRKr+hCUwB9vpnKk90G2MD270VRt/EjnAjXhtpWiZTEuMh7jVbD3k9tW5fvYR3t+bm80tFcxlQEY0Fu7CerJXH1aQ91Z5x71r0breUV5TpRklIEv9LcjLbDVxXLnOyDsDy07foBg5t68MYVvZ63GLlV8R+H1HJydDEcEp8sVu+6cT3+fDf1WM28nxYoN6lpWENnXYOefJjHzdlLVjy1Hbyo9fkbeTMIJPg3bPbmOoAzJZi2wumpxQlMO2AaywwnnsSxYpv6Dz7SgWZb6y6yI9nYmUMsu4v/2Z413pDl1V48w5hOYwGV9hj9QrEWfE/3sXwrW5+hiMaV13Jk8JQ0gjYwVTOqdOF4vbLN9JssJYPvzsIDRWu3LeK5CjmJzf9VG8zptiABXr0nLKX86W1LoHHjLE2LIK3v8DGqNOXwkrrwTOkdwtxVt/ZlLC+LGg9+mEbA1ErBotiDWfzYrwYhNzvgbfDVRSlCmjaVe0e2T3uwA3LUM2fhLDQNapIOg4Ky8+YO4rb5FDy0AcvjQ4ZnLT6bE7F7HgfPvSdJ1/XtAIokEZ/wCQBEi1znwkKfJE9a5AdIQEOejPXKu5HDfGnfNms1urZwyDdr5DJxmYAfr0bqq+ULoRS8sQm1Ol4XRkPP8HVYZch1n6+jPhXHpQJO3qr0hqc9o0SqdaQs2mXl+aWaBg40mU8wdhTIKviL2lvhBjrhsoVDTAg0xVdhKvLLrCgTg5ypApF2ANDmLAKksgsLJypqhkR3fTpWGFVDBV1lYFkEQ43OkDYPWkBIeu2yZH9c2O6FNQwm4KRtLBlZzRIIHU2yZR6u/Tex6HI/ckAfTt
+  wispbit:clerk-jwt-jwks-url:
+    secure: AAABADs3vJkfpChccaIyPCyMrHTkzoBwypoEaLd3jErx2HC1ynDwbPoqNXe59nW8tTiB00/HrSZlu7p0x4jOAP1IRRrBfRbAMwAkhuhWJQ==
+  wispbit:clerk-publishable-key:
+    secure: AAABAGvKOEYBlaGxyR6prgMeBHZPJDvyP6Hxkp7g1fiA/tv+LbTcmcLmlj/J2XQJsIt6GnJhvAEIpYiMDU3MLQ==
+  wispbit:clerk-secret-key:
+    secure: AAABAG8Nj4k8+u+pd+pXQg/xJO85WAEybiAgpW575zwDHEP21qg/Eysg8rTmZJXNzwFN3ehRBZq0InAPJ9jxo7hXaSRuWsUFTwPQVJTdirEdaQ==
+  aws:region: us-east-1
+  aws:profile: overdoll

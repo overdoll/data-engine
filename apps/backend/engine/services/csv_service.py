@@ -13,11 +13,19 @@ from django.utils.text import slugify
 
 class CSVService:
     def __init__(self):
-        self.s3 = boto3.client(
-            "s3",
-            aws_access_key_id=settings.AWS_ACCESS_KEY_ID,
-            aws_secret_access_key=settings.AWS_SECRET_ACCESS_KEY,
-        )
+        # Initialize S3 client with optional credentials
+        s3_kwargs = {}
+        if hasattr(settings, "AWS_ACCESS_KEY_ID") and hasattr(
+            settings, "AWS_SECRET_ACCESS_KEY"
+        ):
+            s3_kwargs.update(
+                {
+                    "aws_access_key_id": settings.AWS_ACCESS_KEY_ID,
+                    "aws_secret_access_key": settings.AWS_SECRET_ACCESS_KEY,
+                }
+            )
+
+        self.s3 = boto3.client("s3", **s3_kwargs)
         self.bucket = settings.AWS_STORAGE_BUCKET_NAME
 
     def _get_user_path(self, user_id: str, file_uuid: str) -> str:
