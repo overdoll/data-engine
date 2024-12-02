@@ -1,2 +1,0 @@
-ruff
--r requirements.txt

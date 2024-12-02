@@ -1,23 +1,28 @@
 # install dependencies
 
 ```
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements-dev.txt
+brew install poetry
+poetry install
+poetry shell
 ```
 
 update .env in api/
 
-# run migrations
-
-python manage.py migrate
-
 # run server
-
-python manage.py runserver
+```
+poetry run python manage.py runserver
+```
 
 ---
 
+# run migrations
+
+```
+poetry run python manage.py migrate
+```
+
 # create migrations
 
-python manage.py makemigrations
+```
+poetry run python manage.py makemigrations
+```
