@@ -4,14 +4,16 @@
 
 # Set up pulumi
 
-0. Install pulumi CLI
-`brew install pulumi/tap/pulumi`
+0. Install pulumi CLI & AWS CLI
+   `brew install pulumi/tap/pulumi`
+   `brew install pulumi/tap/esc`
+   `brew install awscli`
 
 1. Login to pulumi ESC and enter your personal access token
-`esc login`
+   `esc login`
 
 2. Configure AWS - use your AWS account credentials
-`aws configure --profile overdoll`
+   `aws configure --profile overdoll`
 
 Region is `us-east-1`
 
@@ -23,11 +25,9 @@ Check resources to be created
 Deploy
 `pulumi up`
 
-
 # Destroy production resources
 
 `pulumi destroy`
-
 
 # Add a secret
 

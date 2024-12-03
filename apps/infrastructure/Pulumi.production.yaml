@@ -18,3 +18,9 @@ config:
     secure: AAABACTyBCdsmqBzgJAFDtr82k9dg6v3Cvr/HJmTr2vRZdfh5owAEGRhvBDvJGdMoV2nN9Y/g7+ioCrHJ7L3vEo8HakNpC+J
   wispbit:cloudflare-account-id:
     secure: AAABACoEgLzOsGbrfPUryZlm4ZekIi2x/kVyry81TTWOk1kPYXWgRLQi/qZTFoCC5csUgP5w0b05dfKDqSbwJA==
+  wispbit:sentry-dsn-backend:
+    secure: AAABADbvPU9dvOxiEsIKBk9aZn3KF3LelG0XpQ1nS4ziZ3a3xgpoftZ4AcqacHiFb65y6rno183yHR0RbOoBPF4YQ1qY0twJhqRyv9e/OH/7OGQkyQQQ8g/82488x1/j844CvUy/K+7uZo8I7kgnPwrRvnsbO/07DdHNh72/EQ==
+  wispbit:sentry-dsn-frontend:
+    secure: AAABAHvceSKWDJtT+hSOYW+ZO1OkXrB7yqpZmPaydy6zE7PX8di+IGTbiN+ZC0X4xU8hYQoYiiakGGLYJwzMXVwqRcGtFz5Y+nEzEHt06/XHERA090u5RNKDOwb5LSkMZyjx6np+Wkphtbmiq6LV2U9ksi2O6evHDoFIsc1YAw==
+  wispbit:posthog-key:
+    secure: AAABAE9Qv51nyGSOGl8o/ZVfc4TET7c4mnKHn/Z3xUlsfu4KD4ILlKqQctP0KbkZMjCVQnvmz1I8HWv87qzg/iT0PIa5L0htWZ8sCOXXPw==

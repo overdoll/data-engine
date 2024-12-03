@@ -199,6 +199,7 @@ const backendService = new awsx.ecs.FargateService("wispbit-backend", {
           value: config.requireSecret("clerk-jwt-pem-public-key"),
         },
         { name: "CLERK_JWT_JWKS_URL", value: config.requireSecret("clerk-jwt-jwks-url") },
+        { name: "SENTRY_DSN", value: config.requireSecret("sentry-dsn-backend") },
       ],
     },
     taskRole: {
@@ -259,6 +260,9 @@ const vercelDeployment = new vercel.Deployment("wispbit-deployment", {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: config.requireSecret("clerk-publishable-key"),
     CLERK_SECRET_KEY: config.requireSecret("clerk-secret-key"),
     API_URL: lb.loadBalancer.dnsName,
+    SENTRY_DSN: config.requireSecret("sentry-dsn-frontend"),
+    NEXT_PUBLIC_POSTHOG_KEY: config.requireSecret("posthog-key"),
+    NEXT_PUBLIC_POSTHOG_HOST: "https://us.i.posthog.com",
   },
 })
 
