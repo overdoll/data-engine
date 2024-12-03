@@ -36,6 +36,17 @@ def upload_csv(request):
             {"error": "No file provided"}, status=status.HTTP_400_BAD_REQUEST
         )
 
+    # Check user's paid status from the user instance
+    if not request.user.is_paid:
+        file_uuids = csv_service.list_user_files(request.user.id)
+        if len(file_uuids) >= 3:
+            return Response(
+                {
+                    "error": "Free users can only upload up to 3 files. Please upgrade to upload more files."
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
+
     file = request.FILES["file"]
     df = csv_service.parse_csv(file)
     file_uuid = csv_service.generate_friendly_id(file.name)

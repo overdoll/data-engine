@@ -13,10 +13,12 @@ logger = logging.getLogger(__name__)
 
 
 class ClerkUser:
-    def __init__(self, user_id, email=None):
+    def __init__(self, user_id, email=None, metadata=None):
         self.id = user_id
         self.email = email
+        self.metadata = metadata or {}
         self.is_authenticated = True
+        self.is_paid = self.metadata.get("is_paid", False)
 
     @property
     def is_anonymous(self):
@@ -57,8 +59,19 @@ class ClerkJWTAuthentication(authentication.BaseAuthentication):
 
             logger.debug(f"Decoded token data: {decoded}")
 
-            # Create a user instance
-            user = ClerkUser(user_id=decoded.get("sub"), email=decoded.get("email"))
+            # Extract metadata from custom claims
+            metadata = {
+                "public_metadata": decoded.get("public_metadata", {}),
+                "private_metadata": decoded.get("private_metadata", {}),
+                "unsafe_metadata": decoded.get("unsafe_metadata", {}),
+            }
+
+            # Create a user instance with metadata
+            user = ClerkUser(
+                user_id=decoded.get("sub"),
+                email=decoded.get("email"),
+                metadata=metadata,
+            )
 
             return (user, None)
 
