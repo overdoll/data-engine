@@ -4,6 +4,13 @@ import { Inter } from "next/font/google"
 import QueryClientProvider from "./_providers/QueryClientProvider"
 import { Toaster } from "@/components/toaster"
 import { Metadata } from "next"
+import { PostHogProvider } from "./components/PostHogProvider"
+
+import dynamic from "next/dynamic"
+
+const PostHogPageView = dynamic(() => import("./components/PostHogPageView"), {
+  ssr: false,
+})
 
 export const metadata: Metadata = {
   title: "wispbit",
@@ -34,13 +41,18 @@ const inter = Inter({ subsets: ["latin"] })
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ClerkProvider>
-      <html lang="en">
-        <body className={inter.className}>
-          <QueryClientProvider>{children}</QueryClientProvider>
-          <Toaster />
-        </body>
-      </html>
-    </ClerkProvider>
+    <html lang="en">
+      <body className={inter.className}>
+        <ClerkProvider>
+          <QueryClientProvider>
+            <PostHogProvider>
+              <PostHogPageView />
+              <Toaster />
+              {children}
+            </PostHogProvider>
+          </QueryClientProvider>
+        </ClerkProvider>
+      </body>
+    </html>
   )
 }
