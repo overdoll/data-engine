@@ -43,5 +43,5 @@ urlpatterns = [
         views.visualize_deduplication,
         name="visualize_deduplication",
     ),
-    path("feature-request", views.feature_request, name="feature_request"),
+    path("message", views.send_message, name="send_message"),
 ]

@@ -7,9 +7,9 @@ import Salesforce from "@/icons/salesforce"
 import { CubeSolid } from "@/icons/index"
 import { Prompt } from "@/components/prompt"
 import { Label } from "@/components/label"
-import { useFeatureRequest } from "@/utils/api"
 import { Textarea } from "@/components/textarea"
 import { toast } from "@/utils/toast"
+import { useSendMessage } from "@/utils/api"
 
 interface ExportDropdownProps {
   fileName: string
@@ -96,7 +96,7 @@ interface PremiumFeatureModalProps {
 
 export function PremiumFeatureModal({ open, onOpenChange, featureName }: PremiumFeatureModalProps) {
   const [text, setText] = useState("")
-  const { mutateAsync: submitFeatureRequest, isPending } = useFeatureRequest()
+  const { mutateAsync: submitFeatureRequest, isPending } = useSendMessage()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -104,8 +104,9 @@ export function PremiumFeatureModal({ open, onOpenChange, featureName }: Premium
     // Submit feature request
     if (featureName) {
       await submitFeatureRequest({
-        feature_type: featureName === "hubspot" ? "export-hubspot" : "export-salesforce",
-        text, // Using email as the text field
+        title: featureName,
+        description: `User requested export to ${featureName}`,
+        customerMessage: text,
       })
       toast("Feature request received", {
         description: `Thanks for your interest in ${featureName} export! We'll notify you when this integration is ready. In the meantime, you can export your data as a CSV file.`,

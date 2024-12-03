@@ -307,3 +307,54 @@ const clerkMail = new cloudflare.Record("clerk-mail", {
   content: "mail.3a1qpuehfbdh.clerk.services",
   proxied: false,
 })
+
+// Loops Email Records
+const loopsMxRecord = new cloudflare.Record("loops-mx", {
+  zoneId: zone.id,
+  name: "envelope",
+  type: "MX",
+  content: "feedback-smtp.us-east-1.amazonses.com",
+  priority: 10,
+  proxied: false,
+})
+
+const loopsSpfRecord = new cloudflare.Record("loops-spf", {
+  zoneId: zone.id,
+  name: "envelope",
+  type: "TXT",
+  content: "v=spf1 include:amazonses.com ~all",
+  proxied: false,
+})
+
+const loopsDmarcRecord = new cloudflare.Record("loops-dmarc", {
+  zoneId: zone.id,
+  name: "_dmarc",
+  type: "TXT",
+  content: "v=DMARC1; p=none",
+  proxied: false,
+})
+
+// DKIM Records
+const loopsDkim1 = new cloudflare.Record("loops-dkim1", {
+  zoneId: zone.id,
+  name: "ddfjkzgmrf7tfaf45fdg2pjklsfaq2l3._domainkey",
+  type: "CNAME",
+  content: "ddfjkzgmrf7tfaf45fdg2pjklsfaq2l3.dkim.amazonses.com",
+  proxied: false,
+})
+
+const loopsDkim2 = new cloudflare.Record("loops-dkim2", {
+  zoneId: zone.id,
+  name: "ozi4w5unozdbqm2lrrlbw52mb36ak2j5._domainkey",
+  type: "CNAME",
+  content: "ozi4w5unozdbqm2lrrlbw52mb36ak2j5.dkim.amazonses.com",
+  proxied: false,
+})
+
+const loopsDkim3 = new cloudflare.Record("loops-dkim3", {
+  zoneId: zone.id,
+  name: "woa7beka37a7iuiresv5ayux6mu6s4ji._domainkey",
+  type: "CNAME",
+  content: "woa7beka37a7iuiresv5ayux6mu6s4ji.dkim.amazonses.com",
+  proxied: false,
+})

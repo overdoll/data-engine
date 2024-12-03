@@ -20,11 +20,15 @@ from pathlib import Path
 import tempfile
 from rest_framework.permissions import IsAuthenticated
 from .authentication import ClerkJWTAuthentication
+import datetime
+from .services.email_service import EmailService
+import requests
 
 csv_service = CSVService()
 column_operation_service = ColumnOperationService()
 ai_service = AIService()
 deduplication_service = DeduplicationService()
+email_service = EmailService()
 
 
 @api_view(["POST"])
@@ -440,32 +444,45 @@ def update_column_values(request, uuid):
 
 
 @api_view(["POST"])
-def feature_request(request):
-    """Handle feature requests from users"""
-    VALID_FEATURE_TYPES = [
-        "export-hubspot",
-        "export-salesforce",
-        "unsupported-dataset-type",
-    ]
+def send_message(request):
+    """Handle incoming messages from users"""
+    # Get message data
+    title = request.data.get("title")
+    description = request.data.get("description", "")
+    customer_message = request.data.get("customer_message", "")
 
-    feature_type = request.data.get("feature_type")
-    text = request.data.get("text", "")  # Optional text field
-
-    if not feature_type:
+    if not title:
         return Response(
-            {"error": "feature_type is required"}, status=status.HTTP_400_BAD_REQUEST
+            {"error": "message type is required"}, status=status.HTTP_400_BAD_REQUEST
         )
 
-    if feature_type not in VALID_FEATURE_TYPES:
+    # Prepare email content
+    email_data = {
+        "title": title,
+        "description": description,
+        "customer_message": customer_message,
+        "timestamp": datetime.datetime.now().isoformat(),
+    }
+
+    # Add user info if authenticated
+    if hasattr(request, "user") and request.user.is_authenticated:
+        email_data["clerk_id"] = request.user.id
+        email_data["clerk_email"] = request.user.email
+
+    try:
+        # Send email via EmailService
+        email_service.send_transactional_email(
+            transactional_id="cm4932bve006e7c90z3zv0tyw",
+            email="ilya@wispbit.com",
+            data=email_data,
+        )
+    except requests.exceptions.RequestException as e:
         return Response(
-            {
-                "error": f"Invalid feature_type. Must be one of: {', '.join(VALID_FEATURE_TYPES)}"
-            },
-            status=status.HTTP_400_BAD_REQUEST,
+            {"error": f"Failed to send email: {str(e)}"},
+            status=status.HTTP_502_BAD_GATEWAY,
         )
 
-    # For now just return success. In the future, this would store the request or send notifications
-    return Response({"status": "success", "message": "Feature request received"})
+    return Response({"status": "success", "message": "Message received and sent"})
 
 
 @api_view(["GET"])

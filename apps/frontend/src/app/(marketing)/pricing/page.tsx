@@ -1,5 +1,4 @@
 import { PricingSection } from "../_components/PricingSection"
-import Link from "next/link"
 export default function PricingPage() {
   return (
     <div className="space-y-16">
