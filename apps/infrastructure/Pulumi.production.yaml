@@ -14,3 +14,7 @@ config:
     secure: AAABAG8Nj4k8+u+pd+pXQg/xJO85WAEybiAgpW575zwDHEP21qg/Eysg8rTmZJXNzwFN3ehRBZq0InAPJ9jxo7hXaSRuWsUFTwPQVJTdirEdaQ==
   aws:region: us-east-1
   aws:profile: overdoll
+  cloudflare:apiToken:
+    secure: AAABACTyBCdsmqBzgJAFDtr82k9dg6v3Cvr/HJmTr2vRZdfh5owAEGRhvBDvJGdMoV2nN9Y/g7+ioCrHJ7L3vEo8HakNpC+J
+  wispbit:cloudflare-account-id:
+    secure: AAABACoEgLzOsGbrfPUryZlm4ZekIi2x/kVyry81TTWOk1kPYXWgRLQi/qZTFoCC5csUgP5w0b05dfKDqSbwJA==
