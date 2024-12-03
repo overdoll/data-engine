@@ -6,6 +6,7 @@
     "typescript": "^5.0.0"
   },
   "dependencies": {
+    "@pulumi/cloudflare": "^5.44.0",
     "@pulumi/pulumi": "^3.0.0"
   }
 }

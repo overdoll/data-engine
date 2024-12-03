@@ -2,6 +2,7 @@ import * as pulumi from "@pulumi/pulumi"
 import * as aws from "@pulumi/aws"
 import * as awsx from "@pulumi/awsx"
 import * as vercel from "@pulumiverse/vercel"
+import * as cloudflare from "@pulumi/cloudflare"
 
 // Configuration setup
 const config = new pulumi.Config()
@@ -33,9 +34,76 @@ const vpc = new awsx.ec2.Vpc("wispbit-vpc", {
 // Create an ECS cluster
 const cluster = new aws.ecs.Cluster("wispbit-cluster", {})
 
-// Create a load balancer
+// Create an ACM certificate
+const certificate = new aws.acm.Certificate("wispbit-cert", {
+  domainName: "api.wispbit.com",
+  validationMethod: "DNS",
+})
+
+// Create Cloudflare DNS record for certificate validation
+const certificateValidation = new aws.acm.CertificateValidation("cert-validation", {
+  certificateArn: certificate.arn,
+  validationRecordFqdns: [certificate.domainValidationOptions[0].resourceRecordName],
+})
+
+// Create Cloudflare DNS record for the API
+const zone = new cloudflare.Zone("wispbit-zone", {
+  zone: "wispbit.com",
+  accountId: config.requireSecret("cloudflare-account-id"),
+})
+
+// Create target group first
+const targetGroup = new aws.lb.TargetGroup("wispbit-tg", {
+  port: 8000,
+  protocol: "HTTP",
+  targetType: "ip",
+  vpcId: vpc.vpcId,
+  healthCheck: {
+    enabled: true,
+    path: "/health/",
+    protocol: "HTTP",
+  },
+})
+
+// Then create the load balancer with the target group
 const lb = new awsx.lb.ApplicationLoadBalancer("wispbit-lb", {
   subnetIds: vpc.privateSubnetIds,
+  listeners: [
+    {
+      port: 443,
+      protocol: "HTTPS",
+      certificateArn: certificate.arn,
+      defaultActions: [
+        {
+          type: "forward",
+          targetGroupArn: targetGroup.arn,
+        },
+      ],
+    },
+    {
+      port: 80,
+      protocol: "HTTP",
+      defaultActions: [
+        {
+          type: "redirect",
+          redirect: {
+            protocol: "HTTPS",
+            port: "443",
+            statusCode: "HTTP_301",
+          },
+        },
+      ],
+    },
+  ],
+})
+
+// Create Cloudflare DNS record for the API
+const apiRecord = new cloudflare.Record("api-record", {
+  zoneId: zone.id,
+  name: "api",
+  type: "CNAME",
+  value: lb.loadBalancer.dnsName,
+  proxied: true,
 })
 
 // Create security group for the backend service
@@ -118,7 +186,7 @@ const backendService = new awsx.ecs.FargateService("wispbit-backend", {
       portMappings: [
         {
           containerPort: 8000,
-          targetGroup: lb.defaultTargetGroup,
+          targetGroup: targetGroup,
         },
       ],
       environment: [
@@ -145,12 +213,41 @@ const backendService = new awsx.ecs.FargateService("wispbit-backend", {
   },
 })
 
-// Vercel Project Configuration
+// Create Cloudflare DNS records for the main domain and www subdomain
+const mainRecord = new cloudflare.Record("main-record", {
+  zoneId: zone.id,
+  name: "@", // @ represents the root domain
+  type: "CNAME",
+  content: "cname.vercel-dns.com", // Vercel's default CNAME
+  proxied: true,
+})
+
+const wwwRecord = new cloudflare.Record("www-record", {
+  zoneId: zone.id,
+  name: "www",
+  type: "CNAME",
+  content: "cname.vercel-dns.com",
+  proxied: true,
+})
+
+// Create Vercel project without the domains field
 const vercelProject = new vercel.Project("wispbit-frontend", {
   framework: "nextjs",
   name: "wispbit",
   rootDirectory: "../../apps/frontend",
   buildCommand: "bun run build",
+})
+
+// Add domains to Vercel project using Domain resource
+const mainDomain = new vercel.ProjectDomain("main-domain", {
+  projectId: vercelProject.id,
+  domain: "wispbit.com",
+})
+
+const wwwDomain = new vercel.ProjectDomain("www-domain", {
+  projectId: vercelProject.id,
+  domain: "www.wispbit.com",
+  redirect: "wispbit.com",
 })
 
 // Create Vercel deployment
