@@ -36,7 +36,9 @@ export function TopBar({ fileId }: { fileId: string }) {
           </Link>
           <span className="text-gray-400">/</span>
           {metadata && (
-            <Label className="font-normal text-base">{metadata.metadata.original_filename}</Label>
+            <Label className="font-normal text-base truncate">
+              {metadata.metadata.original_filename}
+            </Label>
           )}
         </div>
 

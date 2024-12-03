@@ -198,7 +198,6 @@ class DeduplicationService:
 
             # Process results
             duplicate_mapping = self._create_duplicate_mapping(clusters)
-            print(duplicate_mapping)
             processed_rows, deduplicated_count = self._process_rows_with_duplicates(
                 rows, duplicate_mapping
             )

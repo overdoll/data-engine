@@ -71,9 +71,6 @@ class ClerkJWTAuthentication(authentication.BaseAuthentication):
         except InvalidTokenError as e:
             logger.error(f"Invalid token: {str(e)}")
             raise exceptions.AuthenticationFailed("Invalid token")
-        except Exception as e:
-            logger.error(f"Authentication failed: {str(e)}")
-            raise exceptions.AuthenticationFailed(f"Authentication failed: {str(e)}")
 
     def authenticate_header(self, request):
         return "Bearer"

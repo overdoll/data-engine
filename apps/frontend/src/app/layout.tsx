@@ -8,7 +8,7 @@ import { PostHogProvider } from "./components/PostHogProvider"
 
 import dynamic from "next/dynamic"
 
-const PostHogPageView = dynamic(() => import("./components/PostHogPageView"), {
+const PostHogPageView = dynamic(() => import("./components/PostHogListener"), {
   ssr: false,
 })
 
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       {
-        url: "/favicon.ico",
+        url: "/icons/favicon.ico",
         sizes: "64x64 32x32 24x24 16x16",
         type: "image/x-icon",
       },

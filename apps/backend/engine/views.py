@@ -461,39 +461,29 @@ def feature_request(request):
 @authentication_classes([ClerkJWTAuthentication])
 @permission_classes([IsAuthenticated])
 def list_csv_files(request):
-    try:
-        # Get list of file UUIDs
-        file_uuids = csv_service.list_user_files(request.user.id)
-        print("test")
-        print(file_uuids)
+    # Get list of file UUIDs
+    file_uuids = csv_service.list_user_files(request.user.id)
 
-        # Fetch metadata for each file
-        files = []
-        for file_uuid in file_uuids:
-            try:
-                metadata = csv_service.get_metadata(request.user.id, file_uuid)
-                files.append(
-                    {
-                        "uuid": file_uuid,
-                        "original_filename": metadata.get("original_filename"),
-                        "dataset_type": metadata.get("dataset_type"),
-                        "created_at": metadata.get(
-                            "created_at"
-                        ),  # Will be None if not present
-                    }
-                )
-            except ValueError:
-                # Skip files with missing/invalid metadata
-                continue
+    # Fetch metadata for each file
+    files = []
+    for file_uuid in file_uuids:
+        try:
+            metadata = csv_service.get_metadata(request.user.id, file_uuid)
+            files.append(
+                {
+                    "uuid": file_uuid,
+                    "original_filename": metadata.get("original_filename"),
+                    "dataset_type": metadata.get("dataset_type"),
+                    "created_at": metadata.get(
+                        "created_at"
+                    ),  # Will be None if not present
+                }
+            )
+        except ValueError:
+            # Skip files with missing/invalid metadata
+            continue
 
-        # Sort by created_at if available, newest first
-        files.sort(
-            key=lambda x: x["created_at"] if x["created_at"] else "", reverse=True
-        )
+    # Sort by created_at if available, newest first
+    files.sort(key=lambda x: x["created_at"] if x["created_at"] else "", reverse=True)
 
-        return Response(files)
-    except Exception as e:
-        return Response(
-            {"error": f"Failed to list files: {str(e)}"},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+    return Response(files)
