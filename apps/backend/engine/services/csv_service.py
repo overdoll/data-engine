@@ -80,7 +80,9 @@ class CSVService:
                 Bucket=self.bucket, Key=f"{path}/metadata.json"
             )
             metadata = json.loads(metadata_obj["Body"].read())
-            metadata["created_at"] = metadata_obj["LastModified"].isoformat()
+            metadata["created_at"] = (
+                metadata.get("created_at") or metadata_obj["LastModified"].isoformat()
+            )
             return metadata
         except self.s3.exceptions.NoSuchKey:
             raise ValueError("Metadata not found")

@@ -171,8 +171,6 @@ export const useUploadFile = () => {
         },
       })
 
-      console.log("data", data)
-
       const fileData = file.get("file")
       if (fileData instanceof File) {
         const fileMetadata = {
@@ -328,7 +326,11 @@ export const useUpdateDatasetType = (fileId: string) => {
 
 // Add new interface for feature request
 export interface FeatureRequest {
-  feature_type: "export-hubspot" | "export-salesforce" | "unsupported-dataset-type"
+  feature_type:
+    | "export-hubspot"
+    | "export-salesforce"
+    | "unsupported-dataset-type"
+    | "upgrade-request"
   text?: string
 }
 

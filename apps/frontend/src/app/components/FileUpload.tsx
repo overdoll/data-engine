@@ -3,6 +3,8 @@ import { useUploadFile } from "@/utils/api"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { useMostRecentUpload } from "@/stores/mostRecentUpload"
+import { toast } from "@/utils/toast"
+import { isAxiosError } from "axios"
 
 export function FileUpload() {
   const router = useRouter()
@@ -27,6 +29,16 @@ export function FileUpload() {
             setPendingFile(undefined)
             setMostRecentFileId(response.id)
             router.push(`/files/${response.id}`)
+          },
+          onError: (error) => {
+            if (isAxiosError(error)) {
+              const err = error.response?.data.error
+              if (err) {
+                toast.error(err)
+              } else {
+                toast.error("An unknown error occurred")
+              }
+            }
           },
         })
       }}

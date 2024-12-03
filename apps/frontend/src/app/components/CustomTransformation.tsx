@@ -5,6 +5,7 @@ import { useState } from "react"
 import { CustomTransformationModal } from "./CustomTransformationModal"
 import { Label } from "@/components/label"
 import { useUpdateColumnValues } from "@/utils/api"
+import { toast } from "@/utils/toast"
 
 export function CustomTransformation({ fileId }: { fileId: string }) {
   const [open, setOpen] = useState(false)
@@ -16,13 +17,21 @@ export function CustomTransformation({ fileId }: { fileId: string }) {
     transformations: Record<string, string>
   }) => {
     try {
-      await applyTransformations.mutateAsync({
-        columnId: data.columnId,
-        transformations: data.transformations,
-      })
+      await applyTransformations.mutateAsync(
+        {
+          columnId: data.columnId,
+          transformations: data.transformations,
+        },
+        {
+          onError: () => {
+            toast.error("Failed to apply custom fixes")
+          },
+        }
+      )
       setOpen(false)
-    } catch (error) {
-      console.error("Failed to apply transformations:", error)
+      toast.success("Custom fixes applied!")
+    } catch (e) {
+      console.error("Failed to apply custom fixes:", e)
     }
   }
 

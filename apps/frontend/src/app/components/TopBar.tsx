@@ -10,6 +10,7 @@ import { StyledTopBar } from "../../components/topbar/top-bar"
 import { Label } from "@/components/label/label"
 import { Logo } from "./Logo"
 import { useEffect } from "react"
+import { SubscriptionStatusBadge } from "./SubscriptionStatusBadge"
 
 export function TopBar({ fileId }: { fileId: string }) {
   const { data: metadata } = useCsvMetadata(fileId)
@@ -47,6 +48,7 @@ export function TopBar({ fileId }: { fileId: string }) {
             <DatasetType datasetType={metadata.metadata.dataset_type} />
             <ModeToggle />
             <ExportDropdown fileName={metadata.metadata.original_filename} />
+            <SubscriptionStatusBadge />
             <UserButton />
           </div>
         ) : (

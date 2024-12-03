@@ -60,11 +60,7 @@ class ClerkJWTAuthentication(authentication.BaseAuthentication):
             logger.debug(f"Decoded token data: {decoded}")
 
             # Extract metadata from custom claims
-            metadata = {
-                "public_metadata": decoded.get("public_metadata", {}),
-                "private_metadata": decoded.get("private_metadata", {}),
-                "unsafe_metadata": decoded.get("unsafe_metadata", {}),
-            }
+            metadata = {"is_paid": decoded.get("is_paid", False)}
 
             # Create a user instance with metadata
             user = ClerkUser(

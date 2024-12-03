@@ -20,6 +20,7 @@ from pathlib import Path
 import tempfile
 from rest_framework.permissions import IsAuthenticated
 from .authentication import ClerkJWTAuthentication
+from datetime import datetime
 
 csv_service = CSVService()
 column_operation_service = ColumnOperationService()
@@ -57,6 +58,7 @@ def upload_csv(request):
         "storage_engine": "v1",
         "original_filename": file.name,
         "user_id": request.user.id,  # Add user ID to metadata
+        "created_at": datetime.now().isoformat(),
     }
 
     # Convert DataFrame to column-based format
@@ -446,6 +448,7 @@ def feature_request(request):
         "export-hubspot",
         "export-salesforce",
         "unsupported-dataset-type",
+        "upgrade-request",
     ]
 
     feature_type = request.data.get("feature_type")

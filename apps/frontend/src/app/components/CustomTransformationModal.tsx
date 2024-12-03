@@ -10,6 +10,7 @@ import { useTransformationStore } from "@/stores/useTransformationStore"
 import { useEffect } from "react"
 import { Table } from "@/components/table"
 import { Input } from "@/components/input"
+import { toast } from "@/utils/toast"
 
 interface CustomTransformationModalProps {
   open: boolean
@@ -61,13 +62,20 @@ export function CustomTransformationModal({
     if (!selectedColumn || !description) return
 
     try {
-      const result = await generateTransformation.mutateAsync({
-        columnId: selectedColumn,
-        prompt: description,
-      })
+      const result = await generateTransformation.mutateAsync(
+        {
+          columnId: selectedColumn,
+          prompt: description,
+        },
+        {
+          onError: () => {
+            toast.error("Failed to generate transformations")
+          },
+        }
+      )
       setTransformations(result)
-    } catch (error) {
-      console.error("Failed to generate transformation:", error)
+    } catch (e) {
+      console.error("Failed to generate transformations:", e)
     }
   }
 

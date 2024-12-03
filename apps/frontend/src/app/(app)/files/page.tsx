@@ -6,6 +6,7 @@ import { RedirectToSignIn, SignedOut, UserButton } from "@clerk/nextjs"
 import { SignedIn } from "@clerk/nextjs"
 import { StyledTopBar } from "@/components/topbar/top-bar"
 import { Logo } from "../../components/Logo"
+import { SubscriptionStatusBadge } from "../../components/SubscriptionStatusBadge"
 
 export default function Home() {
   return (
@@ -17,7 +18,10 @@ export default function Home() {
             <span className="text-gray-400">/</span>
             <Label className="font-normal text-base">Files</Label>
           </div>
-          <UserButton />
+          <div className="flex items-center gap-2">
+            <SubscriptionStatusBadge />
+            <UserButton />
+          </div>
         </StyledTopBar>
         <FileBrowser />
       </SignedIn>
