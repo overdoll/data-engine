@@ -261,3 +261,45 @@ const vercelDeployment = new vercel.Deployment("wispbit-deployment", {
     API_URL: lb.loadBalancer.dnsName,
   },
 })
+
+// Add Clerk DNS records
+const clerkFrontendApi = new cloudflare.Record("clerk-frontend-api", {
+  zoneId: zone.id,
+  name: "clerk",
+  type: "CNAME",
+  content: "frontend-api.clerk.services",
+  proxied: true,
+})
+
+const clerkAccountsPortal = new cloudflare.Record("clerk-accounts-portal", {
+  zoneId: zone.id,
+  name: "accounts",
+  type: "CNAME",
+  content: "accounts.clerk.services",
+  proxied: true,
+})
+
+// Email-related DNS records for Clerk
+const clerkDkim1 = new cloudflare.Record("clerk-dkim1", {
+  zoneId: zone.id,
+  name: "clk._domainkey",
+  type: "CNAME",
+  content: "dkim1.3a1qpuehfbdh.clerk.services",
+  proxied: false, // Email records should not be proxied
+})
+
+const clerkDkim2 = new cloudflare.Record("clerk-dkim2", {
+  zoneId: zone.id,
+  name: "clk2._domainkey",
+  type: "CNAME",
+  content: "dkim2.3a1qpuehfbdh.clerk.services",
+  proxied: false,
+})
+
+const clerkMail = new cloudflare.Record("clerk-mail", {
+  zoneId: zone.id,
+  name: "clkmail",
+  type: "CNAME",
+  content: "mail.3a1qpuehfbdh.clerk.services",
+  proxied: false,
+})
