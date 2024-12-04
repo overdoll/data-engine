@@ -1,7 +1,7 @@
 import { Prompt } from "@/components/prompt"
 import { useState } from "react"
 import { useMostRecentUpload } from "@/stores/mostRecentUpload"
-import { DatasetType, useCsvMetadata, useUpdateDatasetType, useFeatureRequest } from "@/utils/api"
+import { DatasetType, useCsvMetadata, useUpdateDatasetType, useSendMessage } from "@/utils/api"
 import { X } from "lucide-react"
 import { Textarea } from "@/components/textarea"
 import { DATASET_TYPES } from "@/utils/dataset-types"
@@ -44,7 +44,7 @@ function TypeSelectionModalContent({
   onClose,
 }: TypeSelectionModalContentProps) {
   const { mutateAsync: updateDatasetType } = useUpdateDatasetType(fileId)
-  const { mutateAsync: submitFeatureRequest } = useFeatureRequest()
+  const { mutateAsync: sendMessage } = useSendMessage()
   const { setFileId: setMostRecentFileId } = useMostRecentUpload()
   const [selectedType, setSelectedType] = useState<DatasetType>(datasetType)
   const [showOtherInput, setShowOtherInput] = useState(false)
@@ -56,9 +56,10 @@ function TypeSelectionModalContent({
     }
 
     if (showOtherInput && otherDescription.trim()) {
-      await submitFeatureRequest({
-        feature_type: "unsupported-dataset-type",
-        text: otherDescription.trim(),
+      await sendMessage({
+        title: "Unsupported Dataset Type",
+        description: "User requested support for new dataset type",
+        customerMessage: otherDescription.trim(),
       })
 
       toast("Feature request received", {

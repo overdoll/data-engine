@@ -324,25 +324,18 @@ export const useUpdateDatasetType = (fileId: string) => {
   })
 }
 
-// Add new interface for feature request
-export interface FeatureRequest {
-  feature_type:
-    | "export-hubspot"
-    | "export-salesforce"
-    | "unsupported-dataset-type"
-    | "upgrade-request"
-  text?: string
-}
-
-// Add new mutation for feature requests
-export const useFeatureRequest = () => {
+export const useSendMessage = () => {
   const apiClient = useApiClient()
 
   return useMutation({
-    mutationFn: async (request: FeatureRequest) => {
+    mutationFn: async (data: { title: string; description?: string; customerMessage?: string }) => {
       const client = await apiClient()
-      const { data } = await client.post("/feature-request", request)
-      return data
+      const { data: response } = await client.post("/message", {
+        title: data.title,
+        description: data.description,
+        customer_message: data.customerMessage,
+      })
+      return response
     },
   })
 }

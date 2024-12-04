@@ -10,6 +10,7 @@ import { useForm } from "react-hook-form"
 import { z } from "zod"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { toast } from "@/utils/toast"
+import { useSendMessage } from "@/utils/api"
 
 const formSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
@@ -26,6 +27,7 @@ interface ContactModalProps {
 export function ContactModal({ isOpen, onClose }: ContactModalProps) {
   const { user, isLoaded } = useUser()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const { mutateAsync: sendMessage } = useSendMessage()
 
   const {
     register,
@@ -51,9 +53,11 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
   const onSubmit = async (data: FormData) => {
     setIsSubmitting(true)
     try {
-      // TODO: Implement form submission
-      console.log("Form submitted:", data)
-      await new Promise((resolve) => setTimeout(resolve, 1000)) // Simulate API call
+      await sendMessage({
+        title: "Sales Contact Request",
+        description: `Contact request from ${data.email}`,
+        customerMessage: data.message,
+      })
       toast.success("Message sent successfully", {
         description: "We'll be in touch with you shortly!",
       })

@@ -139,7 +139,15 @@ AWS_SECRET_ACCESS_KEY = env("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = env("AWS_STORAGE_BUCKET_NAME")
 AI_API_KEY = env("AI_API_KEY")
 AI_BASE_URL = "https://openrouter.ai/api/v1"
-
+# Clerk settings
+CLERK_JWT_PEM_PUBLIC_KEY = env(
+    "CLERK_JWT_PEM_PUBLIC_KEY", default=""
+)  # Get this from Clerk Dashboard
+CLERK_JWT_JWKS_URL = env(
+    "CLERK_JWT_JWKS_URL", default=""
+)  # Your Clerk JWKS URL (e.g., https://clerk.your-domain.com/.well-known/jwks.json)
+# Loops
+LOOPS_API_KEY = env("LOOPS_API_KEY")
 
 # Add CORS settings at the bottom of the file
 CORS_ALLOWED_ORIGINS = [
@@ -158,13 +166,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-# Clerk settings
-CLERK_JWT_PEM_PUBLIC_KEY = env(
-    "CLERK_JWT_PEM_PUBLIC_KEY", default=""
-)  # Get this from Clerk Dashboard
-CLERK_JWT_JWKS_URL = env(
-    "CLERK_JWT_JWKS_URL", default=""
-)  # Your Clerk JWKS URL (e.g., https://clerk.your-domain.com/.well-known/jwks.json)
 
 # Configure logging
 LOGGING = {
