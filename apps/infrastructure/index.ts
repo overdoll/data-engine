@@ -9,19 +9,27 @@ const config = new pulumi.Config()
 const stackName = pulumi.getStack()
 
 // Create an S3 bucket for storage
-const bucket = new aws.s3.Bucket("data-engine-storage", {
-  acl: "private",
-  versioning: {
-    enabled: true,
-  },
-  serverSideEncryptionConfiguration: {
-    rule: {
-      applyServerSideEncryptionByDefault: {
-        sseAlgorithm: "AES256",
+const bucket = new aws.s3.Bucket(
+  "data-engine-storage",
+  {
+    acl: "private",
+    versioning: {
+      enabled: true,
+    },
+    serverSideEncryptionConfiguration: {
+      rule: {
+        applyServerSideEncryptionByDefault: {
+          sseAlgorithm: "AES256",
+        },
       },
     },
+    forceDestroy: false,
   },
-})
+  {
+    protect: true,
+    import: "data-engine-storage",
+  }
+)
 
 // Create a VPC for our backend
 const vpc = new awsx.ec2.Vpc("wispbit-vpc", {
