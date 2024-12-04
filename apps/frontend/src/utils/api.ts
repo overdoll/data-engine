@@ -22,12 +22,18 @@ const useApiClient = () => {
   const { getToken } = useAuth()
 
   return async () => {
+    const token = await getToken()
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    }
+
+    if (token) {
+      headers.Authorization = `Bearer ${token}`
+    }
+
     return axios.create({
       baseURL: "http://localhost:8000/api",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${await getToken()}`,
-      },
+      headers,
     })
   }
 }

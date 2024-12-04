@@ -200,6 +200,7 @@ const backendService = new awsx.ecs.FargateService("wispbit-backend", {
         },
         { name: "CLERK_JWT_JWKS_URL", value: config.requireSecret("clerk-jwt-jwks-url") },
         { name: "SENTRY_DSN", value: config.requireSecret("sentry-dsn-backend") },
+        { name: "LOOPS_API_KEY", value: config.requireSecret("loops-api-key") },
       ],
     },
     taskRole: {
