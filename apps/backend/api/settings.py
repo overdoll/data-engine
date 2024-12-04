@@ -147,7 +147,7 @@ CLERK_JWT_JWKS_URL = env(
     "CLERK_JWT_JWKS_URL", default=""
 )  # Your Clerk JWKS URL (e.g., https://clerk.your-domain.com/.well-known/jwks.json)
 # Loops
-LOOPS_API_KEY = env("LOOPS_API_KEY")
+LOOPS_API_KEY = env("LOOPS_API_KEY", default="")
 
 # Add CORS settings at the bottom of the file
 CORS_ALLOWED_ORIGINS = [

@@ -37,15 +37,17 @@ export function TopBar({ fileId }: { fileId: string }) {
           </Link>
           <span className="text-gray-400">/</span>
           {metadata && (
-            <Label className="font-normal text-base truncate">
-              {metadata.metadata.original_filename}
-            </Label>
+            <div className="flex items-center gap-2">
+              <Label className="font-normal text-base truncate">
+                {metadata.metadata.original_filename}
+              </Label>
+              <DatasetType datasetType={metadata.metadata.dataset_type} />
+            </div>
           )}
         </div>
 
         {metadata ? (
           <div className="flex items-center gap-2">
-            <DatasetType datasetType={metadata.metadata.dataset_type} />
             <ModeToggle />
             <ExportDropdown fileName={metadata.metadata.original_filename} />
             <SubscriptionStatusBadge />

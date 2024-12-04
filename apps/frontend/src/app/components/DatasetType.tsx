@@ -12,7 +12,7 @@ export function DatasetType({ datasetType }: { datasetType: DatasetTypeEnum }) {
       <Tooltip
         content={`This dataset type is marked as ${type.label} data. Available fixes and deduplication logic will be applied based on this type. The type cannot be changed after initial selection.`}
       >
-        <div className="flex items-center gap-2 py-1 px-2 rounded-md opacity-40">
+        <div className="flex items-center gap-2 px-2 rounded-md opacity-40">
           <DatasetTypeIcon type={datasetType} />
           <Label>{type.label}</Label>
         </div>
