@@ -236,7 +236,7 @@ const wwwRecord = new cloudflare.Record("www-record", {
 const vercelProject = new vercel.Project("wispbit-frontend", {
   framework: "nextjs",
   name: "wispbit",
-  rootDirectory: "../../apps/frontend",
+  rootDirectory: "apps/frontend",
   buildCommand: "bun run build",
 })
 
@@ -256,7 +256,7 @@ const wwwDomain = new vercel.ProjectDomain("www-domain", {
 const vercelDeployment = new vercel.Deployment("wispbit-deployment", {
   projectId: vercelProject.id,
   production: true,
-  files: vercel.getProjectDirectoryOutput({ path: "../../apps/frontend" }).files,
+  files: vercel.getProjectDirectoryOutput({ path: "apps/frontend" }).files,
   environment: {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: config.requireSecret("clerk-publishable-key"),
     CLERK_SECRET_KEY: config.requireSecret("clerk-secret-key"),
