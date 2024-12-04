@@ -7,6 +7,7 @@ import { Metadata } from "next"
 import { PostHogProvider } from "./components/PostHogProvider"
 
 import dynamic from "next/dynamic"
+import { CrispProvider } from "./components/CrispProvider"
 
 const PostHogPageView = dynamic(() => import("./components/PostHogListener"), {
   ssr: false,
@@ -48,6 +49,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <PostHogProvider>
               <PostHogPageView />
               <Toaster />
+              <CrispProvider />
               {children}
             </PostHogProvider>
           </QueryClientProvider>
