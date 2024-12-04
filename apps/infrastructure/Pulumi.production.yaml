@@ -24,3 +24,5 @@ config:
     secure: AAABAHvceSKWDJtT+hSOYW+ZO1OkXrB7yqpZmPaydy6zE7PX8di+IGTbiN+ZC0X4xU8hYQoYiiakGGLYJwzMXVwqRcGtFz5Y+nEzEHt06/XHERA090u5RNKDOwb5LSkMZyjx6np+Wkphtbmiq6LV2U9ksi2O6evHDoFIsc1YAw==
   wispbit:posthog-key:
     secure: AAABAE9Qv51nyGSOGl8o/ZVfc4TET7c4mnKHn/Z3xUlsfu4KD4ILlKqQctP0KbkZMjCVQnvmz1I8HWv87qzg/iT0PIa5L0htWZ8sCOXXPw==
+  wispbit:loops-api-key:
+    secure: AAABANU7o/ilO+dtwGkp3tpymfO2Z+xSlilyk5A4lKJ1ZuZ5perzdJNZIGYzWInvD/EOX0TwJdPjgK9inppSWQ==
