@@ -3,21 +3,21 @@ import { Prompt } from "@/components/prompt"
 import { Label } from "@/components/label"
 import { Textarea } from "@/components/textarea"
 import { useState } from "react"
-import { useFeatureRequest } from "@/utils/api"
 import { toast } from "@/utils/toast"
 import { Sparkles } from "lucide-react"
-
+import { useSendMessage } from "@/utils/api"
 export function UpgradeButton(props: ButtonProps) {
   const [modalOpen, setModalOpen] = useState(false)
   const [text, setText] = useState("")
-  const { mutateAsync: submitFeatureRequest, isPending } = useFeatureRequest()
+  const { mutateAsync: sendMessage, isPending } = useSendMessage()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    await submitFeatureRequest({
-      feature_type: "upgrade-request",
-      text,
+    await sendMessage({
+      title: "Upgrade Request",
+      customerMessage: text,
+      description: "User requested upgrade to premium",
     })
 
     toast("Request received", {
