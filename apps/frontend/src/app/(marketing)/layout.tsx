@@ -1,5 +1,5 @@
 import { Button } from "@/components/button"
-import { SignInButton, SignedIn, SignedOut, UserButton } from "@clerk/nextjs"
+import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs"
 import Link from "next/link"
 import { Metadata } from "next"
 
