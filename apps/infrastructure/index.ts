@@ -238,7 +238,6 @@ const vercelProject = new vercel.Project("wispbit-frontend", {
   buildCommand: "bun run build",
   installCommand: "bun install",
   teamId: "team_qjGLQv9Fohre18coiyWEvZic",
-  rootDirectory: "src",
 })
 
 // Add domains to Vercel project using Domain resource
@@ -276,7 +275,7 @@ const clerkFrontendApi = new cloudflare.Record("clerk-frontend-api", {
   name: "clerk",
   type: "CNAME",
   content: "frontend-api.clerk.services",
-  proxied: true,
+  proxied: false,
   allowOverwrite: true,
 })
 
@@ -285,7 +284,7 @@ const clerkAccountsPortal = new cloudflare.Record("clerk-accounts-portal", {
   name: "accounts",
   type: "CNAME",
   content: "accounts.clerk.services",
-  proxied: true,
+  proxied: false,
   allowOverwrite: true,
 })
 
