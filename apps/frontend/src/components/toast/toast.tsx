@@ -8,7 +8,7 @@ import {
 } from "@/icons/index"
 import * as React from "react"
 
-import type { ToastAction, ToastVariant } from "@/types"
+import type { ToastAction, ToastVariant } from "@/types/types"
 import { clx } from "@/utils/clx"
 import { toast } from "sonner"
 import { IconButton } from "../icon-button"

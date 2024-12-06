@@ -6,9 +6,7 @@ import { clx } from "@/utils/clx"
 /**
  * This component is based on the [Radix UI Popover](https://www.radix-ui.com/primitives/docs/components/popover) primitves.
  */
-const Root = (
-  props: React.ComponentPropsWithoutRef<typeof Primitives.Root>
-) => {
+const Root = (props: React.ComponentPropsWithoutRef<typeof Primitives.Root>) => {
   return <Primitives.Root {...props} />
 }
 Root.displayName = "Popover"
@@ -37,16 +35,12 @@ const Close = React.forwardRef<
 })
 Close.displayName = "Popover.Close"
 
-interface ContentProps
-  extends React.ComponentPropsWithoutRef<typeof Primitives.Content> {}
+type ContentProps = React.ComponentPropsWithoutRef<typeof Primitives.Content>
 
 /**
  * @excludeExternal
  */
-const Content = React.forwardRef<
-  React.ElementRef<typeof Primitives.Content>,
-  ContentProps
->(
+const Content = React.forwardRef<React.ElementRef<typeof Primitives.Content>, ContentProps>(
   (
     {
       className,
@@ -89,18 +83,13 @@ const Content = React.forwardRef<
 )
 Content.displayName = "Popover.Content"
 
-const Seperator = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentPropsWithoutRef<"div">
->(({ className, ...props }, ref) => {
-  return (
-    <div
-      ref={ref}
-      className={clx("bg-ui-border-base -mx-1 my-1 h-px", className)}
-      {...props}
-    />
-  )
-})
+const Seperator = React.forwardRef<HTMLDivElement, React.ComponentPropsWithoutRef<"div">>(
+  ({ className, ...props }, ref) => {
+    return (
+      <div ref={ref} className={clx("bg-ui-border-base -mx-1 my-1 h-px", className)} {...props} />
+    )
+  }
+)
 Seperator.displayName = "Popover.Seperator"
 
 const Popover = Object.assign(Root, {

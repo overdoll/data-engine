@@ -31,7 +31,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = "django-insecure-%n(wfo2*i%l-uiqlgd^^*_s042&d=+o_7ssvvc90n!u_8-=yke"
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = env("DEBUG", default=False)
 
 ALLOWED_HOSTS = ["*"]
 
@@ -153,6 +153,7 @@ LOOPS_API_KEY = env("LOOPS_API_KEY", default="")
 CORS_ALLOWED_ORIGINS = [
     "http://localhost:3000",  # React default port
     "http://127.0.0.1:3000",
+    "https://wispbit.com",
 ]
 
 # Optional: Allow credentials (cookies, authorization headers)

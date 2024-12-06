@@ -64,7 +64,7 @@ const targetGroup = new aws.lb.TargetGroup("wispbit-tg", {
 
 // Then create the load balancer with the target group
 const lb = new awsx.lb.ApplicationLoadBalancer("wispbit-lb", {
-  subnetIds: vpc.privateSubnetIds,
+  subnetIds: vpc.publicSubnetIds,
   listeners: [
     {
       port: 443,
@@ -190,7 +190,6 @@ const backendService = new awsx.ecs.FargateService("wispbit-backend", {
       ],
       environment: [
         { name: "DEBUG", value: "false" },
-        { name: "ALLOWED_HOSTS", value: "*" },
         { name: "AWS_STORAGE_BUCKET_NAME", value: bucket.id },
         { name: "AI_API_KEY", value: config.requireSecret("ai-api-key") },
         {
@@ -209,7 +208,7 @@ const backendService = new awsx.ecs.FargateService("wispbit-backend", {
   desiredCount: 1,
   networkConfiguration: {
     assignPublicIp: true,
-    subnets: vpc.privateSubnetIds,
+    subnets: vpc.publicSubnetIds,
     securityGroups: [backendSecurityGroup.id],
   },
 })
@@ -237,8 +236,9 @@ const vercelProject = new vercel.Project("wispbit-frontend", {
   framework: "nextjs",
   name: "wispbit",
   buildCommand: "bun run build",
+  installCommand: "bun install",
   teamId: "team_qjGLQv9Fohre18coiyWEvZic",
-  rootDirectory: "apps/frontend",
+  rootDirectory: "src",
 })
 
 // Add domains to Vercel project using Domain resource
@@ -258,6 +258,7 @@ const vercelDeployment = new vercel.Deployment("wispbit-deployment", {
   projectId: vercelProject.id,
   production: true,
   teamId: "team_qjGLQv9Fohre18coiyWEvZic",
+  pathPrefix: "../../apps/frontend",
   files: vercel.getProjectDirectoryOutput({ path: "../../apps/frontend" }).files,
   environment: {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: config.requireSecret("clerk-publishable-key"),

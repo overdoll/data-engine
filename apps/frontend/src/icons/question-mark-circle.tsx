@@ -1,5 +1,5 @@
 import * as React from "react"
-import type { IconProps } from "../types"
+import type { IconProps } from "../types/types"
 const QuestionMarkCircle = React.forwardRef<SVGSVGElement, IconProps>(
   ({ color = "currentColor", ...props }, ref) => {
     return (

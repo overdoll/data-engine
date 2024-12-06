@@ -5,18 +5,17 @@ import { Toaster as Primitive } from "sonner"
 
 import { clx } from "@/utils/clx"
 
-interface ToasterProps
-  extends Omit<
-    React.ComponentPropsWithoutRef<typeof Primitive>,
-    | "richColors"
-    | "closeButton"
-    | "icons"
-    | "theme"
-    | "invert"
-    | "loadingIcon"
-    | "cn"
-    | "toastOptions"
-  > {}
+type ToasterProps = Omit<
+  React.ComponentPropsWithoutRef<typeof Primitive>,
+  | "richColors"
+  | "closeButton"
+  | "icons"
+  | "theme"
+  | "invert"
+  | "loadingIcon"
+  | "cn"
+  | "toastOptions"
+>
 
 /**
  * This component is based on the [Toaster component of the Sonner library](https://sonner.emilkowal.ski/toaster).
@@ -37,7 +36,7 @@ const Toaster = ({
   /**
    * The time in milliseconds that a toast is shown before it's
    * automatically dismissed.
-   * 
+   *
    * @defaultValue 4000
    */
   duration,

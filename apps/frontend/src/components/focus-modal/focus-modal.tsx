@@ -13,8 +13,7 @@ import { clx } from "@/utils/clx"
  * @prop open - Whether the modal is opened.
  * @prop onOpenChange - A function to handle when the modal is opened or closed.
  */
-interface FocusModalRootProps
-  extends React.ComponentPropsWithoutRef<typeof FocusModalPrimitives.Root> {}
+type FocusModalRootProps = React.ComponentPropsWithoutRef<typeof FocusModalPrimitives.Root>
 
 /**
  * This component is based on the [Radix UI Dialog](https://www.radix-ui.com/primitives/docs/components/dialog) primitives.
@@ -133,7 +132,7 @@ const FocusModalTitle = React.forwardRef<
   HTMLHeadingElement,
   React.ComponentPropsWithoutRef<typeof FocusModalPrimitives.Title>
 >(({ className, ...props }, ref) => {
-  return <FocusModalPrimitives.Title ref={ref} {...props} />
+  return <FocusModalPrimitives.Title ref={ref} className={className} {...props} />
 })
 FocusModalTitle.displayName = "FocusModal.Title"
 

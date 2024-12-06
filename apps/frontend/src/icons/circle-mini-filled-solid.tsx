@@ -1,5 +1,5 @@
 import * as React from "react"
-import type { IconProps } from "../types"
+import type { IconProps } from "../types/types"
 const CircleMiniFilledSolid = React.forwardRef<SVGSVGElement, IconProps>(
   ({ color = "currentColor", ...props }, ref) => {
     return (
@@ -12,13 +12,7 @@ const CircleMiniFilledSolid = React.forwardRef<SVGSVGElement, IconProps>(
         {...props}
       >
         <g clipPath="url(#a)">
-          <circle
-            cx={7.5}
-            cy={7.5}
-            r={6.443}
-            stroke={color}
-            strokeWidth={1.333}
-          />
+          <circle cx={7.5} cy={7.5} r={6.443} stroke={color} strokeWidth={1.333} />
           <circle cx={7.5} cy={7.5} r={4.444} fill={color} />
         </g>
         <defs>

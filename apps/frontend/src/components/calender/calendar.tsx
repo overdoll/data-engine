@@ -44,7 +44,7 @@ const Calendar = (props: CalendarProps) => {
 
   React.useEffect(() => {
     setValue(props.value ? updateCalendarDate(value, props.value) : null)
-  }, [props.value])
+  }, [props.value, value])
 
   const { calendarProps, prevButtonProps, nextButtonProps, title } = useCalendar(
     { value, ..._props },
@@ -78,8 +78,10 @@ function convertProps(
     maxValue,
     isDateUnavailable: _isDateUnavailable,
     onChange: _onChange,
-    value: __value__,
-    defaultValue: __defaultValue__,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    value: _value,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    defaultValue: _defaultValue,
     ...rest
   } = props
 

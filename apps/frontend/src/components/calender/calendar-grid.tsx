@@ -20,21 +20,22 @@ const CalendarGrid = ({ state, ...props }: CalendarGridProps) => {
       <thead {...headerProps}>
         <tr>
           {weekDays.map((day, index) => (
-            <th key={index} className="txt-compact-small-plus text-ui-fg-muted size-8 p-1 rounded-md">{day}</th>
+            <th
+              key={index}
+              className="txt-compact-small-plus text-ui-fg-muted size-8 p-1 rounded-md"
+            >
+              {day}
+            </th>
           ))}
         </tr>
       </thead>
       <tbody>
-        {[...new Array(weeksInMonth).keys()].map((weekIndex) => (
+        {Array.from({ length: weeksInMonth }).map((_, weekIndex) => (
           <tr key={weekIndex}>
             {state
               .getDatesInWeek(weekIndex)
               .map((date, i) =>
-                date ? (
-                  <CalendarCell key={i} state={state} date={date} />
-                ) : (
-                  <td key={i} />
-                )
+                date ? <CalendarCell key={i} state={state} date={date} /> : <td key={i} />
               )}
           </tr>
         ))}

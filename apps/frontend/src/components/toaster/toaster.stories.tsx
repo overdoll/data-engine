@@ -65,7 +65,7 @@ const meta: Meta<typeof Toaster> = {
     }
 
     const makeUpdatingToast = () => {
-      let id: number | string = Math.random()
+      const id: number | string = Math.random()
 
       const retry = async () => {
         const coinFlip = Math.random() > 0.5
@@ -88,8 +88,7 @@ const meta: Meta<typeof Toaster> = {
         } else {
           toast.error("Request failed", {
             id: id,
-            description:
-              "Insert the description here. Can be semi-long and still work.",
+            description: "Insert the description here. Can be semi-long and still work.",
             action: {
               label: "Retry",
               altText: "Retry the request",
@@ -101,8 +100,7 @@ const meta: Meta<typeof Toaster> = {
 
       toast.error("Request failed", {
         id: id,
-        description:
-          "Insert the description here. Can be semi-long and still work.",
+        description: "Insert the description here. Can be semi-long and still work.",
         action: {
           label: "Retry",
           altText: "Retry the request",

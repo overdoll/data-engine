@@ -1,5 +1,5 @@
 import { Toast } from "@/components/toast"
-import { ToastAction, ToastVariant, ToasterPosition } from "@/types"
+import type { ToastAction, ToastVariant, ToasterPosition } from "@/types/types"
 import * as React from "react"
 import { ExternalToast, toast as toastFn } from "sonner"
 
@@ -55,11 +55,7 @@ function message(
   return create("message", title, props)
 }
 
-function custom() {
-  return create("message", "Custom",)
-}
-
-interface VariantToastProps extends Omit<ToastProps, "icon"> {}
+type VariantToastProps = Omit<ToastProps, "icon">
 
 function info(
   /**
@@ -92,7 +88,7 @@ function success(
   /**
    * The props of the toast.
    */
-  props: VariantToastProps = { }
+  props: VariantToastProps = {}
 ) {
   return create("success", title, props)
 }
@@ -151,52 +147,31 @@ async function promise<TData>(
   let id: string | number | undefined = props.id || createUniqueID()
   let shouldDismiss = id !== undefined
 
-  id = create(
-    "loading",
-    typeof props.loading === "string" ? props.loading : props.loading.title,
-    {
-      id: id,
-      position: props.position,
-      description:
-        typeof props.loading === "string"
-          ? undefined
-          : props.loading.description,
-      duration: Infinity,
-      dismissable: false,
-    }
-  )
+  id = create("loading", typeof props.loading === "string" ? props.loading : props.loading.title, {
+    id: id,
+    position: props.position,
+    description: typeof props.loading === "string" ? undefined : props.loading.description,
+    duration: Infinity,
+    dismissable: false,
+  })
 
   const p = promise instanceof Promise ? promise : promise()
 
   p.then(() => {
     shouldDismiss = false
-    create(
-      "success",
-      typeof props.success === "string" ? props.success : props.success.title,
-      {
-        id: id,
-        position: props.position,
-        description:
-          typeof props.success === "string"
-            ? undefined
-            : props.success.description,
-      }
-    )
+    create("success", typeof props.success === "string" ? props.success : props.success.title, {
+      id: id,
+      position: props.position,
+      description: typeof props.success === "string" ? undefined : props.success.description,
+    })
   })
     .catch(() => {
       shouldDismiss = false
-      create(
-        "error",
-        typeof props.error === "string" ? props.error : props.error.title,
-        {
-          id: id,
-          position: props.position,
-          description:
-            typeof props.error === "string"
-              ? undefined
-              : props.error.description,
-        }
-      )
+      create("error", typeof props.error === "string" ? props.error : props.error.title, {
+        id: id,
+        position: props.position,
+        description: typeof props.error === "string" ? undefined : props.error.description,
+      })
     })
     .finally(() => {
       if (shouldDismiss) {

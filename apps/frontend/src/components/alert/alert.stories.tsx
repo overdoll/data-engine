@@ -1,6 +1,7 @@
 import * as React from "react"
 
 import { Alert } from "./alert"
+import { Meta, StoryObj } from "@storybook/react"
 
 const meta: Meta<typeof Alert> = {
   title: "Components/Alert",

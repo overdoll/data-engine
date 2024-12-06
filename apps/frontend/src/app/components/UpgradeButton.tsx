@@ -48,8 +48,8 @@ export function UpgradeButton(props: ButtonProps) {
           <Prompt.Header>
             <Prompt.Title>Upgrade to Premium</Prompt.Title>
             <Prompt.Description>
-              Get early access to premium features when they launch! Tell us what features you're
-              most interested in.
+              Get early access to premium features when they launch! Tell us what features
+              you&apos;re most interested in.
             </Prompt.Description>
           </Prompt.Header>
           <div className="space-y-1 p-6">

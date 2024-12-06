@@ -1,21 +1,6 @@
 import { CalendarDate, CalendarDateTime } from "@internationalized/date"
 
-import { Granularity } from "@/types"
-
-function getDefaultCalendarDateTime(
-  value: Date | null | undefined,
-  defaultValue: Date | null | undefined
-) {
-  if (value) {
-    return createCalendarDateTime(value)
-  }
-
-  if (defaultValue) {
-    return createCalendarDateTime(defaultValue)
-  }
-
-  return null
-}
+import type { Granularity } from "@/types/types"
 
 function createCalendarDateTime(date: Date) {
   return new CalendarDateTime(
@@ -29,10 +14,7 @@ function createCalendarDateTime(date: Date) {
   )
 }
 
-function updateCalendarDateTime(
-  date: CalendarDateTime | null | undefined,
-  value: Date
-) {
+function updateCalendarDateTime(date: CalendarDateTime | null | undefined, value: Date) {
   if (!date) {
     return createCalendarDateTime(value)
   }
@@ -66,17 +48,10 @@ function getDefaultCalendarDate(
 }
 
 function createCalendarDate(date: Date) {
-  return new CalendarDate(
-    date.getFullYear(),
-    date.getMonth() + 1,
-    date.getDate()
-  )
+  return new CalendarDate(date.getFullYear(), date.getMonth() + 1, date.getDate())
 }
 
-function updateCalendarDate(
-  date: CalendarDate | null | undefined,
-  value: Date
-) {
+function updateCalendarDate(date: CalendarDate | null | undefined, value: Date) {
   if (!date) {
     return createCalendarDate(value)
   }

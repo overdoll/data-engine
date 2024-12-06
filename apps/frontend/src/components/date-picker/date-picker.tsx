@@ -15,7 +15,7 @@ import { useDatePickerState } from "react-stately"
 import { InternalCalendar } from "@/components/calender"
 import { Popover } from "@/components/popover"
 import { TimeInput } from "@/components/time-input"
-import { Granularity } from "@/types"
+import type { Granularity } from "@/types/types"
 import {
   createCalendarDateFromDate,
   getDefaultCalendarDateFromDate,
@@ -102,7 +102,7 @@ const DatePicker = React.forwardRef<HTMLDivElement, DatePickerProps>(
       state.setValue(
         props.value ? updateCalendarDateFromDate(value, props.value, props.granularity) : null
       )
-    }, [props.value])
+    }, [props.value, props.granularity, state, value])
 
     function clear(e: React.MouseEvent<HTMLButtonElement>) {
       e.preventDefault()
@@ -173,8 +173,10 @@ function convertProps(
     maxValue,
     isDateUnavailable: _isDateUnavailable,
     onChange: _onChange,
-    value: __value__,
-    defaultValue: __defaultValue__,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    value: _value,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    defaultValue: _defaultValue,
     ...rest
   } = props
 

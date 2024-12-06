@@ -3,7 +3,7 @@ import { AriaButtonProps, useButton } from "react-aria"
 
 import { IconButton } from "@/components/icon-button"
 
-interface CalendarButtonProps extends AriaButtonProps<"button"> {}
+type CalendarButtonProps = AriaButtonProps<"button">
 
 const CalendarButton = React.forwardRef<HTMLButtonElement, CalendarButtonProps>(
   ({ children, ...props }, ref) => {
@@ -13,12 +13,7 @@ const CalendarButton = React.forwardRef<HTMLButtonElement, CalendarButtonProps>(
     const { buttonProps } = useButton(props, innerRef)
 
     return (
-      <IconButton
-        size="small"
-        variant="transparent"
-        className="rounded-[4px]"
-        {...buttonProps}
-      >
+      <IconButton size="small" variant="transparent" className="rounded-[4px]" {...buttonProps}>
         {children}
       </IconButton>
     )

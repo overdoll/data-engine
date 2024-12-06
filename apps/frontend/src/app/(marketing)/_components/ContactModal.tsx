@@ -21,7 +21,7 @@ type FormData = z.infer<typeof formSchema>
 
 interface ContactModalProps {
   isOpen: boolean
-  onClose: () => void
+  onClose: VoidFunction
 }
 
 export function ContactModal({ isOpen, onClose }: ContactModalProps) {
@@ -32,7 +32,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
   const {
     register,
     handleSubmit,
-    formState: { errors, isDirty },
+    formState: { errors },
     reset,
     setValue,
   } = useForm<FormData>({
@@ -63,7 +63,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
       })
       reset()
       onClose()
-    } catch (error) {
+    } catch {
       toast.error("Failed to send message", {
         description: "Please try again later.",
       })
@@ -79,7 +79,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
           <Prompt.Header>
             <Prompt.Title>Contact Sales</Prompt.Title>
             <Prompt.Description>
-              Tell us about your needs and we'll get back to you shortly.
+              Tell us about your needs and we&apos;ll get back to you shortly.
             </Prompt.Description>
           </Prompt.Header>
           <div className="space-y-4 p-6">

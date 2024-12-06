@@ -1,5 +1,5 @@
 import * as React from "react"
-import type { IconProps } from "../types"
+import type { IconProps } from "../types/types"
 const RocketLaunch = React.forwardRef<SVGSVGElement, IconProps>(
   ({ color = "currentColor", ...props }, ref) => {
     return (
@@ -19,10 +19,7 @@ const RocketLaunch = React.forwardRef<SVGSVGElement, IconProps>(
             strokeWidth={1.5}
             d="M11.265 8.386c3.118-3.271 2.736-7.084 2.704-7.355C13.697 1 9.885.617 6.614 3.735a10.4 10.4 0 0 0-2.842 4.702l2.79 2.79c.706-.193 2.815-.86 4.703-2.841"
           />
-          <path
-            fill={color}
-            d="M9.743 6.75a1.493 1.493 0 1 0 0-2.985 1.493 1.493 0 0 0 0 2.985"
-          />
+          <path fill={color} d="M9.743 6.75a1.493 1.493 0 1 0 0-2.985 1.493 1.493 0 0 0 0 2.985" />
           <path
             stroke={color}
             strokeLinecap="round"

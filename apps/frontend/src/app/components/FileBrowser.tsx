@@ -7,7 +7,6 @@ import { Heading } from "@/components/heading"
 import { FileUpload } from "./FileUpload"
 import { useUser } from "@clerk/nextjs"
 import FileBrowserSkeleton from "./FileBrowserSkeleton"
-import { Alert } from "@/components/alert"
 import { UpgradeButton } from "./UpgradeButton"
 
 export function FileBrowser() {

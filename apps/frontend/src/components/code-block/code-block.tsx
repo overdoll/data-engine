@@ -3,7 +3,7 @@ import { Highlight, Prism, themes } from "prism-react-renderer"
 import * as React from "react"
 ;(typeof global !== "undefined" ? global : window).Prism = Prism
 
-// @ts-ignore
+// @ts-expect-error lol help me
 import("prismjs/components/prism-json")
 
 import { Copy } from "@/components/copy"
@@ -44,9 +44,7 @@ const useCodeBlockContext = () => {
   const context = React.useContext(CodeBlockContext)
 
   if (context === null)
-    throw new Error(
-      "useCodeBlockContext can only be used within a CodeBlockContext"
-    )
+    throw new Error("useCodeBlockContext can only be used within a CodeBlockContext")
 
   return context
 }
@@ -135,16 +133,10 @@ HeaderComponent.displayName = "CodeBlock.Header"
 /**
  * This component is based on the `div` element and supports all of its props
  */
-const Meta = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => {
+const Meta = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
   return (
     <div
-      className={clx(
-        "txt-compact-small text-ui-code-fg-subtle ml-auto",
-        className
-      )}
+      className={clx("txt-compact-small text-ui-code-fg-subtle ml-auto", className)}
       {...props}
     />
   )
@@ -156,24 +148,15 @@ const Header = Object.assign(HeaderComponent, { Meta })
 /**
  * This component is based on the `div` element and supports all of its props
  */
-const Body = ({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) => {
+const Body = ({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) => {
   const { active } = useCodeBlockContext()
   return (
     <div
-      className={clx(
-        "bg-ui-code-bg-base relative h-full overflow-y-auto p-4",
-        className
-      )}
+      className={clx("bg-ui-code-bg-base relative h-full overflow-y-auto p-4", className)}
       {...props}
     >
       {!active.hideCopy && (
-        <Copy
-          content={active.code}
-          className="text-ui-code-fg-muted absolute right-4 top-4"
-        />
+        <Copy content={active.code} className="text-ui-code-fg-muted absolute right-4 top-4" />
       )}
       <div className="max-w-[90%]">
         <Highlight
@@ -261,10 +244,7 @@ const Body = ({
               {!active.hideLineNumbers && (
                 <div role="presentation" className="flex flex-col text-right">
                   {tokens.map((_, i) => (
-                    <span
-                      key={i}
-                      className="text-ui-code-fg-subtle tabular-nums"
-                    >
+                    <span key={i} className="text-ui-code-fg-subtle tabular-nums">
                       {i + 1}
                     </span>
                   ))}

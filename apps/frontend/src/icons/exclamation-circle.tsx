@@ -1,5 +1,5 @@
 import * as React from "react"
-import type { IconProps } from "../types"
+import type { IconProps } from "../types/types"
 const ExclamationCircle = React.forwardRef<SVGSVGElement, IconProps>(
   ({ color = "currentColor", ...props }, ref) => {
     return (
@@ -18,10 +18,7 @@ const ExclamationCircle = React.forwardRef<SVGSVGElement, IconProps>(
             strokeWidth={1.5}
             d="M7.5 13.944a6.444 6.444 0 1 0 0-12.888 6.444 6.444 0 0 0 0 12.888M7.5 4.328v3.678"
           />
-          <path
-            strokeWidth={0.9}
-            d="M7.5 10.976a.44.44 0 0 1 0-.878.44.44 0 0 1 0 .878Z"
-          />
+          <path strokeWidth={0.9} d="M7.5 10.976a.44.44 0 0 1 0-.878.44.44 0 0 1 0 .878Z" />
         </g>
         <defs>
           <clipPath id="a">

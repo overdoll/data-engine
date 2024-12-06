@@ -16,9 +16,11 @@ Including another URLconf
 """
 
 from django.contrib import admin
-from django.urls import path, include
+from django.urls import path, include, re_path
+from api.views import health
 
 urlpatterns = [
     path("admin/", admin.site.urls),
     path("api/", include("engine.urls")),
+    re_path(r"^health/?$", health, name="health"),
 ]

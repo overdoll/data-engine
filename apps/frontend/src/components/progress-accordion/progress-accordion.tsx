@@ -4,7 +4,7 @@ import { CheckCircleSolid, CircleDottedLine, CircleHalfSolid, Plus } from "@/ico
 import * as Primitves from "@radix-ui/react-accordion"
 import * as React from "react"
 
-import { ProgressStatus } from "@/types"
+import { ProgressStatus } from "@/types/types"
 import { clx } from "@/utils/clx"
 import { IconButton } from "../icon-button"
 

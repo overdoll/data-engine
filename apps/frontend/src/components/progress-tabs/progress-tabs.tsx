@@ -4,7 +4,7 @@ import { CheckCircleSolid, CircleDottedLine, CircleHalfSolid } from "@/icons/ind
 import * as ProgressTabsPrimitives from "@radix-ui/react-tabs"
 import * as React from "react"
 
-import { ProgressStatus } from "@/types"
+import { ProgressStatus } from "@/types/types"
 import { clx } from "@/utils/clx"
 
 /**
