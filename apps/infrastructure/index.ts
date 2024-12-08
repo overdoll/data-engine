@@ -262,7 +262,7 @@ const vercelDeployment = new vercel.Deployment("wispbit-deployment", {
   environment: {
     NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: config.requireSecret("clerk-publishable-key"),
     CLERK_SECRET_KEY: config.requireSecret("clerk-secret-key"),
-    NEXT_PUBLIC_API_URL: lb.loadBalancer.dnsName,
+    NEXT_PUBLIC_API_URL: "https://api.wispbit.com/api",
     SENTRY_DSN: config.requireSecret("sentry-dsn-frontend"),
     NEXT_PUBLIC_POSTHOG_KEY: config.requireSecret("posthog-key"),
     NEXT_PUBLIC_POSTHOG_HOST: "https://us.i.posthog.com",
