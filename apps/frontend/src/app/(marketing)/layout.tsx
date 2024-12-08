@@ -25,6 +25,12 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
                 Home
               </Link>
               <Link
+                href="/privacy"
+                className="text-gray-800 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Privacy
+              </Link>
+              <Link
                 href="/pricing"
                 className="text-gray-800 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
@@ -62,16 +68,16 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               <h4 className="text-lg font-semibold mb-4">Legal</h4>
               <ul className="space-y-2">
                 <li>
-                  <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
-                    Terms of Service
-                  </Link>
-                </li>
-                <li>
                   <Link
                     href="/privacy"
                     className="text-gray-400 hover:text-white transition-colors"
                   >
-                    Privacy Policy
+                    Privacy
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/terms" className="text-gray-400 hover:text-white transition-colors">
+                    Terms of Service
                   </Link>
                 </li>
               </ul>
