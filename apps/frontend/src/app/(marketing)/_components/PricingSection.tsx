@@ -12,13 +12,13 @@ export function PricingSection() {
   return (
     <div className="py-16 bg-gradient-to-b from-white to-purple-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold text-center mb-12">Simple, Usage-Based Pricing</h2>
+        <h2 className="text-3xl font-bold text-center mb-12">Pricing</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Free Plan */}
           <div className="p-8 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow">
             <div className="text-center mb-8">
               <h3 className="text-2xl font-bold mb-4">Free</h3>
-              <p className="text-gray-600 mb-6">Perfect for trying out the service</p>
+              <p className="text-gray-600 mb-6">Perfect for trying out the tool</p>
               <div className="text-4xl font-bold mb-2">$0</div>
               <div className="text-gray-500">3 files per month</div>
             </div>
@@ -37,7 +37,23 @@ export function PricingSection() {
                     d="M5 13l4 4L19 7"
                   />
                 </svg>
-                Data cleaning and merging
+                Data cleaning
+              </li>
+              <li className="flex items-center">
+                <svg
+                  className="w-5 h-5 text-green-500 mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+                Data deduplication
               </li>
               <li className="flex items-center">
                 <svg
@@ -130,7 +146,7 @@ export function PricingSection() {
               onClick={() => setIsContactModalOpen(true)}
               className="w-full bg-purple-600 hover:bg-purple-700"
             >
-              Contact Sales
+              Chat with us
             </Button>
           </div>
         </div>

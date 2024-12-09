@@ -2,6 +2,7 @@ import { Button } from "@/components/button"
 import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs"
 import Link from "next/link"
 import { Metadata } from "next"
+import { ScrollHandler } from "./_components/ScrollHandler"
 
 export const metadata: Metadata = {
   title: "Dataset Manager",
@@ -11,7 +12,8 @@ export const metadata: Metadata = {
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
+    <div className="min-h-screen">
+      <ScrollHandler />
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm z-50 border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -19,22 +21,22 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
             {/* Left side - Navigation Links */}
             <div className="flex items-center space-x-8">
               <Link
-                href="/"
+                href="/#home"
                 className="text-gray-800 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Home
               </Link>
               <Link
-                href="/privacy"
-                className="text-gray-800 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Privacy
-              </Link>
-              <Link
-                href="/pricing"
+                href="/#pricing"
                 className="text-gray-800 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Pricing
+              </Link>
+              <Link
+                href="/#privacy"
+                className="text-gray-800 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Privacy
               </Link>
             </div>
 
@@ -48,7 +50,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               <SignedOut>
                 <SignInButton mode="modal" forceRedirectUrl="/files">
                   <Button className="bg-purple-600 hover:bg-purple-700 text-white font-medium">
-                    Create Account
+                    Get Started
                   </Button>
                 </SignInButton>
               </SignedOut>
