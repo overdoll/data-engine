@@ -10,7 +10,7 @@ export function PricingSection() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
 
   return (
-    <div className="py-16 bg-gradient-to-b from-white to-purple-50">
+    <div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 className="text-3xl font-bold text-center mb-12">Pricing</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
