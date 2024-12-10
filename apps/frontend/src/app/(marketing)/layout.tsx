@@ -5,9 +5,8 @@ import { Metadata } from "next"
 import { ScrollHandler } from "./_components/ScrollHandler"
 
 export const metadata: Metadata = {
-  title: "Dataset Manager",
-  description:
-    "Effortlessly merge and manage your datasets with our powerful data management solution.",
+  title: "Clean and deduplicate data - wispbit.com",
+  description: "Clean and deduplicate data instantly, using wispbit.",
 }
 
 export default function MarketingLayout({ children }: { children: React.ReactNode }) {

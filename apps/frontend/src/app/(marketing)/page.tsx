@@ -1,8 +1,8 @@
 import { PricingSection } from "./_components/PricingSection"
 import { Heading } from "@/components/heading"
-import { Tabs } from "@/components/tabs"
-import { Container } from "@/components/container"
-import { BenefitsTabs } from "./_components/BenefitsTabs"
+import { BenefitsSection } from "./_components/BenefitsSection"
+import Link from "next/link"
+import { FaqSection } from "./_components/FaqSection"
 
 export default function Home() {
   return (
@@ -26,32 +26,32 @@ export default function Home() {
       {/* Benefits Section */}
       <section id="benefits" className="py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <BenefitsTabs />
+          <BenefitsSection />
         </div>
       </section>
 
       {/* Privacy Section */}
-      <section id="privacy" className="py-16 ">
+      <section id="privacy" className="py-16 bg-gray-800">
         <div className="max-w-4xl mx-auto px-4">
-          <Heading level="h1" className="text-4xl font-bold text-center mb-12">
-            Your data privacy. First.
+          <Heading level="h1" className="text-4xl font-bold text-center mb-12 text-white">
+            Your privacy. First.
           </Heading>
 
           <div className="space-y-8">
             <section>
-              <Heading level="h3" className="mb-4">
+              <Heading level="h1" className="mb-4 text-white">
                 How we protect your data
               </Heading>
-              <ul className="space-y-4 text-gray-600">
+              <ul className="space-y-4 text-gray-300">
                 <li className="flex items-start">
                   <span className="mr-2">•</span>
-                  <p>We delete any data you uploaded after 24 hours</p>
+                  <p>We delete any files you uploaded after 24 hours.</p>
                 </li>
                 <li className="flex items-start">
                   <span className="mr-2">•</span>
                   <p>
-                    We use OpenAI under the hood for some features for manipulating data. OpenAI
-                    does not use your data for training and has a commitment to privacy.
+                    We use OpenAI under the hood for some features for manipulating data. This data
+                    is not used for training.
                   </p>
                 </li>
                 <li className="flex items-start">
@@ -62,6 +62,11 @@ export default function Home() {
                   </p>
                 </li>
               </ul>
+              <div className="mt-6 text-center">
+                <Link href="/privacy" className="text-purple-400 hover:text-purple-300 font-medium">
+                  Learn more about our privacy →
+                </Link>
+              </div>
             </section>
           </div>
         </div>
@@ -73,34 +78,8 @@ export default function Home() {
       </section>
 
       {/* FAQ Section */}
-      <section id="faq" className="py-16 ">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <h2 className="text-3xl font-bold text-center mb-12">Frequently Asked Questions</h2>
-          <div className="grid gap-8 max-w-3xl mx-auto">
-            {[
-              {
-                question: "How does the 24-hour data retention work?",
-                answer:
-                  "For your security, all uploaded data is automatically deleted after 24 hours. We recommend downloading your merged results immediately after processing.",
-              },
-              {
-                question: "Can I upgrade or downgrade my plan?",
-                answer:
-                  "Yes, you can change your plan at any time by contacting support. Changes will be reflected in your next billing cycle.",
-              },
-              {
-                question: "How do you ensure data privacy?",
-                answer:
-                  "We take data privacy seriously. Your data is encrypted, automatically deleted after 24 hours, and we use trusted SOC2 certified providers.",
-              },
-            ].map((faq) => (
-              <div key={faq.question} className="bg-white rounded-lg p-6 shadow-sm">
-                <h3 className="text-lg font-semibold text-gray-900 mb-2">{faq.question}</h3>
-                <p className="text-gray-600">{faq.answer}</p>
-              </div>
-            ))}
-          </div>
-        </div>
+      <section className="py-16">
+        <FaqSection />
       </section>
     </>
   )
