@@ -8,20 +8,20 @@ export function BenefitsSection() {
       {/* Clean Section */}
       <Container>
         <div className="grid md:grid-cols-2 gap-8 items-center min-h-screen">
-          <div className="w-full max-w-full">
+          <div className="w-full max-w-full space-y-2">
             <Image
-              src="/screenshots/clean-1.png"
+              src="/clean-data-1.png"
               alt="Data cleaning interface - Step 1"
               width={600}
               height={400}
-              className="rounded-t-lg w-full h-auto"
+              className="rounded-lg w-full h-auto"
             />
             <Image
-              src="/screenshots/clean-2.png"
+              src="/custom-fix-2.png"
               alt="Data cleaning interface - Step 2"
               width={600}
               height={400}
-              className="rounded-b-lg w-full h-auto"
+              className="rounded-lg w-full h-auto"
             />
           </div>
 
@@ -48,20 +48,20 @@ export function BenefitsSection() {
       {/* Deduplicate Section */}
       <Container>
         <div className="grid md:grid-cols-2 gap-8 items-center min-h-screen">
-          <div className="w-full max-w-full">
+          <div className="w-full max-w-full space-y-2">
             <Image
-              src="/screenshots/dedupe-1.png"
+              src="/deduplicate-1.png"
               alt="Deduplication interface - Step 1"
               width={600}
               height={400}
-              className="rounded-t-lg w-full h-auto"
+              className="rounded-lg w-full h-auto"
             />
             <Image
-              src="/screenshots/dedupe-2.png"
+              src="/deduplicate-2.png"
               alt="Deduplication interface - Step 2"
               width={600}
               height={400}
-              className="rounded-b-lg w-full h-auto"
+              className="rounded-lg w-full h-auto"
             />
           </div>
 
