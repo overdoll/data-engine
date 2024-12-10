@@ -170,6 +170,14 @@ export default function PrivacyPage() {
         </section>
       </div>
 
+      <p className="mt-8 text-gray-600 text-center">
+        For additional information, please see our{" "}
+        <Link href="/privacy-policy" className="text-purple-600 hover:text-purple-700">
+          Privacy Policy
+        </Link>
+        .
+      </p>
+
       <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
     </div>
   )
