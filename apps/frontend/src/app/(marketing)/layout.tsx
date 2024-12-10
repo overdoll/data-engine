@@ -3,6 +3,7 @@ import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs"
 import Link from "next/link"
 import { Metadata } from "next"
 import { ScrollHandler } from "./_components/ScrollHandler"
+import Image from "next/image"
 
 export const metadata: Metadata = {
   title: "Clean and deduplicate data - wispbit.com",
@@ -15,10 +16,13 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       <ScrollHandler />
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm z-50 border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16 items-center">
             {/* Left side - Navigation Links */}
-            <div className="flex items-center space-x-8">
+            <div className="flex items-center space-x-8 pl-2">
+              <Link href="/#home" className="flex items-center">
+                <Image src="/icon-192.png" alt="Wispbit Logo" width={32} height={32} />
+              </Link>
               <Link
                 href="/#home"
                 className="text-gray-800 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
