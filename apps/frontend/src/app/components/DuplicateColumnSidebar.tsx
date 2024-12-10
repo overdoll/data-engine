@@ -74,11 +74,18 @@ export function DuplicateColumnSidebar({ fileId }: { fileId: string }) {
           )}
         </div>
       </SidebarHeader>
-      {hasClassifiedColumns && error && !isDeduplicating && (
-        <Alert variant="error" className="mx-4 my-2 items-center">
-          Select more columns to start deduplication
-        </Alert>
-      )}
+      {hasClassifiedColumns &&
+        error &&
+        !isDeduplicating &&
+        (error === "NO_MATCHES" ? (
+          <Alert variant="warning" className="mx-4 my-2 items-center">
+            No duplicates found
+          </Alert>
+        ) : (
+          <Alert variant="error" className="mx-4 my-2 items-center">
+            Select more columns to start deduplication
+          </Alert>
+        ))}
       <div className="relative flex-1 overflow-hidden">
         <div className="overflow-y-auto h-full px-4 py-2">
           {sortedColumns.map((column) => {

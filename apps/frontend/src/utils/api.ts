@@ -281,7 +281,7 @@ export interface DeduplicationResponse {
   }[]
   original_count: number
   deduplicated_count: number
-  error?: "NO_MATCHING_RULES" | "SELECT_COLUMNS"
+  error?: "NO_MATCHING_RULES" | "SELECT_COLUMNS" | "NO_MATCHES"
 }
 
 // Update the deduplication mutation
