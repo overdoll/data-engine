@@ -70,10 +70,10 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               <ul className="space-y-2">
                 <li>
                   <Link
-                    href="/privacy"
+                    href="/privacy-policy"
                     className="text-gray-400 hover:text-white transition-colors"
                   >
-                    Privacy
+                    Privacy Policy
                   </Link>
                 </li>
                 <li>
