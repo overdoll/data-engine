@@ -24,6 +24,16 @@ const bucket = new aws.s3.Bucket(
       },
     },
     forceDestroy: false,
+    lifecycleRules: [
+      {
+        enabled: true,
+        expiration: {
+          days: 1, // Delete objects after 24 hours
+        },
+        // This applies to all objects in the bucket
+        prefix: "",
+      },
+    ],
   },
   {
     protect: true,

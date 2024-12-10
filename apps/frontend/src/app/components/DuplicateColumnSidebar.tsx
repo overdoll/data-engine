@@ -140,7 +140,7 @@ interface ColumnRowProps {
 function ColumnRow({ column, isSelected, onToggle, disabled }: ColumnRowProps) {
   return (
     <div
-      className={`flex items-center gap-2 py-1 ${
+      className={`flex items-center gap-2 py-1 ph-no-capture ${
         disabled ? "opacity-50 cursor-not-allowed" : ""
       } border-b`}
     >

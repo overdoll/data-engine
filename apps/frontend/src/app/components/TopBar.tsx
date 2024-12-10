@@ -38,7 +38,7 @@ export function TopBar({ fileId }: { fileId: string }) {
           <span className="text-gray-400">/</span>
           {metadata && (
             <div className="flex items-center gap-2">
-              <Label className="font-normal text-base truncate">
+              <Label className="font-normal text-base truncate ph-no-capture">
                 {metadata.metadata.original_filename}
               </Label>
               <DatasetType datasetType={metadata.metadata.dataset_type} />

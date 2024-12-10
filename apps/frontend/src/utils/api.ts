@@ -244,8 +244,9 @@ export const useApplySuggestion = (fileId: string) => {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.csvData(fileId) })
       await queryClient.invalidateQueries({ queryKey: queryKeys.csvMetadata(fileId) })
-      window.gridApi?.refreshCells({ force: true })
       await queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(fileId) })
+      window.gridApi?.refreshCells({ force: true })
+      window.gridApi?.refreshServerSide()
     },
   })
 }
@@ -293,7 +294,9 @@ export const useUpdateColumnValues = (fileId: string) => {
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: queryKeys.csvData(fileId) })
+      await queryClient.invalidateQueries({ queryKey: queryKeys.csvMetadata(fileId) })
       window.gridApi?.refreshCells({ force: true })
+      window.gridApi?.refreshServerSide()
     },
   })
 }

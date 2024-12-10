@@ -17,7 +17,7 @@ export function Suggestion({ suggestion }: SuggestionProps) {
   return (
     <div
       className={clx(
-        "py-3 px-3 border rounded-md flex gap-3 cursor-pointer",
+        "py-3 px-3 border rounded-md flex gap-3 cursor-pointer ph-no-capture",
         selected && "border-blue-200 bg-blue-50/50"
       )}
       onClick={() => toggleSuggestion(suggestion)}

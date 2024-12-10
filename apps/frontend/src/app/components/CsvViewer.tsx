@@ -60,8 +60,8 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
       field: col.id,
       headerName: col.label,
       width: calculateColumnWidth(col.label, csvData?.rows.map((row) => row.data[col.id]) || []),
-      // cellClass: col.classification ? "classified-column" : undefined,
-      headerClass: col.classification ? "classified-header" : undefined,
+      cellClass: ["ph-no-capture", col.classification ? "classified-column" : ""].filter(Boolean),
+      headerClass: ["ph-no-capture", col.classification ? "classified-header" : ""].filter(Boolean),
     }))
   }, [csvMetadata?.columns, csvData?.rows])
 
@@ -199,9 +199,10 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           resizable: false,
           flex: 1,
           headerComponent: () => null,
+          cellClass: "ph-no-capture",
         }}
         getRowClass={(params) => {
-          const classes = []
+          const classes = ["ph-no-capture"]
           if (params.data?.has_duplicates) {
             classes.push("duplicate-parent-row")
           }

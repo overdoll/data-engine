@@ -2,15 +2,15 @@
 // The config you add here will be used whenever a users loads a page in their browser.
 // https://docs.sentry.io/platforms/javascript/guides/nextjs/
 
-import * as Sentry from "@sentry/nextjs";
+import * as Sentry from "@sentry/nextjs"
 
 Sentry.init({
   dsn: process.env.SENTRY_DSN,
 
   // Add optional integrations for additional features
-  integrations: [
-    Sentry.replayIntegration(),
-  ],
+  integrations: [Sentry.replayIntegration()],
+
+  autoSessionTracking: false,
 
   // Define how likely traces are sampled. Adjust this value in production, or use tracesSampler for greater control.
   tracesSampleRate: 1,
@@ -25,4 +25,21 @@ Sentry.init({
 
   // Setting this option to true will print useful information to the console while you're setting up Sentry.
   debug: false,
-});
+
+  beforeSend(event) {
+    // Remove request bodies, query strings and headers
+    if (event.request) {
+      delete event.request.data
+      delete event.request.query_string
+      delete event.request.headers
+    }
+
+    // Remove response data and headers
+    if (event.contexts?.response) {
+      delete event.contexts.response.data
+      delete event.contexts.response.headers
+    }
+
+    return event
+  },
+})

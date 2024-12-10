@@ -60,7 +60,7 @@ export function FileBrowser() {
               <Link
                 key={file.uuid}
                 href={`/files/${file.uuid}`}
-                className="animate-in fade-in-0 duration-200 py-2 px-3 text-gray-500 hover:text-blue-500 hover:bg-gray-100 rounded grid grid-cols-2 gap-4"
+                className="animate-in fade-in-0 duration-200 py-2 px-3 text-gray-500 hover:text-blue-500 hover:bg-gray-100 rounded grid grid-cols-2 gap-4 ph-no-capture"
               >
                 <span className="truncate">{file.original_filename}</span>
                 <span className="text-sm text-gray-400 text-right">
