@@ -60,13 +60,13 @@ export function DuplicateColumnSidebar({ fileId }: { fileId: string }) {
             </Label>
           </div>
           {isDeduplicating && (
-            <div className="flex items-center gap-2 px-2 py-1 rounded-md ml-auto">
+            <div className="flex items-center gap-2 px-2 rounded-md ml-auto">
               <Label className="text-xsmall text-gray-400">Deduplicating</Label>
               <Spinner className="h-4 w-4 animate-spin" />
             </div>
           )}
           {hasClassifiedColumns && !error && stats && !isDeduplicating && (
-            <div className="flex gap-2 items-center text-sm border rounded-md px-2 py-1 ml-auto">
+            <div className="flex gap-2 items-center text-sm rounded-md px-2 ml-auto">
               <span className="font-semibold">{stats.totalRows}</span>
               <ArrowRightMini className="h-4 w-4 text-gray-400" />
               <span className="font-semibold text-green-500">{stats.duplicateRows}</span>
