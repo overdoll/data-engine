@@ -1,74 +1,176 @@
+"use client"
 import { Heading } from "@/components/heading"
+import { Button } from "@/components/button"
+import { ContactModal } from "../_components/ContactModal"
+import Link from "next/link"
+import { useState } from "react"
 
 export default function PrivacyPage() {
+  const [isContactModalOpen, setIsContactModalOpen] = useState(false)
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-12">
       <Heading level="h1" className="mb-8">
-        Privacy Policy
+        Your data privacy is our priority
       </Heading>
 
       <div className="space-y-8">
+        <p className="text-gray-600">
+          wispbit was build with data privacy in mind. We built this page to tell you all about it.
+        </p>
+
         <section>
           <Heading level="h2" className="mb-4">
-            Data Collection
+            How we protect your data
           </Heading>
-          <p className="text-gray-600">
-            We collect only the minimum amount of data necessary to provide our service. This
-            includes your email address for authentication and any datasets you upload.
-          </p>
+          <ul className="space-y-4 text-gray-600">
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              <p>We delete any data you uploaded after 24 hours</p>
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              <p>
+                We use OpenAI under the hood for some features for manipulating data. OpenAI does
+                not use your data for training and has a commitment to privacy.{" "}
+                <Link
+                  href="https://openai.com/enterprise-privacy/"
+                  className="text-purple-600 hover:text-purple-700"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View their data privacy policy
+                </Link>
+                . OpenAI is{" "}
+                <Link
+                  href="https://trust.openai.com/"
+                  className="text-purple-600 hover:text-purple-700"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  SOC2 certified
+                </Link>
+                .
+              </p>
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              <p>
+                We use Amazon Web Services to store, retrieve, and process your data. All data is
+                encrypted.{" "}
+                <Link
+                  href="https://aws.amazon.com/compliance/data-protection/"
+                  className="text-purple-600 hover:text-purple-700"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View their data privacy policy
+                </Link>
+                . AWS is{" "}
+                <Link
+                  href="https://aws.amazon.com/compliance/soc-faqs/"
+                  className="text-purple-600 hover:text-purple-700"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  SOC2 certified
+                </Link>
+                .
+              </p>
+            </li>
+          </ul>
         </section>
 
         <section>
           <Heading level="h2" className="mb-4">
-            Data Storage
+            How we manage our services
           </Heading>
-          <p className="text-gray-600">
-            All uploaded datasets are automatically deleted after 24 hours. We do not retain any
-            uploaded data beyond this period. Your account information is stored securely using
-            industry-standard encryption.
-          </p>
+          <ul className="space-y-4 text-gray-600">
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              <p>
+                We use PostHog for tracking how our users are using wispbit. We do not send any data
+                related to your uploads to PostHog.{" "}
+                <Link
+                  href="https://posthog.com/privacy"
+                  className="text-purple-600 hover:text-purple-700"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View their privacy policy
+                </Link>
+                . PostHog is{" "}
+                <Link
+                  href="https://drive.google.com/file/d/1uLBE83_pN5q7p7IA-Ut85ArQh9BBzEdw/view"
+                  className="text-purple-600 hover:text-purple-700"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  SOC2 certified
+                </Link>
+                .
+              </p>
+            </li>
+            <li className="flex items-start">
+              <span className="mr-2">•</span>
+              <p>
+                We use Sentry for error tracking and service monitoring. We scrub service logs so
+                your data is never sent to Sentry.{" "}
+                <Link
+                  href="https://sentry.io/trust/privacy/"
+                  className="text-purple-600 hover:text-purple-700"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  View their privacy policy
+                </Link>
+                . Sentry is{" "}
+                <Link
+                  href="https://sentry.io/trust"
+                  className="text-purple-600 hover:text-purple-700"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  SOC2 certified
+                </Link>
+                .
+              </p>
+            </li>
+          </ul>
         </section>
 
-        <section>
+        <section className="bg-purple-50 p-8 rounded-lg">
           <Heading level="h2" className="mb-4">
-            Data Usage
+            Enterprise Data Control
           </Heading>
-          <p className="text-gray-600">
-            We do not sell, trade, or otherwise transfer your personal information to third parties.
-            Your data is used solely for providing the dataset management service.
+          <p className="text-gray-600 mb-6">
+            If you want full control of your data and storage, we can offer the following services
+            via our enterprise offering:
           </p>
-        </section>
-
-        <section>
-          <Heading level="h2" className="mb-4">
-            Cookies
-          </Heading>
-          <p className="text-gray-600">
-            We use essential cookies to maintain your session and authentication status. No tracking
-            or marketing cookies are used.
-          </p>
-        </section>
-
-        <section>
-          <Heading level="h2" className="mb-4">
-            Your Rights
-          </Heading>
-          <p className="text-gray-600">
-            You have the right to request access to your personal data, correct any inaccuracies,
-            and request deletion of your account and associated data.
-          </p>
-        </section>
-
-        <section>
-          <Heading level="h2" className="mb-4">
+          <ul className="space-y-2 text-gray-600 mb-8">
+            <li className="flex items-center">
+              <span className="mr-2">•</span>
+              <p>Bring Your Own OpenAI API key</p>
+            </li>
+            <li className="flex items-center">
+              <span className="mr-2">•</span>
+              <p>Bring Your Own Storage layer (AWS, GCP, etc.)</p>
+            </li>
+            <li className="flex items-center">
+              <span className="mr-2">•</span>
+              <p>Deploy wispbit on your own infrastructure (On prem)</p>
+            </li>
+          </ul>
+          <Button
+            onClick={() => setIsContactModalOpen(true)}
+            className="bg-purple-600 hover:bg-purple-700"
+          >
             Contact Us
-          </Heading>
-          <p className="text-gray-600">
-            If you have any questions about this Privacy Policy, please contact us through our
-            support channels.
-          </p>
+          </Button>
         </section>
       </div>
+
+      <ContactModal isOpen={isContactModalOpen} onClose={() => setIsContactModalOpen(false)} />
     </div>
   )
 }

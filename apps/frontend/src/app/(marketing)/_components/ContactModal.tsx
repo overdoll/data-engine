@@ -77,9 +77,9 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
       <Prompt.Content>
         <form onSubmit={handleSubmit(onSubmit)}>
           <Prompt.Header>
-            <Prompt.Title>Contact Sales</Prompt.Title>
+            <Prompt.Title>Contact Us</Prompt.Title>
             <Prompt.Description>
-              Tell us about your needs and we&apos;ll get back to you shortly.
+              Tell us a bit about what you need and we&apos;ll get back to you soon.
             </Prompt.Description>
           </Prompt.Header>
           <div className="space-y-4 p-6">
@@ -98,7 +98,7 @@ export function ContactModal({ isOpen, onClose }: ContactModalProps) {
               <Label htmlFor="message">Message</Label>
               <Textarea
                 id="message"
-                placeholder="Tell us about your needs..."
+                placeholder="What are you looking for?"
                 {...register("message")}
                 className={errors.message ? "border-red-500" : ""}
               />
