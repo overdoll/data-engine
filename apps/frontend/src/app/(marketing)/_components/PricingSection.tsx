@@ -5,6 +5,8 @@ import { SignInButton, SignedIn, SignedOut } from "@clerk/nextjs"
 import Link from "next/link"
 import { useState } from "react"
 import { ContactModal } from "./ContactModal"
+import { Container } from "@/components/container"
+import { Heading } from "@/components/heading"
 
 export function PricingSection() {
   const [isContactModalOpen, setIsContactModalOpen] = useState(false)
@@ -12,12 +14,16 @@ export function PricingSection() {
   return (
     <div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 className="text-3xl font-bold text-center mb-12">Pricing</h2>
+        <Heading level="h2" className="text-3xl font-bold text-center mb-12">
+          Pricing
+        </Heading>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Free Plan */}
-          <div className="p-8 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow">
+          <Container>
             <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold mb-4">Free</h3>
+              <Heading level="h3" className="text-2xl font-bold mb-4">
+                Free
+              </Heading>
               <p className="text-gray-600 mb-6">Perfect for trying out the tool</p>
               <div className="text-4xl font-bold mb-2">$0</div>
               <div className="text-gray-500">3 files per month</div>
@@ -82,12 +88,14 @@ export function PricingSection() {
                 <Button className="w-full bg-purple-600 hover:bg-purple-700">Go to App</Button>
               </Link>
             </SignedIn>
-          </div>
+          </Container>
 
           {/* Pro Plan */}
-          <div className="p-8 bg-white rounded-lg shadow-lg hover:shadow-xl transition-shadow border-2 border-purple-500">
+          <Container className="border-2 border-purple-500">
             <div className="text-center mb-8">
-              <h3 className="text-2xl font-bold mb-4">Pro</h3>
+              <Heading level="h3" className="text-2xl font-bold mb-4">
+                Pro
+              </Heading>
               <p className="text-gray-600 mb-6">For power users</p>
               <div className="text-4xl font-bold mb-2">$49</div>
               <div className="text-gray-500">1,000 files per month</div>
@@ -148,7 +156,7 @@ export function PricingSection() {
             >
               Chat with us
             </Button>
-          </div>
+          </Container>
         </div>
       </div>
 
