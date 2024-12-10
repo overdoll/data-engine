@@ -1,6 +1,7 @@
 import axios from "axios"
 import { QueryClient, useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAuth } from "@clerk/nextjs"
+import { useNotFoundHandler } from "@/utils/useNotFoundHandler"
 
 // Default cache settings
 const defaultCacheTime = 1000 * 60 * 5 // 5 minutes
@@ -112,24 +113,36 @@ export const useFiles = () => {
 
 export const useFile = (id: string) => {
   const apiClient = useApiClient()
+  const handleNotFound = useNotFoundHandler()
+
   return useQuery({
     queryKey: queryKeys.file(id),
     queryFn: async () => {
-      const client = await apiClient()
-      const { data } = await client.get<FileUploadResponse>(`/csv/${id}`)
-      return data
+      try {
+        const client = await apiClient()
+        const { data } = await client.get<FileUploadResponse>(`/csv/${id}`)
+        return data
+      } catch (error) {
+        return handleNotFound(error)
+      }
     },
   })
 }
 
 export const useCsvData = (id: string) => {
   const apiClient = useApiClient()
+  const handleNotFound = useNotFoundHandler()
+
   return useQuery({
     queryKey: queryKeys.csvData(id),
     queryFn: async () => {
-      const client = await apiClient()
-      const { data } = await client.get<CsvRowsData>(`/csv/${id}`)
-      return data
+      try {
+        const client = await apiClient()
+        const { data } = await client.get<CsvRowsData>(`/csv/${id}`)
+        return data
+      } catch (error) {
+        return handleNotFound(error)
+      }
     },
     enabled: !!id,
   })
@@ -137,12 +150,18 @@ export const useCsvData = (id: string) => {
 
 export const useCsvMetadata = (id: string) => {
   const apiClient = useApiClient()
+  const handleNotFound = useNotFoundHandler()
+
   return useQuery({
     queryKey: queryKeys.csvMetadata(id),
     queryFn: async () => {
-      const client = await apiClient()
-      const { data } = await client.get<CsvMetadata>(`/csv/${id}/metadata`)
-      return { ...data, metadata: { ...data.metadata, id } }
+      try {
+        const client = await apiClient()
+        const { data } = await client.get<CsvMetadata>(`/csv/${id}/metadata`)
+        return { ...data, metadata: { ...data.metadata, id } }
+      } catch (error) {
+        return handleNotFound(error)
+      }
     },
     enabled: !!id,
   })
@@ -151,12 +170,18 @@ export const useCsvMetadata = (id: string) => {
 // Add new suggestions query
 export const useSuggestions = (id?: string, enabled: boolean = true) => {
   const apiClient = useApiClient()
+  const handleNotFound = useNotFoundHandler()
+
   return useQuery({
     queryKey: queryKeys.suggestions(id!),
     queryFn: async () => {
-      const client = await apiClient()
-      const { data } = await client.get<Suggestion[]>(`/csv/${id}/suggestions`)
-      return data
+      try {
+        const client = await apiClient()
+        const { data } = await client.get<Suggestion[]>(`/csv/${id}/suggestions`)
+        return data
+      } catch (error) {
+        return handleNotFound(error)
+      }
     },
     enabled: !!id && enabled,
     retry: false,
