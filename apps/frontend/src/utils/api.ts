@@ -242,9 +242,9 @@ export const useApplySuggestion = (fileId: string) => {
       return data
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.csvData(fileId) })
-      await queryClient.invalidateQueries({ queryKey: queryKeys.csvMetadata(fileId) })
-      await queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(fileId) })
+      await queryClient.refetchQueries({ queryKey: queryKeys.csvData(fileId) })
+      await queryClient.refetchQueries({ queryKey: queryKeys.csvMetadata(fileId) })
+      await queryClient.refetchQueries({ queryKey: queryKeys.suggestions(fileId) })
       window.gridApi?.refreshCells({ force: true })
       window.gridApi?.refreshServerSide()
     },
@@ -293,8 +293,8 @@ export const useUpdateColumnValues = (fileId: string) => {
       return data
     },
     onSuccess: async () => {
-      await queryClient.invalidateQueries({ queryKey: queryKeys.csvData(fileId) })
-      await queryClient.invalidateQueries({ queryKey: queryKeys.csvMetadata(fileId) })
+      await queryClient.refetchQueries({ queryKey: queryKeys.csvData(fileId) })
+      await queryClient.refetchQueries({ queryKey: queryKeys.csvMetadata(fileId) })
       window.gridApi?.refreshCells({ force: true })
       window.gridApi?.refreshServerSide()
     },
@@ -351,9 +351,9 @@ export const useUpdateDatasetType = (fileId: string) => {
     },
     onSuccess: async () => {
       // Invalidate and refetch relevant queries
-      await queryClient.invalidateQueries({ queryKey: queryKeys.csvMetadata(fileId) })
-      await queryClient.invalidateQueries({ queryKey: queryKeys.files })
-      await queryClient.invalidateQueries({ queryKey: queryKeys.suggestions(fileId) })
+      await queryClient.refetchQueries({ queryKey: queryKeys.csvMetadata(fileId) })
+      await queryClient.refetchQueries({ queryKey: queryKeys.files })
+      await queryClient.refetchQueries({ queryKey: queryKeys.suggestions(fileId) })
     },
   })
 }

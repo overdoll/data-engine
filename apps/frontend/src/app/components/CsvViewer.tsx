@@ -70,6 +70,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
       getRows: (params: IServerSideGetRowsParams) => {
         if (!csvData?.rows) {
           params.success({ rowData: [], rowCount: 0 })
+          window.gridApi?.refreshCells({ force: true })
           return
         }
 
@@ -94,6 +95,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
             rowData: rows,
             rowCount: rows.length,
           })
+          window.gridApi?.refreshCells({ force: true })
           return
         }
 
@@ -116,6 +118,7 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
             rowData: rows,
             rowCount: rows.length,
           })
+          window.gridApi?.refreshCells({ force: true })
           return
         }
 
@@ -133,6 +136,8 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           rowData: rows,
           rowCount: rows.length,
         })
+        window.gridApi?.refreshCells({ force: true })
+        return
       },
     }
   }, [csvData?.rows])

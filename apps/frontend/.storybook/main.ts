@@ -16,7 +16,6 @@ const config: StorybookConfig = {
     config.resolve.alias["@/hooks"] = path.resolve(__dirname, "../src/hooks")
     config.resolve.alias["@/icons"] = path.resolve(__dirname, "../src/icons")
     config.resolve.alias["@/utils"] = path.resolve(__dirname, "../src/utils")
-    console.log(path.resolve(__dirname, "../src/icons"))
     return config
   },
 }
