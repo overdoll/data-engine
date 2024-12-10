@@ -50,13 +50,11 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   const columnDefs = useMemo<ColDef<RowData>[]>(() => {
     if (!csvMetadata?.columns) return []
 
-    const sortedColumns = [...csvMetadata.columns]
-      .filter((col) => col.label !== "facebook_url")
-      .sort((a, b) => {
-        if (a.classification && !b.classification) return -1
-        if (!a.classification && b.classification) return 1
-        return 0
-      })
+    const sortedColumns = [...csvMetadata.columns].sort((a, b) => {
+      if (a.classification && !b.classification) return -1
+      if (!a.classification && b.classification) return 1
+      return 0
+    })
 
     return sortedColumns.map((col) => ({
       field: col.id,
