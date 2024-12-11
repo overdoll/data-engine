@@ -23,7 +23,6 @@ from .authentication import ClerkJWTAuthentication
 
 import datetime
 from .services.email_service import EmailService
-import requests
 
 csv_service = CSVService()
 column_operation_service = ColumnOperationService()
@@ -471,18 +470,12 @@ def send_message(request):
         email_data["clerk_id"] = request.user.id
         email_data["clerk_email"] = request.user.email
 
-    try:
-        # Send email via EmailService
-        email_service.send_transactional_email(
-            transactional_id="cm4932bve006e7c90z3zv0tyw",
-            email="ilya@wispbit.com",
-            data=email_data,
-        )
-    except requests.exceptions.RequestException as e:
-        return Response(
-            {"error": f"Failed to send email: {str(e)}"},
-            status=status.HTTP_502_BAD_GATEWAY,
-        )
+    # Send email via EmailService
+    email_service.send_transactional_email(
+        transactional_id="cm4932bve006e7c90z3zv0tyw",
+        email="ilya@wispbit.com",
+        data=email_data,
+    )
 
     return Response({"status": "success", "message": "Message received and sent"})
 
