@@ -467,8 +467,8 @@ def send_message(request):
 
     # Add user info if authenticated
     if hasattr(request, "user") and request.user.is_authenticated:
-        email_data["clerk_id"] = request.user.id
-        email_data["clerk_email"] = request.user.email
+        email_data["clerk_id"] = request.user.id or "guest"
+        email_data["clerk_email"] = request.user.id or "guest"
 
     # Send email via EmailService
     email_service.send_transactional_email(
