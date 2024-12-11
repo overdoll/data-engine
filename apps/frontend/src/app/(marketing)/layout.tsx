@@ -17,7 +17,7 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
       {/* Navigation */}
       <nav className="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur-sm z-50 border-b">
         <div className="max-w-7xl mx-auto px-0 sm:px-6 lg:px-8">
-          <div className="flex justify-between h-16 items-center">
+          <div className="flex justify-between h-12 items-center">
             {/* Left side - Navigation Links */}
             <div className="flex items-center space-x-8 pl-2">
               <Link href="/#home" className="flex items-center">
@@ -29,17 +29,18 @@ export default function MarketingLayout({ children }: { children: React.ReactNod
               >
                 Home
               </Link>
-              <Link
-                href="/#pricing"
-                className="text-gray-800 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                Pricing
-              </Link>
+
               <Link
                 href="/#privacy"
                 className="text-gray-800 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 Privacy
+              </Link>
+              <Link
+                href="/#pricing"
+                className="text-gray-800 hover:text-purple-600 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Pricing
               </Link>
             </div>
 
