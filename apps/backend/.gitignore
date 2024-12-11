@@ -165,3 +165,4 @@ cluster_studio.html
 
 .venv/
 venv
+api/.env
