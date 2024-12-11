@@ -18,16 +18,18 @@ class CSVService:
         s3_kwargs = {}
         logger = logging.getLogger(__name__)
 
-        if hasattr(settings, "AWS_ACCESS_KEY_ID") and hasattr(
-            settings, "AWS_SECRET_ACCESS_KEY"
-        ):
+        # Get AWS credentials with defaults of None
+        aws_key = getattr(settings, "AWS_ACCESS_KEY_ID", None)
+        aws_secret = getattr(settings, "AWS_SECRET_ACCESS_KEY", None)
+
+        if aws_key and aws_secret:
             s3_kwargs.update(
                 {
-                    "aws_access_key_id": settings.AWS_ACCESS_KEY_ID,
-                    "aws_secret_access_key": settings.AWS_SECRET_ACCESS_KEY,
+                    "aws_access_key_id": aws_key,
+                    "aws_secret_access_key": aws_secret,
                 }
             )
-            logger.warning("Initializing S3 client with AWS credentials")
+            logger.warning(f"Initializing S3 client with AWS credentials ID: {aws_key}")
         else:
             logger.info(
                 "Initializing S3 client without AWS credentials (using IAM role)"

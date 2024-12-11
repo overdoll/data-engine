@@ -7,7 +7,7 @@ export function BenefitsSection() {
     <div className="space-y-4">
       {/* Clean Section */}
       <Container>
-        <div className="grid md:grid-cols-2 gap-8 items-center min-h-screen">
+        <div className="grid md:grid-cols-2 gap-8 items-center min-h-[400px] max-h-[1200px]">
           <div className="w-full max-w-full space-y-2">
             <Image
               src="/clean-data-1.png"
@@ -47,7 +47,7 @@ export function BenefitsSection() {
 
       {/* Deduplicate Section */}
       <Container>
-        <div className="grid md:grid-cols-2 gap-8 items-center min-h-screen">
+        <div className="grid md:grid-cols-2 gap-8 items-center min-h-[400px] max-h-[1200px]">
           <div className="w-full max-w-full space-y-2">
             <Image
               src="/deduplicate-1.png"
