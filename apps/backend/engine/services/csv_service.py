@@ -9,12 +9,15 @@ import string
 import re
 import uuid
 from django.utils.text import slugify
+import logging
 
 
 class CSVService:
     def __init__(self):
         # Initialize S3 client with optional credentials
         s3_kwargs = {}
+        logger = logging.getLogger(__name__)
+
         if hasattr(settings, "AWS_ACCESS_KEY_ID") and hasattr(
             settings, "AWS_SECRET_ACCESS_KEY"
         ):
@@ -23,6 +26,11 @@ class CSVService:
                     "aws_access_key_id": settings.AWS_ACCESS_KEY_ID,
                     "aws_secret_access_key": settings.AWS_SECRET_ACCESS_KEY,
                 }
+            )
+            logger.warning("Initializing S3 client with AWS credentials")
+        else:
+            logger.info(
+                "Initializing S3 client without AWS credentials (using IAM role)"
             )
 
         self.s3 = boto3.client("s3", **s3_kwargs)
