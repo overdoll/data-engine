@@ -54,3 +54,7 @@ body {
 .ag-theme-quartz .duplicate-child-row.ag-row-hover {
   background-color: rgba(255, 244, 229, 0.3);
 }
+
+.ag-watermark {
+  display: none !important;
+}
