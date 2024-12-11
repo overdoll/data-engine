@@ -6,7 +6,7 @@ from typing import Dict, Any, Optional
 class EmailService:
     def __init__(self):
         self.api_key = settings.LOOPS_API_KEY
-        self.base_url = "https://api.loops.so/v1"
+        self.base_url = "https://app.loops.so/api/v1"
         self.headers = {
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
