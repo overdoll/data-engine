@@ -1,5 +1,5 @@
 import { useFiles } from "@/utils/api"
-import { format } from "date-fns"
+import { format, parseISO } from "date-fns"
 import Link from "next/link"
 import { Label } from "@/components/label"
 import { DataDeletionNotice } from "./DataDeletionNotice"
@@ -65,7 +65,7 @@ export function FileBrowser() {
                 <span className="truncate">{file.original_filename}</span>
                 <span className="text-sm text-gray-400 text-right">
                   {file.created_at
-                    ? format(new Date(file.created_at), "MMM d, h:mm a")
+                    ? format(parseISO(file.created_at + "Z"), "MMM d, h:mm a")
                     : "Unknown date"}
                 </span>
               </Link>
