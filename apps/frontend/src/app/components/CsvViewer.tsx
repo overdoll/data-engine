@@ -1,4 +1,4 @@
-import { useCsvData, useCsvMetadata } from "@/utils/api"
+import { CsvRowsData, useCsvData, useCsvMetadata } from "@/utils/api"
 import "ag-grid-enterprise"
 import { AgGridReact } from "ag-grid-react"
 import { ColDef, GridReadyEvent, IServerSideGetRowsParams } from "ag-grid-community"
@@ -8,6 +8,7 @@ import { useMemo, useCallback, useRef } from "react"
 import { useDuplicatesStore } from "@/stores/duplicates"
 import { useModeStore } from "@/stores/mode"
 import { TableSectionSkeleton } from "@/components/skeleton"
+import { useQueryClient } from "@tanstack/react-query"
 
 declare global {
   interface Window {
@@ -38,6 +39,7 @@ interface RowData {
 }
 
 export function CsvViewer({ fileId }: CsvViewerProps) {
+  const queryClient = useQueryClient()
   const { data: csvData, isLoading: isCsvDataLoading, error: csvDataError } = useCsvData(fileId)
   const {
     data: csvMetadata,
@@ -68,9 +70,9 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
   const serverSideDatasource = useCallback(() => {
     return {
       getRows: (params: IServerSideGetRowsParams) => {
+        const csvData = queryClient.getQueryData<CsvRowsData>(["csv-data", fileId])
         if (!csvData?.rows) {
           params.success({ rowData: [], rowCount: 0 })
-          window.gridApi?.refreshCells({ force: true })
           return
         }
 
@@ -95,7 +97,6 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
             rowData: rows,
             rowCount: rows.length,
           })
-          window.gridApi?.refreshCells({ force: true })
           return
         }
 
@@ -118,7 +119,6 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
             rowData: rows,
             rowCount: rows.length,
           })
-          window.gridApi?.refreshCells({ force: true })
           return
         }
 
@@ -136,16 +136,14 @@ export function CsvViewer({ fileId }: CsvViewerProps) {
           rowData: rows,
           rowCount: rows.length,
         })
-        window.gridApi?.refreshCells({ force: true })
         return
       },
     }
-  }, [csvData?.rows])
+  }, [fileId, queryClient])
 
   const onGridReady = useCallback(
     (params: GridReadyEvent) => {
       window.gridApi = params.api
-
       const datasource = serverSideDatasource()
       params.api.setGridOption("serverSideDatasource", datasource)
     },
