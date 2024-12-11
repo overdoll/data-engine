@@ -198,6 +198,13 @@ const backendService = new awsx.ecs.FargateService("wispbit-backend", {
           targetGroup: targetGroup,
         },
       ],
+      healthCheck: {
+        command: ["CMD-SHELL", "curl -f http://0.0.0.0:8000/health/ || exit 1"],
+        interval: 30, // Check every 30 seconds
+        timeout: 5, // Timeout after 5 seconds
+        retries: 3, // Allow 3 retries before marking unhealthy
+        startPeriod: 5, // Give container 60 seconds to startup before starting healthchecks
+      },
       environment: [
         { name: "DEBUG", value: "false" },
         { name: "AWS_STORAGE_BUCKET_NAME", value: bucket.id },

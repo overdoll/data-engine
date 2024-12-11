@@ -8,13 +8,13 @@ __pycache__/
 *.egg-info/
 *.egg
 
-# Virtual Environment
-.env
+# Virtual Environment - ignore in all directories
+**/.env
+**/.venv
+**/env/
+**/venv/
+**/ENV/
 .venv
-env/
-venv/
-ENV/
-api/.env
 
 # Django
 *.log
