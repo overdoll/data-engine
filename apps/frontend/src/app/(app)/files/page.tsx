@@ -25,9 +25,6 @@ export default function Home() {
         </StyledTopBar>
         <FileBrowser />
       </SignedIn>
-      <SignedOut>
-        <RedirectToSignIn />
-      </SignedOut>
     </>
   )
 }

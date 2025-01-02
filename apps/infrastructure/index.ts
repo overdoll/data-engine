@@ -14,7 +14,7 @@ const bucket = new aws.s3.Bucket(
   {
     acl: "private",
     versioning: {
-      enabled: true,
+      enabled: false,
     },
     serverSideEncryptionConfiguration: {
       rule: {
