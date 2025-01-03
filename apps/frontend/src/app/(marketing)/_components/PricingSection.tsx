@@ -98,7 +98,7 @@ export function PricingSection() {
               </Heading>
               <p className="text-gray-600 mb-6">For power users</p>
               <div className="text-4xl font-bold mb-2">$49</div>
-              <div className="text-gray-500">1,000 files per month</div>
+              <div className="text-gray-500">Unlimited files</div>
             </div>
             <ul className="space-y-4 mb-8">
               <li className="flex items-center">
