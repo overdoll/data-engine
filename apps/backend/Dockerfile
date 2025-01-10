@@ -21,7 +21,7 @@ ENV PYTHONPATH=/app
 COPY pyproject.toml poetry.lock ./
 
 # Install dependencies
-RUN poetry install --no-interaction --no-ansi --no-root --no-dev
+RUN poetry install --no-interaction --no-ansi --no-root
 
 # Copy project files
 COPY manage.py .
