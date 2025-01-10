@@ -2,7 +2,7 @@
 
 import { FileBrowser } from "../../components/FileBrowser"
 import { Label } from "@/components/label"
-import { RedirectToSignIn, SignedOut, UserButton } from "@clerk/nextjs"
+import { UserButton } from "@clerk/nextjs"
 import { SignedIn } from "@clerk/nextjs"
 import { StyledTopBar } from "@/components/topbar/top-bar"
 import { Logo } from "../../components/Logo"
