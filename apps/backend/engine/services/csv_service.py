@@ -106,7 +106,7 @@ class CSVService:
         )
 
     def parse_csv(self, file: BinaryIO) -> pl.DataFrame:
-        df = pl.read_csv(file)
+        df = pl.read_csv(file, truncate_ragged_lines=True)
         return self._process_dataframe(df)
 
     def _process_dataframe(self, df: pl.DataFrame) -> pl.DataFrame:
